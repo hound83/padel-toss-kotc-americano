@@ -127,3 +127,87 @@ test('100,000 draws: invited players have even odds across the two lowest courts
       .map(c => 'court ' + c + ' ' + percent(distribution[player][c])).join(', '));
   }
 });
+
+
+const duplicateStart = html.indexOf('function kocDuplicateIndices(){');
+const duplicateEnd = html.indexOf('\n  function renderKocResult(){', duplicateStart);
+assert.ok(duplicateStart !== -1 && duplicateEnd > duplicateStart, 'KOC duplicate-name validator was found');
+const duplicateFactory = new Function('kocAttendees', 'kocPlayerName',
+  html.slice(duplicateStart, duplicateEnd) + '\nreturn kocDuplicateIndices;');
+
+function duplicateIndices(names, absent = []) {
+  const attending = names.map((_, i) => i).filter(i => !absent.includes(i));
+  const checker = duplicateFactory(
+    () => attending,
+    i => names[i].trim() || 'Speler ' + (i + 1)
+  );
+  return checker();
+}
+
+test('duplicate-name validation ignores case, spacing and Unicode-width differences', () => {
+  assert.deepEqual(duplicateIndices(['Anna', '  ANNA  ', 'Kees', 'Piet']), [0, 1]);
+  assert.deepEqual(duplicateIndices(['Jan  van  Dijk', 'jan van dijk', 'Kees', 'Piet']), [0, 1]);
+  assert.deepEqual(duplicateIndices(['Marc', 'Ｍａｒｃ', 'Kees', 'Piet']), [0, 1]);
+  assert.deepEqual(duplicateIndices(['Jan', 'JAN', 'jan', 'Piet']), [0, 1, 2]);
+});
+
+test('absent players are excluded; placeholder names cannot duplicate named attendees', () => {
+  assert.deepEqual(duplicateIndices(['Anna', 'Anna', 'Kees', 'Piet'], [1]), []);
+  assert.deepEqual(duplicateIndices(['Speler 2', '', 'Kees', 'Piet']), [0, 1]);
+  assert.deepEqual(duplicateIndices(['Anna', 'Bob', 'Kees', 'Piet']), []);
+});
+
+test('KOC validation disables sharing and generating until a duplicate is fixed', () => {
+  const validationStart = html.indexOf('function renderKocCount(){');
+  const validationEnd = html.indexOf('\n  function kocSignature(', validationStart);
+  assert.ok(validationStart !== -1 && validationEnd > validationStart);
+
+  const people = ['Anna', 'ANNA', 'Kees', 'Piet'];
+  const controls = {};
+  for (const id of ['kocCount', 'kocRoll', 'kocCopy', 'kocSave', 'kocPresent', 'kocDupError']) {
+    controls[id] = {disabled: false, hidden: true, textContent: ''};
+  }
+  const rows = people.map(() => {
+    const flags = new Set();
+    const attributes = {};
+    return {
+      flags, attributes,
+      classList: {toggle: (name, set) => set ? flags.add(name) : flags.delete(name)},
+      querySelector: () => ({
+        setAttribute: (name, value) => { attributes[name] = value; },
+        removeAttribute: name => { delete attributes[name]; }
+      })
+    };
+  });
+  const doc = {
+    getElementById: id => controls[id],
+    querySelectorAll: () => rows
+  };
+  const check = new Function('ensureKocRoster', 'kocAttendees', 'kocDuplicateIndices',
+    'document', 't', 'tf', html.slice(validationStart, validationEnd) +
+    '\nreturn renderKocCount;')(
+      () => ({courts: 2, assignment: {0:1, 1:1, 2:2, 3:2}}),
+      () => [0,1,2,3],
+      duplicateFactory(() => [0,1,2,3], i => people[i]),
+      doc, key => key, (_, vars) => vars.active + '/' + vars.total
+    );
+
+  assert.equal(check(), true);
+  assert.equal(controls.kocRoll.disabled, true);
+  assert.equal(controls.kocCopy.disabled, true);
+  assert.equal(controls.kocSave.disabled, true);
+  assert.equal(controls.kocPresent.disabled, true);
+  assert.equal(controls.kocDupError.hidden, false);
+  assert.equal(rows[0].attributes['aria-invalid'], 'true');
+  assert.equal(rows[1].attributes['aria-invalid'], 'true');
+
+  people[1] = 'Ben';
+  assert.equal(check(), false);
+  assert.equal(controls.kocRoll.disabled, false);
+  assert.equal(controls.kocCopy.disabled, false);
+  assert.equal(controls.kocSave.disabled, false);
+  assert.equal(controls.kocPresent.disabled, false);
+  assert.equal(controls.kocDupError.hidden, true);
+  assert.equal(rows[0].attributes['aria-invalid'], undefined);
+  assert.equal(rows[1].attributes['aria-invalid'], undefined);
+});
