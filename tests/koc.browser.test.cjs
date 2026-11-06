@@ -83,7 +83,10 @@ test('real browser: KOC setup, entrants, absence, language, reload and mobile la
   await page.locator('.koc-player').nth(1).locator('input[type=text]').fill('');
   assert.equal(await page.locator('#kocRoll').isEnabled(),true);
 
-  await page.locator('#langSwitch .lang-btn[data-lang="en"]').click();
+  // Language switch lives on the mode picker, not on the KOC panel.
+  await page.locator('#kocBack').click();
+  await page.locator('#homeLangSwitch .lang-btn[data-lang="en"]').click();
+  await page.locator('.format-btn[data-format="koc"]').click();
   assert.match(await page.locator('.koc-entry-option').innerText(),/Place incoming players/);
   assert.equal(await page.locator('.koc-entry-marker').count(),4);
 
