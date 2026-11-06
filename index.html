@@ -175,6 +175,9 @@
   .koc-roster{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;}
   .koc-player{border:1px solid var(--line);border-radius:10px;padding:10px;display:flex;gap:8px;align-items:center;background:white;}
   .koc-player.absent{opacity:.48;background:#f2f4f8;}
+  .koc-player.duplicate:not(.absent){border-color:var(--coral);background:#FFF0EE;}
+  .koc-player.duplicate input[type=text]{border-bottom-color:var(--coral);}
+  .koc-dup-warning{color:#A82D24;font-weight:700;font-size:var(--fs-sm);margin:8px 0 0;}
   .koc-player input[type=checkbox]{width:18px;height:18px;accent-color:var(--teal-900);flex-shrink:0;}
   .koc-player input[type=text]{min-width:0;width:100%;border:0;border-bottom:1px solid var(--line);background:transparent;padding:7px 2px;font:inherit;color:var(--ink);}
   .koc-result{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin:20px 0;}
@@ -951,6 +954,7 @@
         <p class="koc-help" data-i18n="kocNamesHint">Pas namen aan of vink een afwezige speler uit. Je kunt met minder spelers beginnen.</p>
         <div class="koc-roster" id="kocRoster"></div>
         <p class="koc-help" id="kocCount" aria-live="polite"></p>
+        <p class="koc-dup-warning" id="kocDupError" role="alert" hidden></p>
       </div>
     </div>
     <div class="koc-actions">
@@ -1114,9 +1118,10 @@
   </section>
 
   <footer class="app-footer">
-    <span id="appVersion">v2.0.1</span>
+    <span id="appVersion">v2.0.2</span>
     <details><summary data-i18n="whatsNew">Wat is nieuw?</summary>
       <ul>
+        <li data-i18n="changeKocNames">KOC: dubbele namen worden direct gemarkeerd en geblokkeerd.</li>
         <li data-i18n="changeKocRandom">KOC: meer variatie op de onderste banen en in de spelersvolgorde.</li>
         <li data-i18n="changeKoc">King of the Court als vierde speelvorm.</li>
         <li data-i18n="changeAutosave">Automatisch bewaren en hervatten.</li>
@@ -1287,6 +1292,7 @@
       resumeTitle: 'Vorige sessie gevonden', resumeBody: 'Wil je verdergaan waar je gebleven was, of een nieuwe sessie beginnen?',
       resumeNew: 'Nieuwe sessie', resumeContinue: 'Doorgaan',
       whatsNew: 'Wat is nieuw?', changeKoc: 'King of the Court als vierde speelvorm.',
+      changeKocNames: 'KOC: dubbele namen direct herkennen en blokkeren.',
       changeKocRandom: 'KOC: meer variatie op de onderste banen en in de spelersvolgorde.',
       changeAutosave: 'Automatisch bewaren en hervatten.', changePwa: 'Installeerbaar, offline en presentatiemodus.',
       updateAvailable: 'Er staat een nieuwe versie klaar.', updateReload: 'Vernieuwen',
@@ -1448,6 +1454,7 @@
       resumeTitle: 'Previous session found', resumeBody: 'Would you like to pick up where you left off, or start a new session?',
       resumeNew: 'New session', resumeContinue: 'Continue',
       whatsNew: 'What is new?', changeKoc: 'King of the Court is the fourth format.',
+      changeKocNames: 'KOC: spot and block duplicate player names immediately.',
       changeKocRandom: 'KOC: more variation across lower courts and player display order.',
       changeAutosave: 'Automatic saving and session recovery.', changePwa: 'Installable, offline, and presentation mode.',
       updateAvailable: 'A new version is available.', updateReload: 'Refresh',
@@ -1581,10 +1588,23 @@
     }).filter(function(i){ return i !== null; });
   }
 
+  // Only attending players count. Ignore case, whitespace and Unicode variants.
+  function kocDuplicateIndices(){
+    var seen = Object.create(null), duplicates = [];
+    kocAttendees().forEach(function(i){
+      var key = kocPlayerName(i).normalize('NFKC').replace(/\s+/g, ' ').trim().toLocaleLowerCase();
+      if (seen[key] !== undefined){
+        if (duplicates.indexOf(seen[key]) === -1) duplicates.push(seen[key]);
+        duplicates.push(i);
+      } else seen[key] = i;
+    });
+    return duplicates;
+  }
+
   function renderKocResult(){
     var k = ensureKocRoster(), root = document.getElementById('kocResult');
     root.innerHTML = '';
-    if (!k.assignment) return;
+    if (!k.assignment || kocDuplicateIndices().length) return;
     // The display order is randomised once per roll, then kept stable while
     // names are edited and when an auto-saved session is resumed.
     var indices = Object.keys(k.assignment).map(Number);
@@ -1653,11 +1673,10 @@
         row.classList.toggle('absent', !checkbox.checked);
         k.assignment = null;
         k.displayOrder = null;
-        renderKocCount();
+        var hasDuplicates = renderKocCount();
         renderKocResult();
         document.getElementById('kocRoll').textContent = t('kocRoll');
-        document.getElementById('kocCopy').disabled = true;
-        document.getElementById('kocStatus').textContent = t('kocChanged');
+        document.getElementById('kocStatus').textContent = t(hasDuplicates ? 'kocDup' : 'kocChanged');
       });
       var input = document.createElement('input');
       input.type = 'text';
@@ -1667,25 +1686,50 @@
       input.setAttribute('aria-label', tf('namePlaceholder', { n: i + 1 }));
       input.addEventListener('input', function(){
         person.name = input.value;
+        var hasDuplicates = renderKocCount();
         renderKocResult();
+        document.getElementById('kocStatus').textContent =
+          t(hasDuplicates ? 'kocDup' : k.assignment ? 'kocGenerated' : 'kocNoSchedule');
       });
       row.appendChild(checkbox);
       row.appendChild(input);
       roster.appendChild(row);
     });
-    renderKocCount();
+    var hasDuplicates = renderKocCount();
     renderKocResult();
     document.getElementById('kocRoll').textContent = t(k.assignment ? 'kocReroll' : 'kocRoll');
-    document.getElementById('kocCopy').disabled = !k.assignment;
-    document.getElementById('kocStatus').textContent = t(k.assignment ? 'kocGenerated' : 'kocNoSchedule');
+    document.getElementById('kocStatus').textContent =
+      t(hasDuplicates ? 'kocDup' : k.assignment ? 'kocGenerated' : 'kocNoSchedule');
   }
 
   function renderKocCount(){
     var k = ensureKocRoster();
+    var attendees = kocAttendees();
+    var duplicates = kocDuplicateIndices();
+    var hasDuplicates = duplicates.length > 0;
     document.getElementById('kocCount').textContent = tf('kocCount', {
-      active: kocAttendees().length, total: k.courts * 4
+      active: attendees.length, total: k.courts * 4
     });
-    document.getElementById('kocRoll').disabled = kocAttendees().length < 4;
+    document.querySelectorAll('#kocRoster .koc-player').forEach(function(row, i){
+      var invalid = duplicates.indexOf(i) !== -1;
+      row.classList.toggle('duplicate', invalid);
+      var input = row.querySelector('input[type=text]');
+      if (invalid){
+        input.setAttribute('aria-invalid', 'true');
+        input.setAttribute('aria-describedby', 'kocDupError');
+      } else {
+        input.removeAttribute('aria-invalid');
+        input.removeAttribute('aria-describedby');
+      }
+    });
+    var warning = document.getElementById('kocDupError');
+    warning.hidden = !hasDuplicates;
+    warning.textContent = hasDuplicates ? t('kocDup') : '';
+    document.getElementById('kocRoll').disabled = attendees.length < 4 || hasDuplicates;
+    document.getElementById('kocCopy').disabled = !k.assignment || hasDuplicates;
+    document.getElementById('kocSave').disabled = hasDuplicates;
+    document.getElementById('kocPresent').disabled = hasDuplicates;
+    return hasDuplicates;
   }
 
   function kocSignature(assignment, courts){
@@ -1768,11 +1812,10 @@
     var attendees = kocAttendees();
     var status = document.getElementById('kocStatus');
     if (attendees.length < 4){ status.textContent = t('kocMin'); return; }
-    var seen = {};
-    for (var i = 0; i < attendees.length; i++){
-      var name = kocPlayerName(attendees[i]).toLocaleLowerCase();
-      if (seen[name]){ status.textContent = t('kocDup'); return; }
-      seen[name] = true;
+    if (kocDuplicateIndices().length){
+      renderKocCount();
+      status.textContent = t('kocDup');
+      return;
     }
     var best = null, signature = '';
     for (var attempt = 0; attempt < 90; attempt++){
@@ -1787,16 +1830,18 @@
     k.displayOrder = shuffle(attendees);
     renderKocResult();
     document.getElementById('kocRoll').textContent = t('kocReroll');
-    document.getElementById('kocCopy').disabled = false;
+    renderKocCount();
     status.textContent = t('kocGenerated');
   }
 
   document.getElementById('kocRoll').addEventListener('click', rollKoc);
-  document.getElementById('kocSave').addEventListener('click', function(){ saveSchedule(); });
+  document.getElementById('kocSave').addEventListener('click', function(){
+    if (!kocDuplicateIndices().length) saveSchedule();
+  });
   document.getElementById('kocLoad').addEventListener('click', function(){ document.getElementById('loadFileInput').click(); });
   document.getElementById('kocCopy').addEventListener('click', function(){
     var k = ensureKocRoster();
-    if (!k.assignment) return;
+    if (!k.assignment || kocDuplicateIndices().length) return;
     var lines = ['🎾 King of the Court'];
     for (var c = k.courts; c >= 1; c--){
       var names = (k.displayOrder || Object.keys(k.assignment).map(Number))
@@ -4352,7 +4397,9 @@
     }
   }
   document.getElementById('presentBtn').addEventListener('click', function(){setPresentation(true);});
-  document.getElementById('kocPresent').addEventListener('click', function(){setPresentation(true);});
+  document.getElementById('kocPresent').addEventListener('click', function(){
+    if (!kocDuplicateIndices().length) setPresentation(true);
+  });
   document.getElementById('presentExit').addEventListener('click', function(){setPresentation(false);});
   document.addEventListener('fullscreenchange', function(){
     if (!document.fullscreenElement) document.body.classList.remove('presentation-mode');
