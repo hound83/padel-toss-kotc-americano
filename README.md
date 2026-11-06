@@ -10,11 +10,11 @@
 </p>
 
 <p align="center">
-  <a href="https://hound83.github.io/padel-toss-americano/"><strong>▶️ OPEN DE KORIANDER TOSS</strong></a>
+  <a href="https://hound83.github.io/padel-toss-kotc-americano/"><strong>▶️ OPEN DE KORIANDER TOSS</strong></a>
 </p>
 
 <p align="center">
-  <strong>Directe URL:</strong> <a href="https://hound83.github.io/padel-toss-americano/">https://hound83.github.io/padel-toss-americano/</a><br />
+  <strong>Directe URL:</strong> <a href="https://hound83.github.io/padel-toss-kotc-americano/">https://hound83.github.io/padel-toss-kotc-americano/</a><br />
   <em>Werkt op telefoon, tablet en computer. Geen account nodig.</em>
 </p>
 
@@ -33,7 +33,7 @@
 
 ## Zo werkt het
 
-1. **Open de [webapp](https://hound83.github.io/padel-toss-americano/)** en kies een speelvorm.
+1. **Open de [webapp](https://hound83.github.io/padel-toss-kotc-americano/)** en kies een speelvorm.
 2. **Stel je avond in:** kies het aantal banen, het aantal spelers en waar van toepassing de rondes of niveaugroepen.
 3. **Vul de namen in** en genereer de indeling.
 4. **Speel!** Bekijk het schema, houd bij Americano de scores bij of gebruik de presentatiemodus om de indeling duidelijk te tonen.
@@ -50,6 +50,9 @@
 
 - Kies **2 tot 8 banen**.
 - Vink afwezige spelers uit of pas namen aan; starten met minder spelers kan ook.
+- De eerste speler start op de hoogste baan, de tweede op de baan eronder.
+- Zet desgewenst **Instroomspelers indelen** aan. De laatste vier spelers krijgen dan een eigen vinkje; gemarkeerde spelers starten zo laag mogelijk, bij voorkeur op baan 1.
+- Bij minder deelnemers blijven vrije plekken op de laagste banen. Daardoor kunnen niet altijd alle gemarkeerde instroomspelers op baan 1 starten.
 - Gebruik **🎲 Genereer startindeling** opnieuw om een andere willekeurige indeling te maken.
 - Kopieer de indeling eenvoudig voor **WhatsApp**.
 - De app verzorgt de **start**. Het doorschuiven na de eerste wedstrijden gebeurt op de baan.
@@ -91,6 +94,7 @@ node --test tests/koc.test.cjs
 
 <p align="center">
   <strong>Klaar om te spelen?</strong><br />
-  <a href="https://hound83.github.io/padel-toss-americano/"><strong>🎾 Start de Koriander Toss</strong></a><br />
+  <a href="https://hound83.github.io/padel-toss-kotc-americano/"><strong>🎾 Start de Koriander Toss</strong></a><br />
   <em>Gemaakt voor gezellige én goed georganiseerde padelavonden.</em>
 </p>
+
