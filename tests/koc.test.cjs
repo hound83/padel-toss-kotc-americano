@@ -20,8 +20,9 @@ const shuffle = values => {
 };
 const makeAssignment = new Function('shuffle', html.slice(begin, end) + '\nreturn makeKocAssignment;')(shuffle);
 
-function checkAssignment(courts, attendees) {
-  const assignment = makeAssignment(attendees, {courts});
+function checkAssignment(courts, attendees, incoming = [], incomingEnabled = false) {
+  const roster = Array.from({length: courts * 4}, (_, i) => ({incoming: incoming.includes(i)}));
+  const assignment = makeAssignment(attendees, {courts, roster, incomingEnabled});
   const actual = Object.keys(assignment).map(Number).sort((a,b) => a-b);
   assert.deepEqual(actual, attendees.slice().sort((a,b) => a-b));
   const occupancy = Array.from({length: courts + 1}, () => 0);
@@ -39,24 +40,27 @@ function checkAssignment(courts, attendees) {
   return assignment;
 }
 
-test('two courts: organiser starts on court 1 when that court has space', () => {
+test('two courts: first player starts at the top, second on the court below if occupied', () => {
   for (const count of [5, 6, 7, 8]) {
     const attendees = Array.from({length: count}, (_, i) => i);
     for (let attempt = 0; attempt < 20; attempt++) {
-      assert.equal(checkAssignment(2, attendees)[0], 1);
+      const assignment = checkAssignment(2, attendees);
+      assert.equal(assignment[0], 2);
+      assert.equal(assignment[1], 1);
     }
   }
+  const onlyFour = checkAssignment(2, [0,1,2,3]);
+  assert.equal(onlyFour[0], 2);
+  assert.equal(onlyFour[1], 2, 'a court with no participants cannot take player 2');
 });
 
-test('organiser stays on the penultimate court; guests use the bottom two from four courts', () => {
+test('first two players have fixed highest and penultimate courts when available', () => {
   for (const courts of [3, 4, 5, 8]) {
     const attendees = Array.from({length: courts * 4}, (_, i) => i);
     for (let attempt = 0; attempt < 20; attempt++) {
       const assignment = checkAssignment(courts, attendees);
-      assert.equal(assignment[0], courts - 1);
-      const allowed = courts >= 4 ? [1, 2] : [1];
-      assert.ok(allowed.includes(assignment[courts * 4 - 2]));
-      assert.ok(allowed.includes(assignment[courts * 4 - 1]));
+      assert.equal(assignment[0], courts);
+      assert.equal(assignment[1], courts - 1);
     }
   }
 });
@@ -67,12 +71,8 @@ test('two absences leave vacancies only on the lowest court', () => {
       .filter(i => i !== 4 && i !== 5);
     for (let attempt = 0; attempt < 20; attempt++) {
       const assignment = checkAssignment(courts, attendees);
-      assert.equal(assignment[0], courts === 2 ? 1 : courts - 1);
-      if (courts > 2) {
-        const allowed = courts >= 4 ? [1, 2] : [1];
-        assert.ok(allowed.includes(assignment[courts * 4 - 2]));
-        assert.ok(allowed.includes(assignment[courts * 4 - 1]));
-      }
+      assert.equal(assignment[0], courts);
+      assert.equal(assignment[1], courts - 1);
     }
   }
 });
@@ -96,35 +96,100 @@ test('absence patterns do not create duplicates, gaps or overfilled courts', () 
   }
 });
 
-test('100,000 draws: invited players have even odds across the two lowest courts', () => {
+test('100,000 draws: unmarked players (including 13-16) are shuffled without old guest bias', () => {
   const courts = 4;
   const attendees = Array.from({length: 16}, (_, i) => i);
-  const outcomes = {'1,1':0, '1,2':0, '2,1':0, '2,2':0};
   const distribution = Array.from({length: 16}, () => [0,0,0,0,0]);
   const draws = 100000;
   for (let i = 0; i < draws; i++) {
     const assignment = makeAssignment(attendees, {courts});
-    const key = assignment[14] + ',' + assignment[15];
-    assert.ok(Object.hasOwn(outcomes, key), 'both guests stay on court 1 or 2');
-    outcomes[key]++;
     for (const player of attendees) distribution[player][assignment[player]]++;
   }
-  for (const key of Object.keys(outcomes)) {
-    const share = outcomes[key] / draws;
-    assert.ok(Math.abs(share - .25) < .015, key + ' outcome is close to 25%');
+  assert.equal(distribution[0][4], draws, 'organiser always on court 4');
+  assert.equal(distribution[1][3], draws, 'second player always on court 3');
+  const expected = {1:4/14, 2:4/14, 3:3/14, 4:3/14};
+  for (const player of [2, 12, 13, 14, 15]) {
+    for (let court=1; court<=4; court++){
+      const share = distribution[player][court] / draws;
+      assert.ok(Math.abs(share - expected[court]) < .015,
+        'player ' + (player+1) + ' court ' + court + ' distribution');
+    }
   }
-  assert.equal(distribution[0][3], draws, 'organiser always on court 3');
-  assert.equal(distribution[14][3] + distribution[14][4], 0);
-  assert.equal(distribution[15][3] + distribution[15][4], 0);
 
   const percent = n => (100 * n / draws).toFixed(2) + '%';
-  console.log('KOC 4 courts / 16 players / 100,000 independent draws:');
-  for (const [key, count] of Object.entries(outcomes)) {
-    console.log('  invited player courts ' + key + ': ' + percent(count));
-  }
-  for (const player of [0, 1, 2, 14, 15]) {
+  console.log('KOC 4 courts / 16 players / 100,000 unmarked draws:');
+  for (const player of [0, 1, 2, 12, 14, 15]) {
     console.log('  player ' + (player + 1) + ': ' + [1,2,3,4]
       .map(c => 'court ' + c + ' ' + percent(distribution[player][c])).join(', '));
+  }
+});
+
+test('incoming players use the lowest available court after reserved first/second slots', () => {
+  for (const courts of [2, 3, 4, 5, 8]){
+    const attendees = Array.from({length:courts*4}, (_, i) => i);
+    const lastFour = attendees.slice(-4);
+    for(let count=1; count<=4; count++){
+      const marked = lastFour.slice(0,count);
+      for(let attempt=0; attempt<40; attempt++){
+        const assignment=checkAssignment(courts, attendees, marked, true);
+        const bottomSpace = courts === 2 ? 3 : 4;
+        assert.equal(marked.filter(idx=>assignment[idx]===1).length,Math.min(count,bottomSpace));
+        for(const idx of marked) assert.ok([1,2].includes(assignment[idx]));
+        assert.equal(assignment[0],courts);
+        assert.equal(assignment[1],courts-1);
+      }
+    }
+  }
+});
+
+test('incoming flags have no effect when the global option is off', () => {
+  const attendees = Array.from({length:16}, (_, i)=>i);
+  let court1Only = 0;
+  for(let attempt=0;attempt<200;attempt++){
+    const assignment=checkAssignment(4,attendees,[12,13,14,15],false);
+    if([12,13,14,15].every(i=>assignment[i]===1)) court1Only++;
+  }
+  assert.ok(court1Only < 20,'the marked players are not secretly reserved without enabling the mode');
+});
+
+test('with 15 players, 4 marked entrants use 3 slots on court 1 and 1 on court 2', () => {
+  const attendees=Array.from({length:16},(_,i)=>i).filter(i=>i!==5);
+  const incoming=[12,13,14,15];
+  const overflowCounts=new Map(incoming.map(i=>[i,0]));
+  for(let attempt=0;attempt<4000;attempt++){
+    const assignment=checkAssignment(4,attendees,incoming,true);
+    assert.equal(incoming.filter(i=>assignment[i]===1).length,3);
+    const overflow=incoming.filter(i=>assignment[i]===2);
+    assert.equal(overflow.length,1);
+    overflowCounts.set(overflow[0],overflowCounts.get(overflow[0])+1);
+  }
+  for(const count of overflowCounts.values()){
+    assert.ok(Math.abs(count/4000-.25)<.04,'overflow is shared fairly between entrants');
+  }
+});
+
+test('absent entrants and flags on other roster positions are ignored', () => {
+  const attendees=Array.from({length:16},(_,i)=>i).filter(i=>i!==14);
+  for(let attempt=0;attempt<50;attempt++){
+    const assignment=checkAssignment(4,attendees,[3,12,14],true);
+    assert.equal(assignment[12],1);
+    assert.equal(assignment[14],undefined);
+    assert.equal(assignment[0],4);
+  }
+});
+
+test('all court sizes and random absences remain valid with 0-4 incoming players', () => {
+  for(let courts=2;courts<=8;courts++){
+    const all=Array.from({length:courts*4},(_,i)=>i);
+    const eligible=all.slice(-4);
+    for(let attempt=0;attempt<500;attempt++){
+      const count=4+Math.floor(Math.random()*(all.length-3));
+      const attendees=shuffle(all).slice(0,count);
+      const marked=shuffle(eligible).slice(0,Math.floor(Math.random()*5));
+      const assignment=checkAssignment(courts,attendees,marked,true);
+      if(attendees.includes(0)) assert.equal(assignment[0],courts);
+      if(attendees.includes(1) && count>4) assert.equal(assignment[1],courts-1);
+    }
   }
 });
 
@@ -211,3 +276,4 @@ test('KOC validation disables sharing and generating until a duplicate is fixed'
   assert.equal(rows[0].attributes['aria-invalid'], undefined);
   assert.equal(rows[1].attributes['aria-invalid'], undefined);
 });
+
