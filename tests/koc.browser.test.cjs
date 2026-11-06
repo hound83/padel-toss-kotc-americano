@@ -53,6 +53,21 @@ test('real browser: KOC setup, entrants, absence, language, reload and mobile la
   for (let i=13;i<=16;i++) assert.ok(cards[3].includes('Speler '+i));
   assert.ok(cards.every(court=>!court.includes('Instroom')), 'incoming markers are private setup-only labels');
 
+  await context.grantPermissions(['clipboard-read','clipboard-write'],{origin});
+  await page.locator('#kocCopy').click();
+  const copied = await page.evaluate(() => navigator.clipboard.readText());
+  assert.match(copied,/King of the Court/);
+  assert.match(copied,/Baan 4/);
+  assert.ok(!copied.includes('Instroom'),'copying for WhatsApp never reveals incoming markers');
+
+  const downloadEvent = page.waitForEvent('download');
+  await page.locator('#kocSave').click();
+  const download = await downloadEvent;
+  const savedPath = await download.path();
+  const saved = JSON.parse(fs.readFileSync(savedPath,'utf8'));
+  assert.equal(saved.state.koc.incomingEnabled,true);
+  assert.equal(saved.state.koc.roster.slice(12,16).filter(p=>p.incoming).length,4);
+
   // The fifth player is absent; of four entrants one must now start on court 2.
   await page.locator('.koc-player').nth(4).locator('input[type=checkbox]').first().uncheck();
   assert.equal(await page.locator('#kocResult .koc-court').count(),0,'old assignment is invalidated');
@@ -68,7 +83,7 @@ test('real browser: KOC setup, entrants, absence, language, reload and mobile la
   await page.locator('.koc-player').nth(1).locator('input[type=text]').fill('');
   assert.equal(await page.locator('#kocRoll').isEnabled(),true);
 
-  await page.locator('.lang-btn[data-lang="en"]').click();
+  await page.locator('#langSwitch .lang-btn[data-lang="en"]').click();
   assert.match(await page.locator('.koc-entry-option').innerText(),/Place incoming players/);
   assert.equal(await page.locator('.koc-entry-marker').count(),4);
 
@@ -92,6 +107,12 @@ test('real browser: KOC setup, entrants, absence, language, reload and mobile la
   cards = await courtNames();
   assert.ok(cards[0].includes('Player 1'));
   assert.ok(cards[1].includes('Player 2'));
+
+  // Importing a saved KOC schedule restores its four incoming flags.
+  await page.locator('#loadFileInput').setInputFiles(savedPath);
+  await page.locator('#kocEntryToggle').waitFor({state:'visible'});
+  await page.waitForFunction(() => document.getElementById('kocEntryToggle').checked);
+  assert.equal(await page.locator('.koc-entry-marker input:checked').count(),4);
 
   // Responsive mobile field: four markers remain usable without sideways scroll.
   const mobile = await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true});
