@@ -1,0 +1,25 @@
+name: KOC checks
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  tests:
+    # Pin to a Playwright-supported image (ubuntu-latest currently resolves to 26.04).
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: KOC assignment tests
+        run: node --test tests/koc.test.cjs
+      - name: Install browser test dependencies
+        run: |
+          npm install --no-save --no-package-lock playwright@1.58.0
+          npx playwright install --with-deps chromium
+      - name: KOC browser smoke test
+        run: node --test tests/koc.browser.test.cjs
