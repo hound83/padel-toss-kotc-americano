@@ -61,7 +61,7 @@ test('real browser: KOC setup, entrants, absence, language, reload and mobile la
   // Name collision uses the existing duplicate-name guard.
   await page.locator('.koc-player').nth(1).locator('input[type=text]').fill('Speler 1');
   assert.equal(await page.locator('#kocRoll').isEnabled(),false);
-  await page.locator('.koc-player').nth(1).locator('input[type=text]').fill('Speler 2');
+  await page.locator('.koc-player').nth(1).locator('input[type=text]').fill('');
   assert.equal(await page.locator('#kocRoll').isEnabled(),true);
 
   await page.locator('.lang-btn[data-lang="en"]').click();
@@ -86,8 +86,8 @@ test('real browser: KOC setup, entrants, absence, language, reload and mobile la
   assert.equal(await page.locator('.koc-entry-marker').count(),0);
   await page.locator('#kocRoll').click();
   cards = await page.locator('#kocResult .koc-court').allTextContents();
-  assert.match(cards[0],/Speler 1\b/);
-  assert.match(cards[1],/Speler 2\b/);
+  assert.match(cards[0],/Player 1\b/);
+  assert.match(cards[1],/Player 2\b/);
 
   // Responsive mobile field: four markers remain usable without sideways scroll.
   const mobile = await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true});
