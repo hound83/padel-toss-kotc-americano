@@ -41,22 +41,26 @@ test('real browser: KOC setup, entrants, absence, language, reload and mobile la
   for (let idx=12;idx<16;idx++){
     await page.locator('.koc-player').nth(idx).locator('.koc-entry-marker input').check();
   }
+  async function courtNames(){
+    const cards = await page.locator('#kocResult .koc-court').all();
+    return Promise.all(cards.map(card => card.locator('li').allTextContents()));
+  }
   await page.locator('#kocRoll').click();
-  let cards = await page.locator('#kocResult .koc-court').allTextContents();
+  let cards = await courtNames();
   assert.equal(cards.length,4);
-  assert.match(cards[0],/Speler 1\b/);
-  assert.match(cards[1],/Speler 2\b/);
-  for (let i=13;i<=16;i++) assert.match(cards[3],new RegExp('Speler '+i+'\\b'));
-  assert.ok(cards.every(card=>!card.includes('Instroom')), 'incoming markers are private setup-only labels');
+  assert.ok(cards[0].includes('Speler 1'));
+  assert.ok(cards[1].includes('Speler 2'));
+  for (let i=13;i<=16;i++) assert.ok(cards[3].includes('Speler '+i));
+  assert.ok(cards.every(court=>!court.includes('Instroom')), 'incoming markers are private setup-only labels');
 
   // The fifth player is absent; of four entrants one must now start on court 2.
   await page.locator('.koc-player').nth(4).locator('input[type=checkbox]').first().uncheck();
   assert.equal(await page.locator('#kocResult .koc-court').count(),0,'old assignment is invalidated');
   await page.locator('#kocRoll').click();
-  cards = await page.locator('#kocResult .koc-court').allTextContents();
+  cards = await courtNames();
   const entrants = [13,14,15,16];
-  assert.equal(entrants.filter(i=>new RegExp('Speler '+i+'\\b').test(cards[3])).length,3);
-  assert.equal(entrants.filter(i=>new RegExp('Speler '+i+'\\b').test(cards[2])).length,1);
+  assert.equal(entrants.filter(i=>cards[3].includes('Speler '+i)).length,3);
+  assert.equal(entrants.filter(i=>cards[2].includes('Speler '+i)).length,1);
 
   // Name collision uses the existing duplicate-name guard.
   await page.locator('.koc-player').nth(1).locator('input[type=text]').fill('Speler 1');
@@ -85,9 +89,9 @@ test('real browser: KOC setup, entrants, absence, language, reload and mobile la
   await page.locator('#kocEntryToggle').uncheck();
   assert.equal(await page.locator('.koc-entry-marker').count(),0);
   await page.locator('#kocRoll').click();
-  cards = await page.locator('#kocResult .koc-court').allTextContents();
-  assert.match(cards[0],/Player 1\b/);
-  assert.match(cards[1],/Player 2\b/);
+  cards = await courtNames();
+  assert.ok(cards[0].includes('Player 1'));
+  assert.ok(cards[1].includes('Player 2'));
 
   // Responsive mobile field: four markers remain usable without sideways scroll.
   const mobile = await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true});
