@@ -134,10 +134,17 @@ test('real browser: KOC setup, entrants, absence, language, reload and mobile la
   const overflows = await mobilePage.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 2);
   assert.equal(overflows,false,'no horizontal overflow at a 390px mobile viewport');
 
-  // The service worker must install the new cache key, not keep a stale shell.
+  // Production auto-registers the service worker on HTTPS only. On this local
+  // HTTP test origin we register it explicitly and verify its upgrade cleanup.
+  await page.evaluate(async () => {
+    await caches.open('padel-toss-americano-v202');
+    await navigator.serviceWorker.register('./sw.js');
+  });
   await page.waitForFunction(async () => {
     if(!('serviceWorker' in navigator))return false;
     await navigator.serviceWorker.ready;
-    return (await caches.keys()).includes('padel-toss-americano-v203');
+    const keys = await caches.keys();
+    return keys.includes('padel-toss-americano-v203') &&
+      !keys.includes('padel-toss-americano-v202');
   });
 });
