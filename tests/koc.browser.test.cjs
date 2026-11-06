@@ -83,13 +83,6 @@ test('real browser: KOC setup, entrants, absence, language, reload and mobile la
   await page.locator('.koc-player').nth(1).locator('input[type=text]').fill('');
   assert.equal(await page.locator('#kocRoll').isEnabled(),true);
 
-  // Language switch lives on the mode picker, not on the KOC panel.
-  await page.locator('#kocBack').click();
-  await page.locator('#homeLangSwitch .lang-btn[data-lang="en"]').click();
-  await page.locator('.format-btn[data-format="koc"]').click();
-  assert.match(await page.locator('.koc-entry-option').innerText(),/Place incoming players/);
-  assert.equal(await page.locator('.koc-entry-marker').count(),4);
-
   await page.waitForFunction(() => {
     const raw = localStorage.getItem('padel-toss-americano-session-v2');
     if(!raw)return false;
@@ -102,20 +95,31 @@ test('real browser: KOC setup, entrants, absence, language, reload and mobile la
   assert.equal(await page.locator('#kocEntryToggle').isChecked(),true);
   assert.equal(await page.locator('.koc-entry-marker input:checked').count(),4);
   assert.equal(await page.locator('#kocRoster .koc-player.absent').count(),1);
-  assert.match(await page.locator('.koc-entry-option').innerText(),/Place incoming players/);
+  assert.match(await page.locator('.koc-entry-option').innerText(),/Instroomspelers indelen/);
 
   await page.locator('#kocEntryToggle').uncheck();
   assert.equal(await page.locator('.koc-entry-marker').count(),0);
   await page.locator('#kocRoll').click();
   cards = await courtNames();
-  assert.ok(cards[0].includes('Player 1'));
-  assert.ok(cards[1].includes('Player 2'));
+  assert.ok(cards[0].includes('Speler 1'));
+  assert.ok(cards[1].includes('Speler 2'));
 
   // Importing a saved KOC schedule restores its four incoming flags.
   await page.locator('#loadFileInput').setInputFiles(savedPath);
   await page.locator('#kocEntryToggle').waitFor({state:'visible'});
   await page.waitForFunction(() => document.getElementById('kocEntryToggle').checked);
   assert.equal(await page.locator('.koc-entry-marker input:checked').count(),4);
+
+  // The English labels also work when selected from the visible mode picker.
+  const english = await browser.newContext();
+  t.after(() => english.close());
+  const englishPage = await english.newPage();
+  await englishPage.goto(origin);
+  await englishPage.locator('#homeLangSwitch .lang-btn[data-lang="en"]').click();
+  await englishPage.locator('.format-btn[data-format="koc"]').click();
+  await englishPage.locator('#kocEntryToggle').check();
+  assert.match(await englishPage.locator('.koc-entry-option').innerText(),/Place incoming players/);
+  assert.equal(await englishPage.locator('.koc-entry-marker').count(),4);
 
   // Responsive mobile field: four markers remain usable without sideways scroll.
   const mobile = await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true});
