@@ -50,7 +50,7 @@ test('paste one name per line in KOC, Toss, Americano, Split Toss and roster edi
   assert.equal(await koc.locator('#bulkKoc .bulk-entry-body').isVisible(), false);
   const sixteen = Array.from({length:16}, (_, i) => 'Deelnemer ' + (i + 1));
   await useList(koc, 'bulkKoc', '  ' + sixteen.slice(0, 8).join('\r\n') + '\r\n\r\n' + sixteen.slice(8).join('\n'));
-  assert.deepEqual(await koc.locator('#kocRoster .koc-player input[type=text]').allInputValues(), sixteen);
+  assert.deepEqual(await koc.locator('#kocRoster .koc-player input[type=text]').evaluateAll(els => els.map(el => el.value)), sixteen);
   assert.equal(await koc.locator('#kocRoster .koc-player.absent').count(), 0);
   await koc.locator('#kocRoll').click();
   assert.equal(await koc.locator('#kocResult .koc-court').count(), 4);
@@ -82,7 +82,7 @@ test('paste one name per line in KOC, Toss, Americano, Split Toss and roster edi
   await toss.locator('#continueTo2').click();
   const eight = ['Anne','Bas','Cleo','Dirk','Eva','Fred','Gijs','Hanna'];
   await useList(toss, 'bulkSingle', ' Anne \n\nBas\nCleo\nDirk\nEva\nFred');
-  assert.deepEqual(await toss.locator('#namesGrid .name-field input').allInputValues(), eight.slice(0,6).concat(['','']));
+  assert.deepEqual(await toss.locator('#namesGrid .name-field input').evaluateAll(els => els.map(el => el.value)), eight.slice(0,6).concat(['','']));
   const tooMany = await useList(toss, 'bulkSingle', eight.concat(['Iris']).join('\n'));
   assert.match(await tooMany.textContent(), /9 namen.*8 plekken/);
   assert.equal(await toss.locator('#namesGrid .name-field input').first().inputValue(), 'Anne');
@@ -93,9 +93,9 @@ test('paste one name per line in KOC, Toss, Americano, Split Toss and roster edi
   // Existing scores/player identity remain untouched when appending through
   // the edit screen; duplicate new names are caught by existing validation.
   await toss.locator('#editPlayersBtn').click();
-  const beforeEdit = await toss.locator('#editRosterList .edit-row input').allInputValues();
+  const beforeEdit = await toss.locator('#editRosterList .edit-row input').evaluateAll(els => els.map(el => el.value));
   await useList(toss, 'bulkEditSingle', 'Iris\nJoris');
-  assert.deepEqual((await toss.locator('#editRosterList .edit-row input').allInputValues()).slice(0,8), beforeEdit);
+  assert.deepEqual((await toss.locator('#editRosterList .edit-row input').evaluateAll(els => els.map(el => el.value))).slice(0,8), beforeEdit);
   assert.equal(await toss.locator('#editRosterList .edit-row').count(), 10);
   await useList(toss, 'bulkEditSingle', 'Anne');
   assert.equal(await toss.locator('#editError').isVisible(), true, 'duplicate pasted name is blocked');
@@ -127,7 +127,7 @@ test('paste one name per line in KOC, Toss, Americano, Split Toss and roster edi
   await useList(split,'bulkBeginner','Z1\nZ2\nZ3\nZ4');
   await useList(split,'bulkErvaren','G1\nG2\nG3\nG4');
   await useList(split,'bulkGevorderd','P1\nP2\nP3\nP4');
-  assert.deepEqual(await split.locator('#namesGridGevorderd input').allInputValues(), ['P1','P2','P3','P4']);
+  assert.deepEqual(await split.locator('#namesGridGevorderd input').evaluateAll(els => els.map(el => el.value)), ['P1','P2','P3','P4']);
   await useList(split,'bulkErvaren','Z1\nG2\nG3\nG4');
   assert.equal(await split.locator('#step2DupError').isVisible(),true);
   await useList(split,'bulkErvaren','G1\nG2\nG3\nG4');
