@@ -456,6 +456,20 @@
   .name-field input:focus{ border-color:var(--teal-600); }
   .name-field input.dup-name-input{ border-color:var(--coral); background:#FDF1F0; }
 
+  /* Optional, compact bulk name entry shared by all four play formats. */
+  .bulk-entry{margin:0 0 14px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:#F7FAFC;}
+  .bulk-entry[hidden],.bulk-entry-body[hidden]{display:none!important;}
+  .bulk-entry-toggle{display:flex;align-items:center;gap:9px;font-weight:700;font-size:var(--fs-sm);cursor:pointer;}
+  .bulk-entry-toggle input{width:18px;height:18px;accent-color:var(--teal-900);flex-shrink:0;}
+  .bulk-entry-body{margin-top:10px;}
+  .bulk-entry-help{margin:0 0 8px;color:var(--ink-soft);font-size:var(--fs-xs);line-height:1.5;}
+  .bulk-entry textarea{display:block;width:100%;min-height:115px;resize:vertical;padding:10px 12px;border:1.5px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);font:inherit;line-height:1.5;}
+  .bulk-entry textarea:focus{border-color:var(--teal-600);outline:2px solid transparent;}
+  .bulk-entry-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:9px;}
+  .bulk-entry-actions .btn{padding:8px 13px;font-size:var(--fs-sm);}
+  .bulk-entry-status{margin:0;font-size:var(--fs-xs);color:var(--teal-900);}
+  .bulk-entry-status.is-error{color:var(--coral);font-weight:600;}
+
   .actions-row{ display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
   .btn{
     font-family:var(--font-body);
@@ -1128,9 +1142,10 @@
   </section>
 
   <footer class="app-footer">
-    <span id="appVersion">v2.0.3</span>
+    <span id="appVersion">v2.0.4</span>
     <details><summary data-i18n="whatsNew">Wat is nieuw?</summary>
       <ul>
+        <li data-i18n="changeBulkNames">Namenlijsten plakken in alle speelvormen en bij Spelers wijzigen.</li>
         <li data-i18n="changeKocEntry">KOC: vaste startbanen voor spelers 1 en 2 en optionele instroomspelers.</li>
         <li data-i18n="changeKocNames">KOC: dubbele namen worden direct gemarkeerd en geblokkeerd.</li>
         <li data-i18n="changeKocRandom">KOC: meer variatie op de onderste banen en in de spelersvolgorde.</li>
@@ -1217,6 +1232,17 @@
       namePlaceholderGevorderd: 'Platina {n}',
       namePlaceholderErvaren: 'Goud {n}',
       blankNameHint: 'Laat een veld leeg — dan speelt "Speler N" mee. Namen vul je aan wanneer je wilt.',
+      bulkNameToggle: 'Namen als lijst plakken',
+      bulkPlaceholder: 'Jan\nPiet\nFatima\nSanne',
+      bulkReplaceHelp: 'Eén naam per regel. Overnemen vervangt de namen in deze lijst. Controleer eerst het aantal spelers/banen; bij KOC worden overige plekken afwezig gezet.',
+      bulkAddHelp: 'Eén naam per regel. De spelers worden toegevoegd; bestaande spelers en uitslagen blijven behouden. Bevestig daarna met Wijzigingen doorvoeren.',
+      bulkReplaceButton: 'Namen overnemen',
+      bulkAddButton: 'Spelers toevoegen',
+      bulkEmpty: 'Plak eerst minimaal één naam.',
+      bulkTooMany: '{n} namen geplakt, maar er zijn {max} plekken. Verhoog eerst het aantal spelers of banen.',
+      bulkNameTooLong: 'Bij KOC mag een naam maximaal 50 tekens bevatten.',
+      bulkReplaced: '{n} namen overgenomen.',
+      bulkAdded: '{n} spelers toegevoegd. Controleer de lijst hieronder.',
       backBtn: '← Terug',
       cancelToScheduleBtn: '← Terug naar schema',
       generateBtn: 'Genereer schema →',
@@ -1308,6 +1334,7 @@
       resumeTitle: 'Vorige sessie gevonden', resumeBody: 'Wil je verdergaan waar je gebleven was, of een nieuwe sessie beginnen?',
       resumeNew: 'Nieuwe sessie', resumeContinue: 'Doorgaan',
       whatsNew: 'Wat is nieuw?', changeKoc: 'King of the Court als vierde speelvorm.',
+      changeBulkNames: 'Namenlijsten plakken in alle speelvormen en bij Spelers wijzigen.',
       changeKocEntry: 'KOC: vaste startbanen voor spelers 1 en 2 en optionele instroomspelers.',
       changeKocNames: 'KOC: dubbele namen direct herkennen en blokkeren.',
       changeKocRandom: 'KOC: meer variatie op de onderste banen en in de spelersvolgorde.',
@@ -1385,6 +1412,17 @@
       namePlaceholderGevorderd: 'Platinum {n}',
       namePlaceholderErvaren: 'Gold {n}',
       blankNameHint: 'Leave any field blank and it\'ll play as "Player N" — fill in names whenever you\'re ready.',
+      bulkNameToggle: 'Paste a list of names',
+      bulkPlaceholder: 'Alex\nSam\nTaylor\nJordan',
+      bulkReplaceHelp: 'One name per line. Applying replaces the names in this list. Set the correct player/court count first; unused KOC slots become absent.',
+      bulkAddHelp: 'One name per line. New players are added while existing players and scores stay intact. Then select Apply changes.',
+      bulkReplaceButton: 'Apply names',
+      bulkAddButton: 'Add players',
+      bulkEmpty: 'Paste at least one name first.',
+      bulkTooMany: '{n} names pasted, but only {max} slots are available. Increase the player or court count first.',
+      bulkNameTooLong: 'KOC names can be at most 50 characters long.',
+      bulkReplaced: '{n} names applied.',
+      bulkAdded: '{n} players added. Check the list below.',
       backBtn: '← Back',
       cancelToScheduleBtn: '← Back to schedule',
       generateBtn: 'Generate schedule →',
@@ -1476,6 +1514,7 @@
       resumeTitle: 'Previous session found', resumeBody: 'Would you like to pick up where you left off, or start a new session?',
       resumeNew: 'New session', resumeContinue: 'Continue',
       whatsNew: 'What is new?', changeKoc: 'King of the Court is the fourth format.',
+      changeBulkNames: 'Paste lists of player names in every format and in Edit players.',
       changeKocEntry: 'KOC: fixed start courts for players 1 and 2, with optional incoming players.',
       changeKocNames: 'KOC: spot and block duplicate player names immediately.',
       changeKocRandom: 'KOC: more variation across lower courts and player display order.',
@@ -1527,6 +1566,12 @@
   function applyStaticTranslations(){
     document.querySelectorAll('[data-i18n]').forEach(function(el){
       el.textContent = t(el.getAttribute('data-i18n'));
+    });
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(function(el){
+      el.placeholder = t(el.getAttribute('data-i18n-placeholder'));
+    });
+    document.querySelectorAll('[data-i18n-aria-label]').forEach(function(el){
+      el.setAttribute('aria-label', t(el.getAttribute('data-i18n-aria-label')));
     });
     document.documentElement.lang = state.lang;
     renderAppTitle();
@@ -3759,6 +3804,7 @@
     var disallowAdd = state.splitDone;
     editAddBtn.style.display = disallowAdd ? 'none' : '';
     editAddDisabledNote.style.display = disallowAdd ? 'block' : 'none';
+    document.getElementById('bulkEditSingle').hidden = disallowAdd;
     checkEditDuplicates();
   }
 
@@ -3794,6 +3840,155 @@
     removeBtn.addEventListener('click', function(){ row.remove(); checkEditDuplicates(); });
     row.appendChild(removeBtn);
     return row;
+  }
+
+  // All name-entry forms offer an opt-in multiline alternative. Setup replaces
+  // numbered fields; editing an existing schedule only appends new players,
+  // preserving player identities and already-played results.
+  function parseBulkNames(raw){
+    return String(raw).split(/\r\n|\r|\n/).map(function(line){return line.trim();})
+      .filter(function(line){return line.length > 0;});
+  }
+
+  function installBulkNameTool(id, before, addMode, onApply){
+    var box = document.createElement('div');
+    box.className = 'bulk-entry';
+    box.id = id;
+    var toggleLabel = document.createElement('label');
+    toggleLabel.className = 'bulk-entry-toggle';
+    var toggle = document.createElement('input');
+    toggle.type = 'checkbox';
+    toggle.setAttribute('aria-controls', id + '-body');
+    var labelText = document.createElement('span');
+    labelText.setAttribute('data-i18n', 'bulkNameToggle');
+    labelText.textContent = t('bulkNameToggle');
+    toggleLabel.appendChild(toggle);
+    toggleLabel.appendChild(labelText);
+    var body = document.createElement('div');
+    body.id = id + '-body';
+    body.className = 'bulk-entry-body';
+    body.hidden = true;
+    var help = document.createElement('p');
+    help.className = 'bulk-entry-help';
+    help.setAttribute('data-i18n', addMode ? 'bulkAddHelp' : 'bulkReplaceHelp');
+    help.textContent = t(addMode ? 'bulkAddHelp' : 'bulkReplaceHelp');
+    var area = document.createElement('textarea');
+    area.rows = 5;
+    area.setAttribute('aria-label', t('bulkNameToggle'));
+    area.setAttribute('data-i18n-aria-label', 'bulkNameToggle');
+    area.setAttribute('data-i18n-placeholder', 'bulkPlaceholder');
+    area.placeholder = t('bulkPlaceholder');
+    var actions = document.createElement('div');
+    actions.className = 'bulk-entry-actions';
+    var apply = document.createElement('button');
+    apply.type = 'button';
+    apply.className = 'btn btn-ghost';
+    apply.setAttribute('data-i18n', addMode ? 'bulkAddButton' : 'bulkReplaceButton');
+    apply.textContent = t(addMode ? 'bulkAddButton' : 'bulkReplaceButton');
+    var status = document.createElement('p');
+    status.className = 'bulk-entry-status';
+    status.setAttribute('role', 'status');
+    status.setAttribute('aria-live', 'polite');
+    actions.appendChild(apply);
+    actions.appendChild(status);
+    body.appendChild(help);
+    body.appendChild(area);
+    body.appendChild(actions);
+    box.appendChild(toggleLabel);
+    box.appendChild(body);
+    before.parentNode.insertBefore(box, before);
+
+    toggle.addEventListener('change', function(){
+      body.hidden = !toggle.checked;
+      if (toggle.checked) area.focus();
+    });
+    area.addEventListener('input', function(){
+      status.textContent = '';
+      status.classList.remove('is-error');
+    });
+    apply.addEventListener('click', function(){
+      var names = parseBulkNames(area.value);
+      var error = !names.length ? t('bulkEmpty') : onApply(names);
+      status.classList.toggle('is-error', !!error);
+      status.textContent = error || tf(addMode ? 'bulkAdded' : 'bulkReplaced', {n:names.length});
+      if (!error && addMode) area.value = '';
+    });
+    return box;
+  }
+
+  function applyBulkSetupNames(names, gridEl, target){
+    var inputs = Array.from(gridEl.querySelectorAll('.name-field input'));
+    if (names.length > inputs.length) return tf('bulkTooMany', {n:names.length,max:inputs.length});
+    inputs.forEach(function(input, i){
+      var name = names[i] || '';
+      input.value = name;
+      target[i] = name;
+    });
+    checkStep2Duplicates();
+    scheduleAutosave();
+    return null;
+  }
+
+  function applyBulkKocNames(names){
+    var k = ensureKocRoster(), capacity = k.courts * 4;
+    if (names.length > capacity) return tf('bulkTooMany', {n:names.length,max:capacity});
+    if (names.some(function(name){return name.length > 50;})) return t('bulkNameTooLong');
+    k.roster.slice(0, capacity).forEach(function(person, i){
+      var newName = names[i] || '';
+      // An incoming flag belongs to a person, not to a numbered slot.
+      // Replacing that person must not silently transfer the flag.
+      if ((person.name || '').trim() !== newName) person.incoming = false;
+      person.name = newName;
+      person.active = i < names.length;
+    });
+    k.assignment = null;
+    k.displayOrder = null;
+    renderKoc();
+    scheduleAutosave();
+    return null;
+  }
+
+  function applyBulkEditNames(names, listEl){
+    names.forEach(function(name){
+      var row = buildEditRow(null);
+      row.querySelector('input').value = name;
+      listEl.appendChild(row);
+    });
+    checkEditDuplicates();
+    return null;
+  }
+
+  function setupBulkNameTools(){
+    installBulkNameTool('bulkKoc', document.getElementById('kocRoster'), false, applyBulkKocNames);
+    installBulkNameTool('bulkSingle', namesGrid, false, function(names){
+      return applyBulkSetupNames(names, namesGrid, state.names);
+    });
+    LEVELS.forEach(function(lv, li){
+      var levelGrid = levelNamesGrids[li];
+      installBulkNameTool('bulk' + lv.cap, levelGrid, false, function(names){
+        return applyBulkSetupNames(names, levelGrid, state.levelNames[li]);
+      });
+    });
+    installBulkNameTool('bulkEditSingle', editRosterList, true, function(names){
+      return applyBulkEditNames(names, editRosterList);
+    });
+    LEVELS.forEach(function(lv, li){
+      var list = editRosterLists[li];
+      installBulkNameTool('bulkEdit' + lv.cap, list, true, function(names){
+        return applyBulkEditNames(names, list);
+      });
+    });
+  }
+
+  function resetBulkNameTools(){
+    document.querySelectorAll('.bulk-entry').forEach(function(box){
+      box.querySelector('.bulk-entry-toggle input').checked = false;
+      box.querySelector('.bulk-entry-body').hidden = true;
+      box.querySelector('textarea').value = '';
+      var status = box.querySelector('.bulk-entry-status');
+      status.textContent = '';
+      status.classList.remove('is-error');
+    });
   }
 
   editAddBtn.addEventListener('click', function(){
@@ -4169,6 +4364,7 @@
 
   function applyLoadedState(st){
     state = st;
+    resetBulkNameTools();
     if (state.lang !== 'en') state.lang = 'nl';
     document.querySelectorAll('.lang-btn').forEach(function(b){
       b.classList.toggle('active', b.getAttribute('data-lang') === state.lang);
@@ -4273,6 +4469,7 @@
 
   function doStartOver(){
     var keepLang = state.lang;
+    resetBulkNameTools();
     state = {
       step: 1, lang: keepLang, format: 'toss',
       playerCount: null, levelCounts: [8, 8, 0],
@@ -4477,6 +4674,7 @@
   }
 
   // init
+  setupBulkNameTools();
   renderKoc();
   goToStep(0);
   try {

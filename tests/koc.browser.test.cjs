@@ -26,7 +26,8 @@ test('real browser: KOC setup, entrants, absence, language, reload and mobile la
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
   t.after(() => new Promise(resolve => server.close(resolve)));
   const origin = 'http://127.0.0.1:' + server.address().port;
-  const browser = await chromium.launch({headless:true});
+  const browser = await chromium.launch({headless:true,
+    ...(process.env.CHROMIUM_EXECUTABLE_PATH ? {executablePath:process.env.CHROMIUM_EXECUTABLE_PATH} : {})});
   t.after(() => browser.close());
 
   const context = await browser.newContext({viewport:{width:1280,height:900}});
@@ -144,7 +145,7 @@ test('real browser: KOC setup, entrants, absence, language, reload and mobile la
     if(!('serviceWorker' in navigator))return false;
     await navigator.serviceWorker.ready;
     const keys = await caches.keys();
-    return keys.includes('padel-toss-americano-v203') &&
+    return keys.includes('padel-toss-americano-v204') &&
       !keys.includes('padel-toss-americano-v202');
   });
 });
