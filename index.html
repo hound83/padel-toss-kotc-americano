@@ -2328,6 +2328,7 @@
 
   // ---------- step nav ----------
   function goToStep(n){
+    if (state.step !== n) clearBulkUndo();
     state.step = n;
     renderAppTitle();
     if (n === 0){
@@ -4250,6 +4251,7 @@
   document.getElementById('bulkDrawerCancel').addEventListener('click', function(){closeBulkDrawer(false);});
   document.getElementById('bulkDrawerClose').addEventListener('click', function(){closeBulkDrawer(false);});
   document.getElementById('bulkDrawerScrim').addEventListener('click', function(){closeBulkDrawer(false);});
+  document.getElementById('kocRoll').addEventListener('click', clearBulkUndo);
   document.addEventListener('keydown', function(event){
     if (!activeBulkTool) return;
     if (event.key === 'Escape'){event.preventDefault();closeBulkDrawer(false);return;}
