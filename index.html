@@ -1988,7 +1988,9 @@
     if (k.incomingEnabled && Array.isArray(k.roster)){
       var start = k.courts * 4 - 4;
       var incoming = shuffle(attendees.filter(function(i){
-        return i >= start && i < k.courts * 4 &&
+        // With one court, the first two reserved players also fall inside
+        // the last-four incoming slots. Never assign them a second time.
+        return result[i] === undefined && i >= start && i < k.courts * 4 &&
           k.roster[i] && k.roster[i].incoming === true;
       }));
       incoming.forEach(function(i){
