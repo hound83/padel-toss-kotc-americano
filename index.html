@@ -209,6 +209,70 @@
   body.presentation-mode .rounds-col{font-size:1.15em;}
   body.presentation-mode .koc-result{grid-template-columns:repeat(auto-fit,minmax(230px,1fr));}
   body.presentation-mode .koc-result li{font-size:1.3em;}
+  /* Dedicated live experience: the ordinary app remains untouched behind it.
+     This also prevents the home tiles, old rounds and edit controls from ever
+     leaking into presentation mode. */
+  body.presentation-mode .wrap{display:none!important;}
+  .live-presentation[hidden]{display:none!important;}
+  .live-presentation{display:none;position:fixed;inset:0;z-index:80;overflow:auto;overscroll-behavior:contain;background:var(--mist);padding:24px 28px 100px;}
+  body.presentation-mode .live-presentation{display:block;}
+  .live-content{max-width:1680px;margin:0 auto;}
+  .live-head{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:22px;padding-bottom:16px;border-bottom:2px solid var(--teal-900);}
+  .live-title{margin:0;font:800 clamp(23px,3vw,34px) var(--font-display);color:var(--teal-900);text-transform:uppercase;letter-spacing:.01em;}
+  .live-subtitle{font-size:var(--fs-sm);color:var(--ink-soft);margin:5px 0 0;}
+  .live-round-tools{display:flex;align-items:center;gap:7px;flex-wrap:wrap;}
+  .live-round-tools button{border:1.5px solid var(--line);border-radius:9px;min-height:40px;background:var(--surface);padding:8px 12px;color:var(--teal-900);font:700 var(--fs-sm) var(--font-body);cursor:pointer;}
+  .live-round-tools button:disabled{cursor:default;opacity:.46;background:#E8EDF4;color:var(--ink-soft);}
+  .live-round-tools button.selected{border-color:var(--teal-900);background:var(--teal-900);color:var(--ball);}
+  .live-round-label{font-weight:800;color:var(--teal-900);min-width:92px;text-align:center;white-space:nowrap;}
+  .live-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(300px,.43fr);gap:18px;align-items:start;grid-template-areas:"current standings" "next standings";}
+  .live-layout.no-board{grid-template-columns:minmax(0,1fr) minmax(300px,.72fr);grid-template-areas:"current next";}
+  .live-current{grid-area:current;min-width:0;}
+  .live-upcoming{grid-area:next;min-width:0;}
+  .live-standings{grid-area:standings;min-width:0;position:sticky;top:12px;display:grid;gap:14px;}
+  .live-layout.no-board .live-standings{display:none;}
+  .live-section-head{margin:0 0 12px;font:800 clamp(19px,2vw,24px) var(--font-display);color:var(--teal-900);}
+  .live-next-head{margin-top:4px;}
+  .live-match-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,270px),1fr));gap:12px;}
+  .live-match{background:#fff;border:1px solid var(--line);border-radius:13px;overflow:hidden;}
+  .live-match-head{font-weight:800;font-size:var(--fs-md);color:var(--teal-900);background:#DFE8F5;padding:11px 14px;display:flex;justify-content:space-between;gap:8px;}
+  .live-match-head small{font-size:var(--fs-xs);font-weight:600;color:var(--ink-soft);}
+  .live-match-body{padding:15px;display:grid;grid-template-columns:minmax(0,1fr) 24px minmax(0,1fr);gap:8px;align-items:center;}
+  .live-team{display:grid;gap:5px;min-width:0;}
+  .live-team.right{text-align:right;}
+  .live-team span{font-weight:700;overflow-wrap:anywhere;font-size:var(--fs-base);}
+  .live-vs{text-align:center;color:var(--ink-soft);font-size:var(--fs-xs);}
+  .live-score{display:flex;align-items:center;justify-content:center;gap:10px;padding:0 12px 14px;}
+  .live-score input{width:76px;max-width:30%;font:700 22px var(--font-mono);text-align:center;border:1.5px solid var(--teal-700);border-radius:8px;background:var(--mist);color:var(--teal-900);padding:6px;}
+  .live-score span{color:var(--ink-soft);}
+  .live-level{font-size:var(--fs-sm);color:var(--teal-700);font-weight:800;margin:14px 0 8px;}
+  .live-level:first-child{margin-top:0;}
+  .live-waiting{font-size:var(--fs-sm);color:var(--ink-soft);margin:9px 0 12px;}
+  .live-board{background:var(--teal-900);color:#fff;border-radius:13px;padding:18px;min-width:0;}
+  .live-board h3{font:800 var(--fs-lg) var(--font-display);color:var(--ball);margin:0 0 12px;}
+  .live-board table{border-collapse:collapse;width:100%;font-size:var(--fs-sm);}
+  .live-board th{text-align:left;color:#B5CAE4;border-bottom:1px solid #44679B;padding:5px;font-size:var(--fs-2xs);}
+  .live-board td{padding:7px 5px;border-bottom:1px solid #44679B;}
+  .live-board td:last-child,.live-board th:last-child{text-align:right;font-weight:800;}
+  .live-board tr:last-child td{border-bottom:none;}
+  .live-empty{color:var(--ink-soft);font-size:var(--fs-base);border:1px dashed var(--line);border-radius:12px;padding:20px;}
+  .live-upcoming .live-match-body{padding:12px;}
+  .live-upcoming .live-match-head{font-size:var(--fs-sm);padding:9px 12px;}
+  .live-koc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;}
+  .live-koc-card{background:#fff;border:1px solid var(--line);border-radius:13px;overflow:hidden;}
+  .live-koc-card h3{margin:0;background:#DFE8F5;color:var(--teal-900);padding:12px 14px;font-size:var(--fs-lg);}
+  .live-koc-card.crown h3{background:var(--teal-900);color:var(--ball);}
+  .live-koc-card ul{list-style:none;padding:8px 14px;margin:0;}
+  .live-koc-card li{padding:12px 2px;border-bottom:1px solid var(--line);font-size:clamp(17px,1.8vw,23px);font-weight:650;overflow-wrap:anywhere;}
+  .live-koc-card li:last-child{border:0;}
+  .live-koc-card .empty{color:var(--ink-soft);}
+  @media(max-width:880px){
+    .live-presentation{padding:18px 16px 90px;}
+    .live-layout,.live-layout.no-board{grid-template-columns:1fr;grid-template-areas:"current" "standings" "next";}
+    .live-layout.no-board{grid-template-areas:"current" "next";}
+    .live-standings{position:static;}
+  }
+
   @media(max-width:680px){
     .mode-home{min-height:calc(100svh - 150px);gap:16px;}
     .mode-home .format-select{gap:10px;}
@@ -1192,6 +1256,30 @@
   </footer>
 
 </div>
+
+<section id="livePresentation" class="live-presentation" hidden aria-label="Live presentation">
+  <div class="live-content">
+    <header class="live-head">
+      <div>
+        <h1 class="live-title" id="liveTitle" tabindex="-1"></h1>
+        <p class="live-subtitle" id="liveSubtitle"></p>
+      </div>
+      <div class="live-round-tools" id="liveRoundTools">
+        <button type="button" id="livePrev" aria-label="Previous round">←</button>
+        <span class="live-round-label" id="liveRoundLabel"></span>
+        <button type="button" id="liveNext" aria-label="Next round">→</button>
+        <button type="button" id="liveAuto"></button>
+        <button type="button" id="liveAllRounds"></button>
+      </div>
+    </header>
+    <div id="liveKoc" class="live-koc-grid"></div>
+    <div class="live-layout" id="liveLayout">
+      <main id="liveCurrent" class="live-current"></main>
+      <aside id="liveStandings" class="live-standings"></aside>
+      <section id="liveUpcoming" class="live-upcoming"></section>
+    </div>
+  </div>
+</section>
 
 <button id="presentExit" class="present-exit" type="button" data-i18n="presentExit">Sluit presentatiemodus</button>
 
