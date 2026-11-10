@@ -40,6 +40,14 @@ function checkAssignment(courts, attendees, incoming = [], incomingEnabled = fal
   return assignment;
 }
 
+test('one court: four players including the two reserved positions share the same court', () => {
+  const attendees = [0,1,2,3];
+  for (let attempt = 0; attempt < 50; attempt++) {
+    const assignment = checkAssignment(1, attendees, [0,1,2,3], true);
+    assert.deepEqual(Object.values(assignment).sort(), [1,1,1,1]);
+  }
+});
+
 test('two courts: first player starts at the top, second on the court below if occupied', () => {
   for (const count of [5, 6, 7, 8]) {
     const attendees = Array.from({length: count}, (_, i) => i);
@@ -55,7 +63,7 @@ test('two courts: first player starts at the top, second on the court below if o
 });
 
 test('first two players have fixed highest and penultimate courts when available', () => {
-  for (const courts of [3, 4, 5, 8]) {
+  for (const courts of [3, 4, 5, 8, 12]) {
     const attendees = Array.from({length: courts * 4}, (_, i) => i);
     for (let attempt = 0; attempt < 20; attempt++) {
       const assignment = checkAssignment(courts, attendees);
@@ -66,7 +74,7 @@ test('first two players have fixed highest and penultimate courts when available
 });
 
 test('two absences leave vacancies only on the lowest court', () => {
-  for (const courts of [2, 3, 4, 5, 8]) {
+  for (const courts of [2, 3, 4, 5, 8, 12]) {
     const attendees = Array.from({length: courts * 4}, (_, i) => i)
       .filter(i => i !== 4 && i !== 5);
     for (let attempt = 0; attempt < 20; attempt++) {
@@ -77,8 +85,8 @@ test('two absences leave vacancies only on the lowest court', () => {
   }
 });
 
-test('all player counts from 4 to 32 produce valid compact court assignments', () => {
-  for (let courts = 2; courts <= 8; courts++) {
+test('all player counts from 4 to 48 produce valid compact court assignments', () => {
+  for (let courts = 1; courts <= 12; courts++) {
     for (let count = 4; count <= courts * 4; count++) {
       const attendees = Array.from({length: count}, (_, i) => i);
       for (let attempt = 0; attempt < 6; attempt++) checkAssignment(courts, attendees);
@@ -87,7 +95,7 @@ test('all player counts from 4 to 32 produce valid compact court assignments', (
 });
 
 test('absence patterns do not create duplicates, gaps or overfilled courts', () => {
-  for (let courts = 2; courts <= 8; courts++) {
+  for (let courts = 1; courts <= 12; courts++) {
     const all = Array.from({length: courts * 4}, (_, i) => i);
     for (let attempt = 0; attempt < 100; attempt++) {
       const attendees = shuffle(all).slice(0, 4 + Math.floor(Math.random() * (all.length - 3)));
@@ -125,7 +133,7 @@ test('100,000 draws: unmarked players (including 13-16) are shuffled without old
 });
 
 test('incoming players use the lowest available court after reserved first/second slots', () => {
-  for (const courts of [2, 3, 4, 5, 8]){
+  for (const courts of [2, 3, 4, 5, 8, 12]){
     const attendees = Array.from({length:courts*4}, (_, i) => i);
     const lastFour = attendees.slice(-4);
     for(let count=1; count<=4; count++){
@@ -179,7 +187,7 @@ test('absent entrants and flags on other roster positions are ignored', () => {
 });
 
 test('all court sizes and random absences remain valid with 0-4 incoming players', () => {
-  for(let courts=2;courts<=8;courts++){
+  for(let courts=1;courts<=12;courts++){
     const all=Array.from({length:courts*4},(_,i)=>i);
     const eligible=all.slice(-4);
     for(let attempt=0;attempt<500;attempt++){

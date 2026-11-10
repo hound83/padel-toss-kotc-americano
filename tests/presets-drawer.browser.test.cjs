@@ -38,10 +38,10 @@ test('court defaults and name-list drawer retain the ordinary player layout', as
 
   const toss = await formatPage('toss');
   assert.equal(await toss.locator('#playerCountInput').inputValue(),'16');
-  await toss.locator('.court-btn[data-courts="3"]').click();
+  await toss.locator('#courtsSelect .court-btn[data-courts="3"]').click();
   assert.equal(await toss.locator('#playerCountInput').inputValue(),'24');
   await toss.locator('#playerCountInput').fill('19');
-  await toss.locator('.court-btn[data-courts="4"]').click();
+  await toss.locator('#courtsSelect .court-btn[data-courts="4"]').click();
   assert.equal(await toss.locator('#playerCountInput').inputValue(),'19','manual count overrides preset');
   await toss.locator('#continueTo2').click();
   assert.equal(await toss.locator('#namesGrid .name-field').count(),19);
@@ -67,7 +67,7 @@ test('court defaults and name-list drawer retain the ordinary player layout', as
 
   const americano = await formatPage('americano');
   assert.equal(await americano.locator('#playerCountInput').inputValue(),'8');
-  await americano.locator('.court-btn[data-courts="3"]').click();
+  await americano.locator('#courtsSelect .court-btn[data-courts="3"]').click();
   assert.equal(await americano.locator('#playerCountInput').inputValue(),'12');
   await americano.locator('#continueTo2').click();
   await americano.locator('#bulkSingle .bulk-entry-trigger').click();
@@ -85,12 +85,12 @@ test('court defaults and name-list drawer retain the ordinary player layout', as
 
   const split = await formatPage('splitToss');
   assert.deepEqual(await split.locator('#splitPlayersBlock input[type=number]').evaluateAll(els=>els.map(e=>e.value)),['8','8','0']);
-  await split.locator('.court-btn[data-courts="3"]').click();
+  await split.locator('#courtsSelect .court-btn[data-courts="3"]').click();
   assert.deepEqual(await split.locator('#splitPlayersBlock input[type=number]').evaluateAll(els=>els.map(e=>e.value)),['12','12','0']);
-  await split.locator('.court-btn[data-courts="4"]').click();
+  await split.locator('#courtsSelect .court-btn[data-courts="4"]').click();
   assert.deepEqual(await split.locator('#splitPlayersBlock input[type=number]').evaluateAll(els=>els.map(e=>e.value)),['16','16','0']);
   await split.locator('#ervarenCountInput').fill('10');
-  await split.locator('.court-btn[data-courts="2"]').click();
+  await split.locator('#courtsSelect .court-btn[data-courts="2"]').click();
   assert.deepEqual(await split.locator('#splitPlayersBlock input[type=number]').evaluateAll(els=>els.map(e=>e.value)),['16','10','0']);
   await split.locator('#continueTo2').click();
   await split.locator('#namesGridBeginner input').first().fill('Zilver origineel');
@@ -114,4 +114,59 @@ test('court defaults and name-list drawer retain the ordinary player layout', as
   assert.equal(await koc.evaluate(()=>document.documentElement.scrollWidth > innerWidth+2),false);
   await koc.locator('#bulkDrawerCancel').click();
   assert.equal(await koc.locator('#bulkDrawerLayer').isVisible(),false);
+
+  // KOC must offer the identical 1–4 buttons and 5–12 dropdown as the
+  // other formats, including the new one-court and twelve-court extremes.
+  const kocButtons = await koc.locator('#kocCourtButtons .court-btn .cb-num').allTextContents();
+  assert.deepEqual(kocButtons,['1','2','3','4']);
+  const kocDropdownOptions = await koc.locator('#kocMoreSelect option').evaluateAll(
+    opts=>opts.map(x=>x.value).filter(Boolean));
+  assert.deepEqual(kocDropdownOptions,['5','6','7','8','9','10','11','12']);
+  assert.equal(await koc.locator('#kocCourtButtons .court-btn[data-courts="4"]').getAttribute('aria-pressed'),'true');
+
+  await koc.locator('#kocCourtButtons .court-btn[data-courts="1"]').click();
+  assert.equal(await koc.locator('#kocRoster .koc-player').count(),4);
+  assert.equal(await koc.locator('#kocMoreSelect').inputValue(),'');
+  await koc.locator('#kocEntryToggle').check();
+  assert.equal(await koc.locator('.koc-entry-marker').count(),4);
+  for (let i=0;i<4;i++) await koc.locator('.koc-entry-marker input').nth(i).check();
+  await koc.locator('#kocRoll').click();
+  assert.equal(await koc.locator('#kocResult .koc-court').count(),1);
+  assert.deepEqual((await koc.locator('#kocResult .koc-court li').allTextContents()).sort(),
+    ['Speler 1','Speler 2','Speler 3','Speler 4']);
+
+  await koc.locator('#kocMoreSelect').selectOption('5');
+  assert.equal(await koc.locator('#kocRoster .koc-player').count(),20);
+  assert.equal(await koc.locator('#kocMoreSelect').inputValue(),'5');
+  assert.equal(await koc.locator('#kocCourtButtons .courts-more.active').count(),1);
+  assert.equal(await koc.locator('#kocResult .koc-court').count(),0,
+    'court count changes invalidate the previous lineup');
+
+  await koc.locator('#kocMoreSelect').selectOption('12');
+  assert.equal(await koc.locator('#kocRoster .koc-player').count(),48);
+  const names48 = Array.from({length:48},(_,i)=>'Padeller '+(i+1));
+  await koc.locator('#bulkKoc .bulk-entry-trigger').click();
+  await koc.locator('#bulkDrawerText').fill(names48.join('\n'));
+  await koc.locator('#bulkDrawerApply').click();
+  assert.equal(await koc.locator('#bulkDrawerLayer').isVisible(),false);
+  assert.equal(await koc.locator('#kocRoster .koc-player.absent').count(),0);
+  await koc.locator('#kocRoll').click();
+  assert.equal(await koc.locator('#kocResult .koc-court').count(),12);
+  assert.match(await koc.locator('#kocResult .koc-court').first().innerText(),/Padeller 1/);
+  assert.match(await koc.locator('#kocResult .koc-court').nth(1).innerText(),/Padeller 2/);
+  assert.equal(await koc.evaluate(()=>document.documentElement.scrollWidth>innerWidth+2),false,
+    '48 player setup remains horizontally responsive at mobile width');
+
+  const savedKoc = koc.waitForEvent('download');
+  await koc.locator('#kocSave').click();
+  const file = await savedKoc;
+  const savedFile = JSON.parse(fs.readFileSync(await file.path(),'utf8'));
+  assert.equal(savedFile.state.koc.courts,12);
+  assert.equal(savedFile.state.koc.roster.slice(0,48).filter(p=>p.active!==false).length,48);
+
+  await koc.locator('#kocCourtButtons .court-btn[data-courts="2"]').click();
+  assert.equal(await koc.locator('#kocRoster .koc-player').count(),8);
+  await koc.locator('#loadFileInput').setInputFiles(await file.path());
+  await koc.waitForFunction(()=>document.querySelector('#kocMoreSelect')?.value === '12');
+  assert.equal(await koc.locator('#kocRoster .koc-player').count(),48);
 });

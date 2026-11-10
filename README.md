@@ -49,7 +49,7 @@
 
 ### Speciaal voor KOC
 
-- Kies **2 tot 8 banen**.
+- Kies **1 tot en met 4 banen** met dezelfde knoppen als bij de andere speelvormen, of **5 tot en met 12 banen** via de dropdown.
 - Vink afwezige spelers uit of pas namen aan; starten met minder spelers kan ook.
 - De eerste speler start op de hoogste baan, de tweede op de baan eronder.
 - Zet desgewenst **Instroomspelers indelen** aan. De laatste vier spelers krijgen dan een eigen vinkje; gemarkeerde spelers starten zo laag mogelijk, bij voorkeur op baan 1.

@@ -169,9 +169,6 @@
   .app-notice.visible{display:flex;}
   .app-notice button{background:var(--ball);border:0;border-radius:8px;padding:9px 12px;font-weight:800;cursor:pointer;}
   .koc-setup{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px 20px;margin:16px 0;}
-  .koc-count-buttons{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 18px;}
-  .koc-count-buttons button{border:2px solid var(--line);background:#fff;border-radius:10px;padding:10px 15px;min-width:52px;font-weight:800;color:var(--teal-900);cursor:pointer;}
-  .koc-count-buttons button.active{background:var(--teal-900);color:var(--ball);border-color:var(--teal-900);}
   .koc-entry-option{display:flex;align-items:center;gap:9px;margin:5px 0 10px;font-weight:700;cursor:pointer;}
   .koc-entry-option input{width:19px;height:19px;accent-color:var(--teal-900);}
   .koc-entry-hint{margin:0 0 16px;}
@@ -983,7 +980,7 @@
     <p class="panel-sub" data-i18n="kocSub">Vul de spelers in, kies je banen en maak een startindeling. Daarna wijzen de uitslagen zichzelf.</p>
     <div class="koc-setup">
       <p class="sub-heading" data-i18n="kocCourts">Aantal banen</p>
-      <div class="koc-count-buttons" id="kocCourtButtons"></div>
+      <div class="courts-select" id="kocCourtButtons" aria-label="KOC court selection"></div>
       <div class="koc-roster-tools">
         <p class="sub-heading" data-i18n="kocNames">Wie spelen er mee?</p>
         <p class="koc-help" data-i18n="kocNamesHint">Pas namen aan of vink een afwezige speler uit. Je kunt met minder spelers beginnen.</p>
@@ -1158,7 +1155,7 @@
   </section>
 
   <footer class="app-footer">
-    <span id="appVersion">v2.1.0</span>
+    <span id="appVersion">v2.1.1</span>
     <details><summary data-i18n="whatsNew">Wat is nieuw?</summary>
       <ul>
         <li data-i18n="changeBulkNames">Slim namenplakpaneel met controle, spelersaantal aanpassen en ongedaan maken.</li>
@@ -1704,7 +1701,7 @@
       state.koc = { courts: 4, roster: [], incomingEnabled: false, assignment: null, lastSignature: '' };
     }
     var k = state.koc;
-    k.courts = Math.max(2, Math.min(8, Number(k.courts) || 4));
+    k.courts = Math.max(1, Math.min(12, Number(k.courts) || 4));
     k.incomingEnabled = k.incomingEnabled === true;
     if (!Array.isArray(k.roster)) k.roster = [];
     for (var i = k.roster.length; i < k.courts * 4; i++){
@@ -1779,27 +1776,67 @@
     var k = ensureKocRoster();
     document.getElementById('kocEntryToggle').checked = k.incomingEnabled;
     document.getElementById('kocEntryHint').hidden = !k.incomingEnabled;
+    // KOC shares the exact selector styling and 1–4 + 5–12 control model
+    // used by Toss, Split Toss and Americano.
     var buttons = document.getElementById('kocCourtButtons');
     buttons.innerHTML = '';
-    for (var count = 2; count <= 8; count++){
+    function changeKocCourts(next){
+      if (k.courts === next) return;
+      k.courts = next;
+      ensureKocRoster();
+      k.assignment = null;
+      k.displayOrder = null;
+      renderKoc();
+      document.getElementById('kocStatus').textContent = t('kocChanged');
+      scheduleAutosave();
+    }
+    for (var count = 1; count <= 4; count++){
       (function(value){
         var btn = document.createElement('button');
         btn.type = 'button';
-        btn.textContent = String(value);
+        btn.className = 'court-btn';
+        btn.setAttribute('data-courts', String(value));
         btn.classList.toggle('active', value === k.courts);
-        btn.setAttribute('aria-pressed', value === k.courts ? 'true' : 'false');
-        btn.addEventListener('click', function(){
-          if (k.courts === value) return;
-          k.courts = value;
-          ensureKocRoster();
-          k.assignment = null;
-          k.displayOrder = null;
-          renderKoc();
-          document.getElementById('kocStatus').textContent = t('kocChanged');
-        });
+        btn.setAttribute('aria-pressed', String(value === k.courts));
+        var num = document.createElement('div');
+        num.className = 'cb-num';
+        num.textContent = String(value);
+        var label = document.createElement('div');
+        label.className = 'cb-label';
+        label.textContent = t(value === 1 ? 'courtUnitSingular' : 'courtUnitPlural');
+        btn.appendChild(num);
+        btn.appendChild(label);
+        btn.addEventListener('click', function(){ changeKocCourts(value); });
         buttons.appendChild(btn);
       })(count);
     }
+    var more = document.createElement('div');
+    more.className = 'courts-more' + (k.courts > 4 ? ' active' : '');
+    var moreLabel = document.createElement('label');
+    moreLabel.setAttribute('for', 'kocMoreSelect');
+    moreLabel.textContent = t('courtsMoreLabel');
+    var select = document.createElement('select');
+    select.id = 'kocMoreSelect';
+    select.setAttribute('aria-label', t('courtsMoreLabel'));
+    var placeholder = document.createElement('option');
+    placeholder.value = '';
+    placeholder.disabled = true;
+    placeholder.hidden = true;
+    placeholder.textContent = t('courtsMorePlaceholder');
+    select.appendChild(placeholder);
+    for (var choice = 5; choice <= 12; choice++){
+      var option = document.createElement('option');
+      option.value = String(choice);
+      option.textContent = String(choice);
+      select.appendChild(option);
+    }
+    select.value = k.courts > 4 ? String(k.courts) : '';
+    select.addEventListener('change', function(){
+      if (select.value) changeKocCourts(Number(select.value));
+    });
+    more.appendChild(moreLabel);
+    more.appendChild(select);
+    buttons.appendChild(more);
     var roster = document.getElementById('kocRoster');
     roster.innerHTML = '';
     k.roster.slice(0, k.courts * 4).forEach(function(person, i){
@@ -1951,7 +1988,9 @@
     if (k.incomingEnabled && Array.isArray(k.roster)){
       var start = k.courts * 4 - 4;
       var incoming = shuffle(attendees.filter(function(i){
-        return i >= start && i < k.courts * 4 &&
+        // With one court, the first two reserved players also fall inside
+        // the last-four incoming slots. Never assign them a second time.
+        return result[i] === undefined && i >= start && i < k.courts * 4 &&
           k.roster[i] && k.roster[i].incoming === true;
       }));
       incoming.forEach(function(i){
@@ -4071,7 +4110,7 @@
   function bulkTargetInfo(tool){
     if (tool.kind === 'koc'){
       var k = ensureKocRoster();
-      return {count:k.courts * 4, max:32, other:[]};
+      return {count:k.courts * 4, max:48, other:[]};
     }
     if (tool.kind === 'setup') return {count:namesGrid.querySelectorAll('.name-field input').length,max:96,other:[]};
     if (tool.kind === 'level'){
@@ -4124,9 +4163,9 @@
       : tf('bulkCountDifference', {n:count,current:info.count});
     var canAdjust = false;
     var label = '';
-    if (tool.kind === 'koc' && count > info.count && count <= 32){
+    if (tool.kind === 'koc' && count > info.count && count <= 48){
       canAdjust = true;
-      label = tf('bulkAdjustCourts', {n:Math.max(2,Math.ceil(count/4)),players:count,current:state.koc.courts});
+      label = tf('bulkAdjustCourts', {n:Math.max(1,Math.ceil(count/4)),players:count,current:state.koc.courts});
     } else if ((tool.kind === 'setup' || tool.kind === 'level') && count >= 4 && count <= 96 && count !== info.count){
       canAdjust = true;
       label = tf('bulkAdjustCount', {n:count,current:info.count});
@@ -4165,7 +4204,7 @@
     if (!bulkDrawerAdjustCount.checked) return;
     presetCountsAutomatic = false;
     if (tool.kind === 'koc'){
-      state.koc.courts = Math.max(2, Math.ceil(count/4));
+      state.koc.courts = Math.max(1, Math.ceil(count/4));
       ensureKocRoster();
     } else if (tool.kind === 'setup'){
       state.playerCount = count;
@@ -4658,7 +4697,7 @@
     if (!Array.isArray(st.levelCounts) || st.levelCounts.length !== LEVELS.length) return 'loadErrCorrupt';
     if (st.format === 'koc'){
       if (!st.koc || !Array.isArray(st.koc.roster) || !Number.isInteger(st.koc.courts) ||
-          st.koc.courts < 2 || st.koc.courts > 8) return 'loadErrCorrupt';
+          st.koc.courts < 1 || st.koc.courts > 12) return 'loadErrCorrupt';
       if (st.koc.assignment && (typeof st.koc.assignment !== 'object' ||
           Object.keys(st.koc.assignment).some(function(key){
             return !/^\d+$/.test(key) || Number(key) >= st.koc.courts * 4 ||
