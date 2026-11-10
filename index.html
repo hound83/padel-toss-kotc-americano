@@ -4,11 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#1C437D">
-<meta name="description" content="Padel Toss, Gesplitste Toss, Americano en King of the Court in één webapp.">
+<meta name="description" content="Padel Planner: Toss, Gesplitste Toss, Americano en King of the Court in één webapp.">
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="icon" href="./icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="./icon-192.png">
-<title>Padel · Toss / Americano / KOC</title>
+<title>Padel Planner</title>
 <!-- Fonts: system fallbacks only (no external font fetch), for reliability on restricted/sandboxed viewers -->
 <style>
   :root{
@@ -82,7 +82,7 @@
   .brand h1{
     font-family:var(--font-display);
     font-weight:800;
-    font-size:clamp(24px, 4vw, 34px);
+    font-size:clamp(26px, 4vw, 40px);
     letter-spacing:0.01em;
     margin:0;
     color:var(--teal-900);
@@ -107,7 +107,7 @@
   .meta-strip span{ background:var(--surface); border:1px solid var(--line); padding:4px 10px; border-radius:20px; }
 
   /* ---------- Language switch ---------- */
-  .lang-switch{ display:flex; gap:6px; margin-bottom:20px; }
+  .lang-switch{ display:flex; gap:6px; margin:0 0 0 auto; flex-shrink:0; align-self:center; }
   .lang-btn{
     font-family:var(--font-mono);
     font-size:var(--fs-sm);
@@ -456,19 +456,40 @@
   .name-field input:focus{ border-color:var(--teal-600); }
   .name-field input.dup-name-input{ border-color:var(--coral); background:#FDF1F0; }
 
-  /* Optional, compact bulk name entry shared by all four play formats. */
-  .bulk-entry{margin:0 0 14px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:#F7FAFC;}
-  .bulk-entry[hidden],.bulk-entry-body[hidden]{display:none!important;}
-  .bulk-entry-toggle{display:flex;align-items:center;gap:9px;font-weight:700;font-size:var(--fs-sm);cursor:pointer;}
-  .bulk-entry-toggle input{width:18px;height:18px;accent-color:var(--teal-900);flex-shrink:0;}
-  .bulk-entry-body{margin-top:10px;}
-  .bulk-entry-help{margin:0 0 8px;color:var(--ink-soft);font-size:var(--fs-xs);line-height:1.5;}
-  .bulk-entry textarea{display:block;width:100%;min-height:115px;resize:vertical;padding:10px 12px;border:1.5px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);font:inherit;line-height:1.5;}
-  .bulk-entry textarea:focus{border-color:var(--teal-600);outline:2px solid transparent;}
-  .bulk-entry-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:9px;}
-  .bulk-entry-actions .btn{padding:8px 13px;font-size:var(--fs-sm);}
-  .bulk-entry-status{margin:0;font-size:var(--fs-xs);color:var(--teal-900);}
-  .bulk-entry-status.is-error{color:var(--coral);font-weight:600;}
+  /* The name-list action never changes the normal, horizontal player layout. */
+  .bulk-entry{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 14px;}
+  .bulk-entry[hidden]{display:none!important;}
+  .bulk-entry-trigger{display:inline-flex;align-items:center;gap:7px;border:1.5px solid var(--line);border-radius:8px;padding:8px 12px;background:var(--surface);color:var(--teal-900);font:700 var(--fs-sm) var(--font-body);cursor:pointer;}
+  .bulk-entry-trigger:hover{border-color:var(--teal-700);background:#F7FAFC;}
+  .bulk-entry-status{font-size:var(--fs-xs);color:var(--teal-900);}
+  .bulk-undo{border:0;background:none;color:var(--teal-900);text-decoration:underline;font:700 var(--fs-sm) var(--font-body);cursor:pointer;}
+  .bulk-drawer-layer[hidden]{display:none!important;}
+  .bulk-drawer-layer{position:fixed;inset:0;z-index:110;display:flex;justify-content:flex-end;}
+  .bulk-drawer-scrim{position:absolute;inset:0;background:rgba(16,38,69,.34);border:0;cursor:pointer;}
+  .bulk-drawer{position:relative;display:flex;flex-direction:column;width:min(390px,100vw);height:100dvh;max-height:100dvh;background:var(--surface);box-shadow:-16px 0 55px rgba(12,32,65,.24);padding:22px;gap:15px;}
+  .bulk-drawer-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;}
+  .bulk-drawer-head h2{margin:0;color:var(--teal-900);font:800 23px var(--font-display);}
+  .bulk-drawer-close{flex-shrink:0;border:1px solid var(--line);background:var(--surface);border-radius:9px;width:36px;height:36px;font-size:23px;cursor:pointer;}
+  .bulk-drawer-help{color:var(--ink-soft);font-size:var(--fs-sm);line-height:1.5;margin:0;}
+  .bulk-drawer textarea{min-height:200px;flex:1;resize:none;width:100%;border:1.5px solid var(--line);border-radius:10px;padding:12px;font:var(--fs-base)/1.55 var(--font-body);color:var(--ink);background:#FBFCFE;}
+  .bulk-drawer textarea:focus{border-color:var(--teal-700);outline:2px solid var(--teal-700);outline-offset:2px;}
+  .bulk-drawer-preview{color:var(--teal-900);font-size:var(--fs-sm);font-weight:700;min-height:1.5em;}
+  .bulk-drawer-error{color:#A82D24;font-size:var(--fs-sm);font-weight:650;min-height:0;margin:0;}
+  .bulk-drawer-actions{display:flex;flex-direction:column;gap:9px;}
+  .bulk-drawer-actions .btn{width:100%;}
+  .bulk-drawer-actions .btn-ghost{background:var(--surface);}
+  .bulk-drawer-count-choice{display:flex;align-items:flex-start;gap:10px;padding:10px;border:1px solid var(--line);border-radius:9px;background:#F7FAFC;font-size:var(--fs-sm);cursor:pointer;}
+  .bulk-drawer-count-choice[hidden]{display:none!important;}
+  .bulk-drawer-count-choice input{width:18px;height:18px;flex-shrink:0;accent-color:var(--teal-900);}
+  body.bulk-drawer-open{overflow:hidden;}
+  @media(max-width:680px){
+    .masthead{align-items:center;gap:8px;}
+    .brand h1{font-size:clamp(19px,4.7vw,28px);overflow-wrap:anywhere;}
+    .brand{min-width:0;flex:1;gap:7px;}
+    .meta-strip{order:3;width:100%;}
+    .lang-btn{padding:6px 9px;}
+    .bulk-drawer{padding:18px 16px;}
+  }
 
   .actions-row{ display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
   .btn{
@@ -819,10 +840,14 @@
 
   <div class="masthead">
     <div class="brand">
-      <h1 id="appTitle">Toss / Americano</h1>
+      <h1 id="appTitle">PADEL PLANNER</h1>
       <span class="ball-dot" aria-hidden="true"></span>
     </div>
     <div class="meta-strip" id="metaStrip" style="display:none;"></div>
+    <div class="lang-switch" id="langSwitch" aria-label="Language / Taal">
+      <button type="button" class="lang-btn active" data-lang="nl" aria-pressed="true">NL</button>
+      <button type="button" class="lang-btn" data-lang="en" aria-pressed="false">EN</button>
+    </div>
   </div>
 
   <div class="steps" id="stepsNav">
@@ -834,10 +859,6 @@
   <section class="panel mode-home" id="panel0" aria-labelledby="modeHomeTitle">
     <h2 id="modeHomeTitle" data-i18n="homeTitle">Wat gaan we spelen?</h2>
     <p data-i18n="homeSub">Kies een speelvorm om te beginnen</p>
-    <div class="lang-switch" id="homeLangSwitch" style="justify-content:center;margin:0;">
-      <button type="button" class="lang-btn active" data-lang="nl">NL</button>
-      <button type="button" class="lang-btn" data-lang="en">EN</button>
-    </div>
     <div class="format-select" id="formatSelect">
       <button class="format-btn" type="button" data-format="toss">
         <span class="mode-icon" aria-hidden="true">🎾</span>
@@ -864,11 +885,6 @@
 
   <!-- STEP 1 -->
   <section class="panel" id="panel1">
-    <div class="lang-switch" id="langSwitch">
-      <button type="button" class="lang-btn active" data-lang="nl">NL</button>
-      <button type="button" class="lang-btn" data-lang="en">EN</button>
-    </div>
-
     <h2 class="panel-title" data-i18n="p1Title">Instellingen</h2>
     <p class="panel-sub" data-i18n="p1Sub">Hoeveel banen zijn er en hoeveel spelers doen mee?</p>
 
@@ -1142,10 +1158,10 @@
   </section>
 
   <footer class="app-footer">
-    <span id="appVersion">v2.0.4</span>
+    <span id="appVersion">v2.1.0</span>
     <details><summary data-i18n="whatsNew">Wat is nieuw?</summary>
       <ul>
-        <li data-i18n="changeBulkNames">Namenlijsten plakken in alle speelvormen en bij Spelers wijzigen.</li>
+        <li data-i18n="changeBulkNames">Slim namenplakpaneel met controle, spelersaantal aanpassen en ongedaan maken.</li>
         <li data-i18n="changeKocEntry">KOC: vaste startbanen voor spelers 1 en 2 en optionele instroomspelers.</li>
         <li data-i18n="changeKocNames">KOC: dubbele namen worden direct gemarkeerd en geblokkeerd.</li>
         <li data-i18n="changeKocRandom">KOC: meer variatie op de onderste banen en in de spelersvolgorde.</li>
@@ -1159,6 +1175,28 @@
 </div>
 
 <button id="presentExit" class="present-exit" type="button" data-i18n="presentExit">Sluit presentatiemodus</button>
+
+<div class="bulk-drawer-layer" id="bulkDrawerLayer" hidden>
+  <button class="bulk-drawer-scrim" id="bulkDrawerScrim" type="button" tabindex="-1" aria-label="Close"></button>
+  <aside class="bulk-drawer" role="dialog" aria-modal="true" aria-labelledby="bulkDrawerTitle" aria-describedby="bulkDrawerHelp">
+    <div class="bulk-drawer-head">
+      <h2 id="bulkDrawerTitle" data-i18n="bulkDrawerTitle">Namenlijst plakken</h2>
+      <button type="button" id="bulkDrawerClose" class="bulk-drawer-close" data-i18n-aria-label="bulkCancel" aria-label="Annuleren">×</button>
+    </div>
+    <p class="bulk-drawer-help" id="bulkDrawerHelp"></p>
+    <textarea id="bulkDrawerText" data-i18n-aria-label="bulkNameToggle" aria-label="Namenlijst plakken" data-i18n-placeholder="bulkPlaceholder" placeholder="Jan&#10;Piet&#10;Fatima&#10;Sanne" spellcheck="false"></textarea>
+    <div class="bulk-drawer-preview" id="bulkDrawerPreview" aria-live="polite"></div>
+    <p class="bulk-drawer-error" id="bulkDrawerError" role="alert" hidden></p>
+    <label class="bulk-drawer-count-choice" id="bulkDrawerCountChoice" hidden>
+      <input type="checkbox" id="bulkDrawerAdjustCount">
+      <span id="bulkDrawerCountLabel"></span>
+    </label>
+    <div class="bulk-drawer-actions">
+      <button class="btn btn-primary" id="bulkDrawerApply" type="button" data-i18n="bulkReplaceButton">Namen overnemen</button>
+      <button class="btn btn-ghost" id="bulkDrawerCancel" type="button" data-i18n="bulkCancel">Sluiten zonder wijzigingen</button>
+    </div>
+  </aside>
+</div>
 
 <div class="modal-overlay resume-modal" id="resumeOverlay" role="dialog" aria-modal="true" aria-labelledby="resumeTitle">
   <div class="modal-box">
@@ -1233,8 +1271,24 @@
       namePlaceholderErvaren: 'Goud {n}',
       blankNameHint: 'Laat een veld leeg — dan speelt "Speler N" mee. Namen vul je aan wanneer je wilt.',
       bulkNameToggle: 'Namen als lijst plakken',
+      bulkDrawerTitle: 'Namenlijst plakken',
+      bulkOpenButton: '📋 Namenlijst plakken',
+      bulkCancel: 'Sluiten zonder wijzigingen',
+      bulkUndo: 'Ongedaan maken',
+      bulkForGroup: 'Namen plakken: {group}',
+      bulkForPlayers: 'Namen plakken: spelers',
+      bulkFound: '{n} namen gevonden; lege regels worden overgeslagen.',
+      bulkCountDifference: '{n} namen gevonden, {current} plekken ingesteld.',
+      bulkAdjustCount: 'Aantal spelers aanpassen naar {n} (nu {current}).',
+      bulkAdjustCourts: 'Aantal banen aanpassen naar {n} voor {players} spelers (nu {current}).',
+      bulkDuplicateLines: 'Dubbele naam “{name}” op regels {lines}. Pas de namen aan en probeer opnieuw.',
+      bulkDuplicateExisting: '“{name}” staat al in een andere spelerslijst of bij de bestaande spelers. Pas de naam aan en probeer opnieuw.',
+      bulkCountMinimum: 'Een groep heeft minimaal 4 spelers nodig. Plak minstens 4 namen of behoud het huidige aantal spelers.',
+      bulkOverMax: 'Maximaal {max} spelers mogelijk. Controleer de geplakte lijst.',
+      bulkCountRequired: 'Vink de optie voor het aanpassen van het aantal aan om alle {n} namen te kunnen overnemen.',
+      bulkUndoDone: 'Vorige namen teruggezet.',
       bulkPlaceholder: 'Jan\nPiet\nFatima\nSanne',
-      bulkReplaceHelp: 'Eén naam per regel. Overnemen vervangt de namen in deze lijst. Controleer eerst het aantal spelers/banen; bij KOC worden overige plekken afwezig gezet.',
+      bulkReplaceHelp: 'Plak één naam per regel; lege regels worden overgeslagen. Pas de tekst gerust aan vóór het overnemen. Als het aantal afwijkt, kun je de spelers- of baanteller mee laten aanpassen. Sluiten laat bestaande velden ongewijzigd.',
       bulkAddHelp: 'Eén naam per regel. De spelers worden toegevoegd; bestaande spelers en uitslagen blijven behouden. Bevestig daarna met Wijzigingen doorvoeren.',
       bulkReplaceButton: 'Namen overnemen',
       bulkAddButton: 'Spelers toevoegen',
@@ -1334,7 +1388,7 @@
       resumeTitle: 'Vorige sessie gevonden', resumeBody: 'Wil je verdergaan waar je gebleven was, of een nieuwe sessie beginnen?',
       resumeNew: 'Nieuwe sessie', resumeContinue: 'Doorgaan',
       whatsNew: 'Wat is nieuw?', changeKoc: 'King of the Court als vierde speelvorm.',
-      changeBulkNames: 'Namenlijsten plakken in alle speelvormen en bij Spelers wijzigen.',
+      changeBulkNames: 'Slim namenplakpaneel met controle, spelersaantal aanpassen en ongedaan maken.',
       changeKocEntry: 'KOC: vaste startbanen voor spelers 1 en 2 en optionele instroomspelers.',
       changeKocNames: 'KOC: dubbele namen direct herkennen en blokkeren.',
       changeKocRandom: 'KOC: meer variatie op de onderste banen en in de spelersvolgorde.',
@@ -1413,8 +1467,24 @@
       namePlaceholderErvaren: 'Gold {n}',
       blankNameHint: 'Leave any field blank and it\'ll play as "Player N" — fill in names whenever you\'re ready.',
       bulkNameToggle: 'Paste a list of names',
+      bulkDrawerTitle: 'Paste player names',
+      bulkOpenButton: '📋 Paste names',
+      bulkCancel: 'Close without changes',
+      bulkUndo: 'Undo',
+      bulkForGroup: 'Paste names: {group}',
+      bulkForPlayers: 'Paste names: players',
+      bulkFound: '{n} names found; blank lines are skipped.',
+      bulkCountDifference: '{n} names found, {current} places configured.',
+      bulkAdjustCount: 'Change player count to {n} (currently {current}).',
+      bulkAdjustCourts: 'Change court count to {n} for {players} players (currently {current}).',
+      bulkDuplicateLines: 'Duplicate “{name}” on lines {lines}. Edit the names and try again.',
+      bulkDuplicateExisting: '“{name}” already exists in another group or the current roster. Edit it and try again.',
+      bulkCountMinimum: 'Each group needs at least 4 players. Paste at least 4 names or keep the current count.',
+      bulkOverMax: 'At most {max} players are supported. Check the pasted list.',
+      bulkCountRequired: 'Select the count adjustment option first to apply all {n} names.',
+      bulkUndoDone: 'Previous names restored.',
       bulkPlaceholder: 'Alex\nSam\nTaylor\nJordan',
-      bulkReplaceHelp: 'One name per line. Applying replaces the names in this list. Set the correct player/court count first; unused KOC slots become absent.',
+      bulkReplaceHelp: 'Paste one name per line; blank lines are skipped. Edit the text before applying. If the count differs, you can also adjust the player or court count. Closing leaves all existing fields untouched.',
       bulkAddHelp: 'One name per line. New players are added while existing players and scores stay intact. Then select Apply changes.',
       bulkReplaceButton: 'Apply names',
       bulkAddButton: 'Add players',
@@ -1514,7 +1584,7 @@
       resumeTitle: 'Previous session found', resumeBody: 'Would you like to pick up where you left off, or start a new session?',
       resumeNew: 'New session', resumeContinue: 'Continue',
       whatsNew: 'What is new?', changeKoc: 'King of the Court is the fourth format.',
-      changeBulkNames: 'Paste lists of player names in every format and in Edit players.',
+      changeBulkNames: 'Name-list drawer with validation, count adjustment and undo.',
       changeKocEntry: 'KOC: fixed start courts for players 1 and 2, with optional incoming players.',
       changeKocNames: 'KOC: spot and block duplicate player names immediately.',
       changeKocRandom: 'KOC: more variation across lower courts and player display order.',
@@ -1581,8 +1651,8 @@
   // schedule says what it is without needing the setup screen for context.
   function renderAppTitle(){
     if (state.step === 0){
-      document.getElementById('appTitle').textContent = 'PADEL TOSS';
-      document.title = 'Padel Toss';
+      document.getElementById('appTitle').textContent = 'PADEL PLANNER';
+      document.title = 'Padel Planner';
       return;
     }
     var key = state.format === 'splitToss' ? 'formatSplitToss'
@@ -2258,6 +2328,7 @@
 
   // ---------- step nav ----------
   function goToStep(n){
+    if (state.step !== n) clearBulkUndo();
     state.step = n;
     renderAppTitle();
     if (n === 0){
@@ -2284,16 +2355,34 @@
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
-  // ---------- Language switch (Step 1 only) ----------
+  // ---------- Language switch (global, including schedules and KOC) ----------
   document.querySelectorAll('.lang-btn').forEach(function(btn){
     btn.addEventListener('click', function(){
       state.lang = btn.getAttribute('data-lang');
       document.querySelectorAll('.lang-btn').forEach(function(b){
-        b.classList.toggle('active', b.getAttribute('data-lang') === state.lang);
+        var selected = b.getAttribute('data-lang') === state.lang;
+        b.classList.toggle('active', selected);
+        b.setAttribute('aria-pressed', String(selected));
       });
       applyStaticTranslations();
       renderCourtsPreview();
       renderKoc();
+      if (state.step === 2) buildNameInputs();
+      if (state.pools.length){
+        renderMeta();
+        renderSchedule();
+        renderLeaderboard();
+      }
+      if (document.getElementById('panelEdit').classList.contains('visible')) renderEditStatus();
+      if (activeBulkTool){
+        var tool = activeBulkTool;
+        var group = tool.levelIdx !== undefined ? t(LEVELS[tool.levelIdx].labelKey) : '';
+        document.getElementById('bulkDrawerTitle').textContent = group
+          ? tf('bulkForGroup', {group:group}) : t('bulkDrawerTitle');
+        document.getElementById('bulkDrawerHelp').textContent = t(tool.addMode ? 'bulkAddHelp' : 'bulkReplaceHelp');
+        document.getElementById('bulkDrawerApply').textContent = t(tool.addMode ? 'bulkAddButton' : 'bulkReplaceButton');
+        renderBulkDrawerPreview();
+      }
     });
   });
 
@@ -2324,6 +2413,21 @@
   var courtsPreview = document.getElementById('courtsPreview');
   var countError = document.getElementById('countError');
   var continueTo2Btn = document.getElementById('continueTo2');
+  // Defaults follow the court count until the organizer edits a player count.
+  // Split Toss starts with Silver and Gold equally sized; Platinum stays optional.
+  var presetCountsAutomatic = true;
+  function applyPlayerCountPreset(){
+    if (!presetCountsAutomatic) return;
+    if (state.format === 'splitToss'){
+      var perGroup = state.courts * 4;
+      [perGroup, perGroup, 0].forEach(function(n, i){
+        levelCountInputs[i].value = n;
+        state.levelCounts[i] = n;
+      });
+    } else if (state.format === 'toss' || state.format === 'americano'){
+      playerCountInput.value = state.courts * (state.format === 'toss' ? 8 : 4);
+    }
+  }
 
   function clampCount(v){
     if (isNaN(v)) v = 16;
@@ -2375,6 +2479,10 @@
   document.querySelectorAll('.format-btn').forEach(function(btn){
     btn.addEventListener('click', function(){
       state.format = btn.getAttribute('data-format');
+      if (!state.pools.length){
+        presetCountsAutomatic = true;
+        applyPlayerCountPreset();
+      }
       document.querySelectorAll('.format-btn').forEach(function(b){
         b.classList.toggle('active', b === btn);
       });
@@ -2540,17 +2648,23 @@
       '<p class="courts-note">' + note + '</p>';
   }
 
-  playerCountInput.addEventListener('input', renderCourtsPreview);
+  playerCountInput.addEventListener('input', function(){
+    presetCountsAutomatic = false;
+    renderCourtsPreview();
+  });
   document.getElementById('countMinus').addEventListener('click', function(){
+    presetCountsAutomatic = false;
     playerCountInput.value = clampCount(parseInt(playerCountInput.value, 10) - 1);
     renderCourtsPreview();
   });
   document.getElementById('countPlus').addEventListener('click', function(){
+    presetCountsAutomatic = false;
     playerCountInput.value = clampCount(parseInt(playerCountInput.value, 10) + 1);
     renderCourtsPreview();
   });
   document.querySelectorAll('.chip').forEach(function(chip){
     chip.addEventListener('click', function(){
+      presetCountsAutomatic = false;
       playerCountInput.value = chip.getAttribute('data-count');
       renderCourtsPreview();
     });
@@ -2558,8 +2672,12 @@
 
   LEVELS.forEach(function(lv, i){
     var input = levelCountInputs[i];
-    input.addEventListener('input', renderCourtsPreview);
+    input.addEventListener('input', function(){
+      presetCountsAutomatic = false;
+      renderCourtsPreview();
+    });
     document.getElementById(lv.id + 'CountMinus').addEventListener('click', function(){
+      presetCountsAutomatic = false;
       var cur = parseInt(input.value, 10);
       // 1-3 players can never form a match, so stepping below the minimum of 4
       // drops straight to 0 ("level not in use") instead of stalling at 4.
@@ -2568,6 +2686,7 @@
       renderCourtsPreview();
     });
     document.getElementById(lv.id + 'CountPlus').addEventListener('click', function(){
+      presetCountsAutomatic = false;
       var cur = parseInt(input.value, 10);
       // Stepping up from an unused level jumps straight to the 4 needed for a match.
       input.value = (isNaN(cur) || cur <= 0) ? 4 : clampLevelCount(cur + 1);
@@ -2593,6 +2712,7 @@
   document.querySelectorAll('.court-btn').forEach(function(btn){
     btn.addEventListener('click', function(){
       state.courts = parseInt(btn.getAttribute('data-courts'), 10);
+      applyPlayerCountPreset();
       syncCourtSelection();
       renderCourtsPreview();
     });
@@ -2606,6 +2726,7 @@
     } else {
       state.courts = parseInt(courtsMoreSelect.value, 10);
     }
+    applyPlayerCountPreset();
     syncCourtSelection();
     renderCourtsPreview();
   });
@@ -3854,66 +3975,39 @@
     var box = document.createElement('div');
     box.className = 'bulk-entry';
     box.id = id;
-    var toggleLabel = document.createElement('label');
-    toggleLabel.className = 'bulk-entry-toggle';
-    var toggle = document.createElement('input');
-    toggle.type = 'checkbox';
-    toggle.setAttribute('aria-controls', id + '-body');
-    var labelText = document.createElement('span');
-    labelText.setAttribute('data-i18n', 'bulkNameToggle');
-    labelText.textContent = t('bulkNameToggle');
-    toggleLabel.appendChild(toggle);
-    toggleLabel.appendChild(labelText);
-    var body = document.createElement('div');
-    body.id = id + '-body';
-    body.className = 'bulk-entry-body';
-    body.hidden = true;
-    var help = document.createElement('p');
-    help.className = 'bulk-entry-help';
-    help.setAttribute('data-i18n', addMode ? 'bulkAddHelp' : 'bulkReplaceHelp');
-    help.textContent = t(addMode ? 'bulkAddHelp' : 'bulkReplaceHelp');
-    var area = document.createElement('textarea');
-    area.rows = 5;
-    area.setAttribute('aria-label', t('bulkNameToggle'));
-    area.setAttribute('data-i18n-aria-label', 'bulkNameToggle');
-    area.setAttribute('data-i18n-placeholder', 'bulkPlaceholder');
-    area.placeholder = t('bulkPlaceholder');
-    var actions = document.createElement('div');
-    actions.className = 'bulk-entry-actions';
-    var apply = document.createElement('button');
-    apply.type = 'button';
-    apply.className = 'btn btn-ghost';
-    apply.setAttribute('data-i18n', addMode ? 'bulkAddButton' : 'bulkReplaceButton');
-    apply.textContent = t(addMode ? 'bulkAddButton' : 'bulkReplaceButton');
+    var trigger = document.createElement('button');
+    trigger.type = 'button';
+    trigger.className = 'bulk-entry-trigger';
+    trigger.setAttribute('data-i18n', 'bulkOpenButton');
+    trigger.textContent = t('bulkOpenButton');
     var status = document.createElement('p');
     status.className = 'bulk-entry-status';
     status.setAttribute('role', 'status');
     status.setAttribute('aria-live', 'polite');
-    actions.appendChild(apply);
-    actions.appendChild(status);
-    body.appendChild(help);
-    body.appendChild(area);
-    body.appendChild(actions);
-    box.appendChild(toggleLabel);
-    box.appendChild(body);
+    status.style.margin = '0';
+    var undo = document.createElement('button');
+    undo.type = 'button';
+    undo.className = 'bulk-undo';
+    undo.setAttribute('data-i18n', 'bulkUndo');
+    undo.textContent = t('bulkUndo');
+    undo.hidden = true;
+    box.appendChild(trigger);
+    box.appendChild(status);
+    box.appendChild(undo);
     before.parentNode.insertBefore(box, before);
-
-    toggle.addEventListener('change', function(){
-      body.hidden = !toggle.checked;
-      if (toggle.checked) area.focus();
+    var tool = { id:id, box:box, trigger:trigger, status:status, undo:undo,
+      addMode:addMode, onApply:onApply, draft:'', undoAction:null };
+    bulkNameTools.push(tool);
+    trigger.addEventListener('click', function(){ openBulkDrawer(tool); });
+    undo.addEventListener('click', function(){
+      if (!tool.undoAction) return;
+      var action = tool.undoAction;
+      clearBulkUndo();
+      action();
+      status.textContent = t('bulkUndoDone');
+      scheduleAutosave();
     });
-    area.addEventListener('input', function(){
-      status.textContent = '';
-      status.classList.remove('is-error');
-    });
-    apply.addEventListener('click', function(){
-      var names = parseBulkNames(area.value);
-      var error = !names.length ? t('bulkEmpty') : onApply(names);
-      status.classList.toggle('is-error', !!error);
-      status.textContent = error || tf(addMode ? 'bulkAdded' : 'bulkReplaced', {n:names.length});
-      if (!error && addMode) area.value = '';
-    });
-    return box;
+    return tool;
   }
 
   function applyBulkSetupNames(names, gridEl, target){
@@ -3958,36 +4052,253 @@
     return null;
   }
 
+  var bulkNameTools = [];
+  var activeBulkTool = null;
+  var bulkDrawerLayer = document.getElementById('bulkDrawerLayer');
+  var bulkDrawerText = document.getElementById('bulkDrawerText');
+  var bulkDrawerCountChoice = document.getElementById('bulkDrawerCountChoice');
+  var bulkDrawerAdjustCount = document.getElementById('bulkDrawerAdjustCount');
+  var bulkDrawerError = document.getElementById('bulkDrawerError');
+
+  function bulkNameKey(name){
+    return String(name).normalize('NFKC').replace(/\s+/g, ' ').trim().toLocaleLowerCase();
+  }
+  function bulkEntries(raw){
+    return String(raw).split(/\r\n|\r|\n/).map(function(name, i){
+      return {name:name.trim(), line:i + 1};
+    }).filter(function(entry){return !!entry.name;});
+  }
+  function bulkTargetInfo(tool){
+    if (tool.kind === 'koc'){
+      var k = ensureKocRoster();
+      return {count:k.courts * 4, max:32, other:[]};
+    }
+    if (tool.kind === 'setup') return {count:namesGrid.querySelectorAll('.name-field input').length,max:96,other:[]};
+    if (tool.kind === 'level'){
+      var other = Array.from(namesSplitBlock.querySelectorAll('.name-field input')).filter(function(input){
+        return !levelNamesGrids[tool.levelIdx].contains(input);
+      }).map(function(input){return input.value.trim();}).filter(Boolean);
+      return {count:state.levelCounts[tool.levelIdx],max:96,other:other};
+    }
+    var all = state.format === 'splitToss' ? editSplitBlockWrap : editSingleBlock;
+    var existing = Array.from(all.querySelectorAll('.edit-row input')).map(function(input){return input.value.trim();}).filter(Boolean);
+    return {count:tool.listEl.querySelectorAll('.edit-row').length,max:96,other:existing};
+  }
+  function bulkInputError(entries, tool, info){
+    if (!entries.length) return t('bulkEmpty');
+    var seen = Object.create(null);
+    for (var i = 0; i < entries.length; i++){
+      var key = bulkNameKey(entries[i].name);
+      if (seen[key]) return tf('bulkDuplicateLines', {name:entries[i].name,
+        lines:seen[key] + ' en ' + entries[i].line});
+      seen[key] = entries[i].line;
+    }
+    var outside = Object.create(null);
+    info.other.forEach(function(name){outside[bulkNameKey(name)] = true;});
+    var overlap = entries.find(function(entry){return outside[bulkNameKey(entry.name)];});
+    if (overlap) return tf('bulkDuplicateExisting', {name:overlap.name});
+    if (tool.kind === 'koc' && entries.some(function(entry){return entry.name.length > 50;}))
+      return t('bulkNameTooLong');
+    var max = tool.kind === 'edit' ? info.max - info.count : info.max;
+    if (entries.length > max) return tf('bulkOverMax', {max:max});
+    return null;
+  }
+  function clearBulkUndo(){
+    bulkNameTools.forEach(function(tool){
+      tool.undoAction = null;
+      tool.undo.hidden = true;
+    });
+  }
+  function setBulkDrawerError(message){
+    bulkDrawerError.textContent = message || '';
+    bulkDrawerError.hidden = !message;
+  }
+  function renderBulkDrawerPreview(){
+    if (!activeBulkTool) return;
+    var entries = bulkEntries(bulkDrawerText.value);
+    var tool = activeBulkTool;
+    var info = bulkTargetInfo(tool);
+    var count = entries.length;
+    document.getElementById('bulkDrawerPreview').textContent = count === info.count || tool.kind === 'edit' || tool.kind === 'koc'
+      ? tf('bulkFound', {n:count})
+      : tf('bulkCountDifference', {n:count,current:info.count});
+    var canAdjust = false;
+    var label = '';
+    if (tool.kind === 'koc' && count > info.count && count <= 32){
+      canAdjust = true;
+      label = tf('bulkAdjustCourts', {n:Math.max(2,Math.ceil(count/4)),players:count,current:state.koc.courts});
+    } else if ((tool.kind === 'setup' || tool.kind === 'level') && count >= 4 && count <= 96 && count !== info.count){
+      canAdjust = true;
+      label = tf('bulkAdjustCount', {n:count,current:info.count});
+    }
+    bulkDrawerCountChoice.hidden = !canAdjust;
+    if (!canAdjust) bulkDrawerAdjustCount.checked = false;
+    document.getElementById('bulkDrawerCountLabel').textContent = label;
+  }
+  function closeBulkDrawer(discardDraft){
+    if (!activeBulkTool) return;
+    var tool = activeBulkTool;
+    if (!discardDraft) tool.draft = bulkDrawerText.value;
+    activeBulkTool = null;
+    bulkDrawerLayer.hidden = true;
+    document.body.classList.remove('bulk-drawer-open');
+    setBulkDrawerError('');
+    tool.trigger.focus();
+  }
+  function openBulkDrawer(tool){
+    activeBulkTool = tool;
+    bulkDrawerLayer.hidden = false;
+    document.body.classList.add('bulk-drawer-open');
+    var group = tool.kind === 'level' || (tool.kind === 'edit' && tool.levelIdx !== undefined)
+      ? t(LEVELS[tool.levelIdx].labelKey) : '';
+    document.getElementById('bulkDrawerTitle').textContent = group
+      ? tf('bulkForGroup', {group:group}) : t('bulkDrawerTitle');
+    document.getElementById('bulkDrawerHelp').textContent = t(tool.addMode ? 'bulkAddHelp' : 'bulkReplaceHelp');
+    document.getElementById('bulkDrawerApply').textContent = t(tool.addMode ? 'bulkAddButton' : 'bulkReplaceButton');
+    bulkDrawerText.value = tool.draft;
+    bulkDrawerAdjustCount.checked = false;
+    setBulkDrawerError('');
+    renderBulkDrawerPreview();
+    bulkDrawerText.focus();
+  }
+  function applyBulkCountChange(tool, count){
+    if (!bulkDrawerAdjustCount.checked) return;
+    presetCountsAutomatic = false;
+    if (tool.kind === 'koc'){
+      state.koc.courts = Math.max(2, Math.ceil(count/4));
+      ensureKocRoster();
+    } else if (tool.kind === 'setup'){
+      state.playerCount = count;
+      playerCountInput.value = count;
+      state.names = state.names.slice(0, count);
+      while (state.names.length < count) state.names.push('');
+      buildNameInputs();
+    } else if (tool.kind === 'level'){
+      state.levelCounts[tool.levelIdx] = count;
+      levelCountInputs[tool.levelIdx].value = count;
+      state.levelNames[tool.levelIdx] = state.levelNames[tool.levelIdx].slice(0, count);
+      while (state.levelNames[tool.levelIdx].length < count) state.levelNames[tool.levelIdx].push('');
+      buildNameInputs();
+    }
+  }
+  function captureBulkUndo(tool){
+    if (tool.kind === 'koc'){
+      var oldKoc = JSON.parse(JSON.stringify(state.koc));
+      return function(){ state.koc = oldKoc; renderKoc(); };
+    }
+    if (tool.kind === 'edit'){
+      var oldRows = new Set(Array.from(tool.listEl.children));
+      return function(){
+        Array.from(tool.listEl.children).forEach(function(row){if (!oldRows.has(row)) row.remove();});
+        checkEditDuplicates();
+      };
+    }
+    var oldCount = state.playerCount;
+    var oldInputCount = playerCountInput.value;
+    var oldNames = state.names.slice();
+    var oldLevelCounts = state.levelCounts.slice();
+    var oldLevelInputs = levelCountInputs.map(function(inp){return inp.value;});
+    var oldLevelNames = state.levelNames.map(function(group){return group.slice();});
+    return function(){
+      state.playerCount = oldCount;
+      playerCountInput.value = oldInputCount;
+      state.names = oldNames;
+      state.levelCounts = oldLevelCounts;
+      levelCountInputs.forEach(function(inp, i){ inp.value = oldLevelInputs[i]; });
+      state.levelNames = oldLevelNames;
+      buildNameInputs();
+      renderCourtsPreview();
+    };
+  }
+
+  bulkDrawerText.addEventListener('input', function(){
+    setBulkDrawerError('');
+    if (activeBulkTool) activeBulkTool.draft = bulkDrawerText.value;
+    renderBulkDrawerPreview();
+  });
+  document.getElementById('bulkDrawerApply').addEventListener('click', function(){
+    var tool = activeBulkTool;
+    if (!tool) return;
+    var entries = bulkEntries(bulkDrawerText.value);
+    var names = parseBulkNames(bulkDrawerText.value);
+    var info = bulkTargetInfo(tool);
+    var error = bulkInputError(entries, tool, info);
+    if (!error && (tool.kind === 'setup' || tool.kind === 'level' || tool.kind === 'koc') &&
+        names.length > info.count && !bulkDrawerAdjustCount.checked){
+      error = tf('bulkCountRequired', {n:names.length});
+    }
+    if (!error && tool.kind === 'level' && bulkDrawerAdjustCount.checked && names.length < 4)
+      error = t('bulkCountMinimum');
+    if (error){setBulkDrawerError(error);return;}
+    var undo = captureBulkUndo(tool);
+    var oldPreset = presetCountsAutomatic;
+    applyBulkCountChange(tool, names.length);
+    error = tool.onApply(names);
+    if (error){
+      undo();
+      presetCountsAutomatic = oldPreset;
+      setBulkDrawerError(error);
+      return;
+    }
+    clearBulkUndo();
+    tool.undoAction = function(){undo();presetCountsAutomatic = oldPreset;};
+    tool.undo.hidden = false;
+    tool.status.textContent = tf(tool.addMode ? 'bulkAdded' : 'bulkReplaced', {n:names.length});
+    tool.draft = '';
+    closeBulkDrawer(true);
+    scheduleAutosave();
+  });
+  document.getElementById('bulkDrawerCancel').addEventListener('click', function(){closeBulkDrawer(false);});
+  document.getElementById('bulkDrawerClose').addEventListener('click', function(){closeBulkDrawer(false);});
+  document.getElementById('bulkDrawerScrim').addEventListener('click', function(){closeBulkDrawer(false);});
+  document.getElementById('kocRoll').addEventListener('click', clearBulkUndo);
+  document.addEventListener('keydown', function(event){
+    if (!activeBulkTool) return;
+    if (event.key === 'Escape'){event.preventDefault();closeBulkDrawer(false);return;}
+    if (event.key !== 'Tab') return;
+    var focusable = Array.from(bulkDrawerLayer.querySelectorAll('button,input,textarea')).filter(function(el){
+      return el.getClientRects().length && el.tabIndex !== -1;
+    });
+    if (!focusable.length) return;
+    var first = focusable[0], last = focusable[focusable.length-1];
+    if (event.shiftKey && document.activeElement === first){event.preventDefault();last.focus();}
+    else if (!event.shiftKey && document.activeElement === last){event.preventDefault();first.focus();}
+  });
+  document.addEventListener('input', function(event){
+    if (event.target.closest('.name-field, .koc-player, .edit-row')) clearBulkUndo();
+  });
+
   function setupBulkNameTools(){
-    installBulkNameTool('bulkKoc', document.getElementById('kocRoster'), false, applyBulkKocNames);
+    installBulkNameTool('bulkKoc', document.getElementById('kocRoster'), false, applyBulkKocNames).kind = 'koc';
     installBulkNameTool('bulkSingle', namesGrid, false, function(names){
       return applyBulkSetupNames(names, namesGrid, state.names);
-    });
+    }).kind = 'setup';
     LEVELS.forEach(function(lv, li){
       var levelGrid = levelNamesGrids[li];
-      installBulkNameTool('bulk' + lv.cap, levelGrid, false, function(names){
+      var tool = installBulkNameTool('bulk' + lv.cap, levelGrid, false, function(names){
         return applyBulkSetupNames(names, levelGrid, state.levelNames[li]);
       });
+      tool.kind = 'level'; tool.levelIdx = li;
     });
-    installBulkNameTool('bulkEditSingle', editRosterList, true, function(names){
+    var singleEdit = installBulkNameTool('bulkEditSingle', editRosterList, true, function(names){
       return applyBulkEditNames(names, editRosterList);
     });
+    singleEdit.kind = 'edit'; singleEdit.listEl = editRosterList;
     LEVELS.forEach(function(lv, li){
       var list = editRosterLists[li];
-      installBulkNameTool('bulkEdit' + lv.cap, list, true, function(names){
+      var tool = installBulkNameTool('bulkEdit' + lv.cap, list, true, function(names){
         return applyBulkEditNames(names, list);
       });
+      tool.kind = 'edit'; tool.levelIdx = li; tool.listEl = list;
     });
   }
 
   function resetBulkNameTools(){
-    document.querySelectorAll('.bulk-entry').forEach(function(box){
-      box.querySelector('.bulk-entry-toggle input').checked = false;
-      box.querySelector('.bulk-entry-body').hidden = true;
-      box.querySelector('textarea').value = '';
-      var status = box.querySelector('.bulk-entry-status');
-      status.textContent = '';
-      status.classList.remove('is-error');
+    if (activeBulkTool) closeBulkDrawer(true);
+    clearBulkUndo();
+    bulkNameTools.forEach(function(tool){
+      tool.draft = '';
+      tool.status.textContent = '';
     });
   }
 
@@ -4364,6 +4675,7 @@
 
   function applyLoadedState(st){
     state = st;
+    presetCountsAutomatic = false;
     resetBulkNameTools();
     if (state.lang !== 'en') state.lang = 'nl';
     document.querySelectorAll('.lang-btn').forEach(function(b){
@@ -4484,6 +4796,7 @@
       koc: { courts: 4, roster: [], incomingEnabled: false, assignment: null, displayOrder: null, lastSignature: '' }
     };
     playcountSort = {};
+    presetCountsAutomatic = true;
     roundsInput.value = 7;
     regroupField.classList.add('collapsed');
     regroupToggle.checked = false;

@@ -2,7 +2,7 @@
   <img src="./icon.svg" alt="Koriander Padel Toss" width="88" />
 </p>
 
-<h1 align="center">🎾 Koriander Padel Toss</h1>
+<h1 align="center">🎾 Koriander Padel Planner</h1>
 
 <p align="center">
   <strong>Van spelerslijst naar speelindeling, zonder gedoe.</strong><br />
@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <a href="https://hound83.github.io/padel-toss-kotc-americano/"><strong>▶️ OPEN DE KORIANDER TOSS</strong></a>
+  <a href="https://hound83.github.io/padel-toss-kotc-americano/"><strong>▶️ OPEN DE PADEL PLANNER</strong></a>
 </p>
 
 <p align="center">
@@ -34,18 +34,18 @@
 ## Zo werkt het
 
 1. **Open de [webapp](https://hound83.github.io/padel-toss-kotc-americano/)** en kies een speelvorm.
-2. **Stel je avond in:** kies het aantal banen, het aantal spelers en waar van toepassing de rondes of niveaugroepen.
-3. **Vul de namen in** of vink **Namen als lijst plakken** aan en plak één naam per regel. Genereer daarna de indeling.
+2. **Stel je avond in:** kies het aantal banen. Toss en Gesplitste Toss starten met 8 spelers per baan (Gesplitste Toss gelijk verdeeld over Zilver en Goud), Americano en KOC met 4 spelers per baan. Je kunt de aantallen met de tellers aanpassen.
+3. **Vul de namen in** of klik op **📋 Namenlijst plakken**. Plak één naam per regel in het tijdelijke zijpaneel; lege regels worden overgeslagen. Genereer daarna de indeling.
 4. **Speel!** Bekijk het schema, houd bij Americano de scores bij of gebruik de presentatiemodus om de indeling duidelijk te tonen.
 
 ### Handig tijdens de toss
 
 - **Namen aanpassen:** ook wanneer de groep op het laatste moment verandert.
-- **Namenlijst plakken:** beschikbaar bij Toss, Gesplitste Toss (per niveau), Americano en KOC. De geplakte namen vullen de naamvelden in volgorde; het vooraf ingestelde aantal plekken blijft leidend. In **Spelers wijzigen** kun je via hetzelfde vinkje juist meerdere *nieuwe* spelers tegelijk toevoegen, zonder bestaande spelers te vervangen.
+- **Namenlijst plakken:** beschikbaar bij Toss, Gesplitste Toss (afzonderlijk per Zilver/Goud/Platina), Americano en KOC. Een tijdelijk paneel rechts laat je de lijst corrigeren, het aantal spelers of banen na bevestiging aanpassen en dubbele namen vóór overnemen oplossen. Sluiten of Escape laat alle bestaande spelersvelden ongemoeid; na overnemen kun je **Ongedaan maken** gebruiken. In **Spelers wijzigen** kun je via hetzelfde paneel meerdere *nieuwe* spelers toevoegen zonder bestaande resultaten te overschrijven.
 - **Schema bewaren en terughalen:** je kunt je speelschema opslaan als bestand en later weer laden.
 - **Automatisch hervatten:** de app onthoudt je sessie in dezelfde browser.
 - **Presentatiemodus:** toon de indeling overzichtelijk op een groter scherm.
-- **Nederlands en Engels:** wissel de taal in de app.
+- **Nederlands en Engels:** wissel op elk scherm via de taalkeuze rechtsboven.
 
 ### Speciaal voor KOC
 
@@ -95,7 +95,7 @@ node --test tests/koc.test.cjs
 
 <p align="center">
   <strong>Klaar om te spelen?</strong><br />
-  <a href="https://hound83.github.io/padel-toss-kotc-americano/"><strong>🎾 Start de Koriander Toss</strong></a><br />
+  <a href="https://hound83.github.io/padel-toss-kotc-americano/"><strong>🎾 Start de Padel Planner</strong></a><br />
   <em>Gemaakt voor gezellige én goed georganiseerde padelavonden.</em>
 </p>
 
