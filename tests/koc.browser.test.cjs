@@ -116,7 +116,7 @@ test('real browser: KOC setup, entrants, absence, language, reload and mobile la
   t.after(() => english.close());
   const englishPage = await english.newPage();
   await englishPage.goto(origin);
-  await englishPage.locator('#homeLangSwitch .lang-btn[data-lang="en"]').click();
+  await englishPage.locator('#langSwitch .lang-btn[data-lang="en"]').click();
   await englishPage.locator('.format-btn[data-format="koc"]').click();
   await englishPage.locator('#kocEntryToggle').check();
   assert.match(await englishPage.locator('.koc-entry-option').innerText(),/Place incoming players/);

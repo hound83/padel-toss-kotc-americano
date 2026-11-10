@@ -33,21 +33,29 @@ test('paste one name per line in KOC, Toss, Americano, Split Toss and roster edi
     t.after(() => context.close());
     const page = await context.newPage();
     await page.goto(origin);
-    if (lang === 'en') await page.locator('#homeLangSwitch .lang-btn[data-lang="en"]').click();
+    if (lang === 'en') await page.locator('#langSwitch .lang-btn[data-lang="en"]').click();
     await page.locator('.format-btn[data-format="' + format + '"]').click();
     return page;
   }
   async function useList(page, id, names){
     const panel = page.locator('#' + id);
-    if (!(await panel.locator('.bulk-entry-toggle input').isChecked()))
-      await panel.locator('.bulk-entry-toggle input').check();
-    await panel.locator('textarea').fill(names);
-    await panel.locator('.bulk-entry-actions button').click();
-    return panel.locator('.bulk-entry-status');
+    if (await page.locator('#bulkDrawerLayer').isVisible())
+      await page.locator('#bulkDrawerCancel').click();
+    await panel.locator('.bulk-entry-trigger').click();
+    await page.locator('#bulkDrawerText').fill(names);
+    await page.locator('#bulkDrawerApply').click();
+    return await page.locator('#bulkDrawerLayer').isVisible()
+      ? page.locator('#bulkDrawerError') : panel.locator('.bulk-entry-status');
   }
 
   const koc = await pageFor('koc');
-  assert.equal(await koc.locator('#bulkKoc .bulk-entry-body').isVisible(), false);
+  assert.equal(await koc.locator('#bulkDrawerLayer').isVisible(), false);
+  await koc.locator('#kocRoster .koc-player input[type=text]').first().fill('Handmatig');
+  await koc.locator('#bulkKoc .bulk-entry-trigger').click();
+  await koc.locator('#bulkDrawerText').fill('Tijdelijk\nNog niet overnemen');
+  await koc.locator('#bulkDrawerCancel').click();
+  assert.equal(await koc.locator('#kocRoster .koc-player input[type=text]').first().inputValue(), 'Handmatig',
+    'closing the drawer leaves prefilled names untouched');
   const sixteen = Array.from({length:16}, (_, i) => 'Deelnemer ' + (i + 1));
   await useList(koc, 'bulkKoc', '  ' + sixteen.slice(0, 8).join('\r\n') + '\r\n\r\n' + sixteen.slice(8).join('\n'));
   assert.deepEqual(await koc.locator('#kocRoster .koc-player input[type=text]').evaluateAll(els => els.map(el => el.value)), sixteen);
@@ -63,23 +71,32 @@ test('paste one name per line in KOC, Toss, Americano, Split Toss and roster edi
   assert.equal(await koc.locator('#kocResult .koc-court').count(), 4);
 
   const overCapacity = await useList(koc, 'bulkKoc', sixteen.concat(['Extra']).join('\n'));
-  assert.match(await overCapacity.textContent(), /17 namen.*16 plekken/);
+  assert.match(await overCapacity.textContent(), /17 namen/);
   assert.equal(await koc.locator('#kocRoster .koc-player').first().locator('input[type=text]').inputValue(), 'Deelnemer 1');
+  await koc.locator('#bulkDrawerAdjustCount').check();
+  await koc.locator('#bulkDrawerApply').click();
+  assert.equal(await koc.locator('#kocRoster .koc-player').count(),20);
+  assert.equal(await koc.locator('#bulkKoc .bulk-undo').isVisible(),true);
+  await koc.locator('#bulkKoc .bulk-undo').click();
+  assert.equal(await koc.locator('#kocRoster .koc-player').count(),16);
   const overLength = await useList(koc, 'bulkKoc', 'L'.repeat(51));
   assert.match(await overLength.textContent(), /50 tekens/);
   assert.equal(await koc.locator('#kocRoster .koc-player').first().locator('input[type=text]').inputValue(), 'Deelnemer 1');
 
-  await useList(koc, 'bulkKoc', 'A\nB\nC\nA');
-  assert.equal(await koc.locator('#kocRoll').isEnabled(), false, 'duplicates block generating');
-  assert.equal(await koc.locator('#kocDupError').isVisible(), true);
+  const duplicate = await useList(koc, 'bulkKoc', 'A\nB\nC\nA');
+  assert.match(await duplicate.textContent(), /regels 1 en 4/);
+  assert.equal(await koc.locator('#kocRoll').isEnabled(), true, 'invalid paste does not modify the existing valid roster');
+  assert.equal(await koc.locator('#kocDupError').isVisible(), false);
   await useList(koc, 'bulkKoc', sixteen.join('\n'));
   assert.equal(await koc.locator('#kocRoll').isEnabled(), true);
   await koc.locator('#kocRoll').click();
   await koc.locator('#kocBack').click();
   await koc.locator('#confirmYesBtn').click();
-  assert.equal(await koc.locator('#bulkKoc textarea').inputValue(), '',
+  await koc.locator('.format-btn[data-format="koc"]').click();
+  await koc.locator('#bulkKoc .bulk-entry-trigger').click();
+  assert.equal(await koc.locator('#bulkDrawerText').inputValue(), '',
     'starting over clears previously pasted personal names');
-  assert.equal(await koc.locator('#bulkKoc .bulk-entry-toggle input').isChecked(), false);
+  await koc.locator('#bulkDrawerCancel').click();
 
   // Ordinary Toss: the player count stays authoritative and blank remainder
   // continues to receive normal placeholder names.
@@ -90,8 +107,15 @@ test('paste one name per line in KOC, Toss, Americano, Split Toss and roster edi
   await useList(toss, 'bulkSingle', ' Anne \n\nBas\nCleo\nDirk\nEva\nFred');
   assert.deepEqual(await toss.locator('#namesGrid .name-field input').evaluateAll(els => els.map(el => el.value)), eight.slice(0,6).concat(['','']));
   const tooMany = await useList(toss, 'bulkSingle', eight.concat(['Iris']).join('\n'));
-  assert.match(await tooMany.textContent(), /9 namen.*8 plekken/);
+  assert.match(await tooMany.textContent(), /9 namen/);
   assert.equal(await toss.locator('#namesGrid .name-field input').first().inputValue(), 'Anne');
+  await toss.locator('#bulkDrawerAdjustCount').check();
+  await toss.locator('#bulkDrawerApply').click();
+  assert.equal(await toss.locator('#namesGrid .name-field').count(),9);
+  assert.equal(await toss.locator('#playerCountInput').inputValue(),'9');
+  await toss.locator('#bulkSingle .bulk-undo').click();
+  assert.equal(await toss.locator('#namesGrid .name-field').count(),8);
+  assert.equal(await toss.locator('#namesGrid .name-field input').first().inputValue(),'Anne');
   await useList(toss, 'bulkSingle', eight.join('\n'));
   await toss.locator('#generateBtn').click();
   assert.equal(await toss.locator('#panel3').isVisible(), true);
@@ -103,9 +127,10 @@ test('paste one name per line in KOC, Toss, Americano, Split Toss and roster edi
   await useList(toss, 'bulkEditSingle', 'Iris\nJoris');
   assert.deepEqual((await toss.locator('#editRosterList .edit-row input').evaluateAll(els => els.map(el => el.value))).slice(0,8), beforeEdit);
   assert.equal(await toss.locator('#editRosterList .edit-row').count(), 10);
-  await useList(toss, 'bulkEditSingle', 'Anne');
-  assert.equal(await toss.locator('#editError').isVisible(), true, 'duplicate pasted name is blocked');
-  await toss.locator('#editRosterList .edit-row').last().locator('.remove-btn').click();
+  const duplicateEdit = await useList(toss, 'bulkEditSingle', 'Anne');
+  assert.match(await duplicateEdit.textContent(), /staat al/);
+  assert.equal(await toss.locator('#editRosterList .edit-row').count(),10,'duplicate paste is atomic');
+  await toss.locator('#bulkDrawerCancel').click();
   assert.equal(await toss.locator('#editError').isVisible(), false);
   await toss.locator('#editApplyBtn').click();
   assert.equal(await toss.locator('#panel3').isVisible(), true);
@@ -117,7 +142,7 @@ test('paste one name per line in KOC, Toss, Americano, Split Toss and roster edi
   await americano.locator('#continueTo2').click();
   const englishStatus = await useList(americano, 'bulkSingle', eight.join('\n'));
   assert.match(await englishStatus.textContent(), /8 names applied/);
-  assert.match(await americano.locator('#bulkSingle .bulk-entry-toggle').innerText(), /Paste a list of names/);
+  assert.match(await americano.locator('#bulkSingle .bulk-entry-trigger').innerText(), /Paste names/);
   await americano.locator('#generateBtn').click();
   assert.equal(await americano.locator('#panel3').isVisible(), true);
 
@@ -134,8 +159,9 @@ test('paste one name per line in KOC, Toss, Americano, Split Toss and roster edi
   await useList(split,'bulkErvaren','G1\nG2\nG3\nG4');
   await useList(split,'bulkGevorderd','P1\nP2\nP3\nP4');
   assert.deepEqual(await split.locator('#namesGridGevorderd input').evaluateAll(els => els.map(el => el.value)), ['P1','P2','P3','P4']);
-  await useList(split,'bulkErvaren','Z1\nG2\nG3\nG4');
-  assert.equal(await split.locator('#step2DupError').isVisible(),true);
+  const splitDuplicate = await useList(split,'bulkErvaren','Z1\nG2\nG3\nG4');
+  assert.match(await splitDuplicate.textContent(), /andere spelerslijst/);
+  assert.equal(await split.locator('#namesGridErvaren input').first().inputValue(),'G1');
   await useList(split,'bulkErvaren','G1\nG2\nG3\nG4');
   assert.equal(await split.locator('#step2DupError').isVisible(),false);
   await split.locator('#generateBtn').click();
