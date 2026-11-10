@@ -38,10 +38,10 @@ test('court defaults and name-list drawer retain the ordinary player layout', as
 
   const toss = await formatPage('toss');
   assert.equal(await toss.locator('#playerCountInput').inputValue(),'16');
-  await toss.locator('.court-btn[data-courts="3"]').click();
+  await toss.locator('#courtsSelect .court-btn[data-courts="3"]').click();
   assert.equal(await toss.locator('#playerCountInput').inputValue(),'24');
   await toss.locator('#playerCountInput').fill('19');
-  await toss.locator('.court-btn[data-courts="4"]').click();
+  await toss.locator('#courtsSelect .court-btn[data-courts="4"]').click();
   assert.equal(await toss.locator('#playerCountInput').inputValue(),'19','manual count overrides preset');
   await toss.locator('#continueTo2').click();
   assert.equal(await toss.locator('#namesGrid .name-field').count(),19);
@@ -67,7 +67,7 @@ test('court defaults and name-list drawer retain the ordinary player layout', as
 
   const americano = await formatPage('americano');
   assert.equal(await americano.locator('#playerCountInput').inputValue(),'8');
-  await americano.locator('.court-btn[data-courts="3"]').click();
+  await americano.locator('#courtsSelect .court-btn[data-courts="3"]').click();
   assert.equal(await americano.locator('#playerCountInput').inputValue(),'12');
   await americano.locator('#continueTo2').click();
   await americano.locator('#bulkSingle .bulk-entry-trigger').click();
@@ -85,12 +85,12 @@ test('court defaults and name-list drawer retain the ordinary player layout', as
 
   const split = await formatPage('splitToss');
   assert.deepEqual(await split.locator('#splitPlayersBlock input[type=number]').evaluateAll(els=>els.map(e=>e.value)),['8','8','0']);
-  await split.locator('.court-btn[data-courts="3"]').click();
+  await split.locator('#courtsSelect .court-btn[data-courts="3"]').click();
   assert.deepEqual(await split.locator('#splitPlayersBlock input[type=number]').evaluateAll(els=>els.map(e=>e.value)),['12','12','0']);
-  await split.locator('.court-btn[data-courts="4"]').click();
+  await split.locator('#courtsSelect .court-btn[data-courts="4"]').click();
   assert.deepEqual(await split.locator('#splitPlayersBlock input[type=number]').evaluateAll(els=>els.map(e=>e.value)),['16','16','0']);
   await split.locator('#ervarenCountInput').fill('10');
-  await split.locator('.court-btn[data-courts="2"]').click();
+  await split.locator('#courtsSelect .court-btn[data-courts="2"]').click();
   assert.deepEqual(await split.locator('#splitPlayersBlock input[type=number]').evaluateAll(els=>els.map(e=>e.value)),['16','10','0']);
   await split.locator('#continueTo2').click();
   await split.locator('#namesGridBeginner input').first().fill('Zilver origineel');
