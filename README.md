@@ -35,12 +35,13 @@
 
 1. **Open de [webapp](https://hound83.github.io/padel-toss-kotc-americano/)** en kies een speelvorm.
 2. **Stel je avond in:** kies het aantal banen, het aantal spelers en waar van toepassing de rondes of niveaugroepen.
-3. **Vul de namen in** en genereer de indeling.
+3. **Vul de namen in** of vink **Namen als lijst plakken** aan en plak één naam per regel. Genereer daarna de indeling.
 4. **Speel!** Bekijk het schema, houd bij Americano de scores bij of gebruik de presentatiemodus om de indeling duidelijk te tonen.
 
 ### Handig tijdens de toss
 
 - **Namen aanpassen:** ook wanneer de groep op het laatste moment verandert.
+- **Namenlijst plakken:** beschikbaar bij Toss, Gesplitste Toss (per niveau), Americano en KOC. De geplakte namen vullen de naamvelden in volgorde; het vooraf ingestelde aantal plekken blijft leidend. In **Spelers wijzigen** kun je via hetzelfde vinkje juist meerdere *nieuwe* spelers tegelijk toevoegen, zonder bestaande spelers te vervangen.
 - **Schema bewaren en terughalen:** je kunt je speelschema opslaan als bestand en later weer laden.
 - **Automatisch hervatten:** de app onthoudt je sessie in dezelfde browser.
 - **Presentatiemodus:** toon de indeling overzichtelijk op een groter scherm.

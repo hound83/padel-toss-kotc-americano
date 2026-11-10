@@ -15,11 +15,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: KOC assignment tests
-        run: node --test tests/koc.test.cjs
+      - name: Scheduling and name-list unit tests
+        run: node --test tests/koc.test.cjs tests/bulk-names.test.cjs
       - name: Install browser test dependencies
         run: |
           npm install --no-save --no-package-lock playwright@1.58.0
           npx playwright install --with-deps chromium
-      - name: KOC browser smoke test
-        run: node --test tests/koc.browser.test.cjs
+      - name: All browser integration tests
+        run: node --test tests/*.browser.test.cjs
