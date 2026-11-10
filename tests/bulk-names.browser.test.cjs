@@ -74,6 +74,12 @@ test('paste one name per line in KOC, Toss, Americano, Split Toss and roster edi
   assert.equal(await koc.locator('#kocDupError').isVisible(), true);
   await useList(koc, 'bulkKoc', sixteen.join('\n'));
   assert.equal(await koc.locator('#kocRoll').isEnabled(), true);
+  await koc.locator('#kocRoll').click();
+  await koc.locator('#kocBack').click();
+  await koc.locator('#confirmYesBtn').click();
+  assert.equal(await koc.locator('#bulkKoc textarea').inputValue(), '',
+    'starting over clears previously pasted personal names');
+  assert.equal(await koc.locator('#bulkKoc .bulk-entry-toggle input').isChecked(), false);
 
   // Ordinary Toss: the player count stays authoritative and blank remainder
   // continues to receive normal placeholder names.

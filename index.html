@@ -3980,6 +3980,17 @@
     });
   }
 
+  function resetBulkNameTools(){
+    document.querySelectorAll('.bulk-entry').forEach(function(box){
+      box.querySelector('.bulk-entry-toggle input').checked = false;
+      box.querySelector('.bulk-entry-body').hidden = true;
+      box.querySelector('textarea').value = '';
+      var status = box.querySelector('.bulk-entry-status');
+      status.textContent = '';
+      status.classList.remove('is-error');
+    });
+  }
+
   editAddBtn.addEventListener('click', function(){
     editRosterList.appendChild(buildEditRow(null));
     checkEditDuplicates();
@@ -4353,6 +4364,7 @@
 
   function applyLoadedState(st){
     state = st;
+    resetBulkNameTools();
     if (state.lang !== 'en') state.lang = 'nl';
     document.querySelectorAll('.lang-btn').forEach(function(b){
       b.classList.toggle('active', b.getAttribute('data-lang') === state.lang);
@@ -4457,6 +4469,7 @@
 
   function doStartOver(){
     var keepLang = state.lang;
+    resetBulkNameTools();
     state = {
       step: 1, lang: keepLang, format: 'toss',
       playerCount: null, levelCounts: [8, 8, 0],
