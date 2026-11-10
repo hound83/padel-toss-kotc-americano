@@ -653,6 +653,11 @@
     color:#fff;
   }
   .board + .board{ margin-top:16px; }
+  .qualification-archive{margin-top:18px;border:1px solid var(--line);border-radius:12px;background:var(--surface);overflow:hidden;}
+  .qualification-archive summary{padding:14px 18px;cursor:pointer;font-weight:700;color:var(--teal-900);}
+  .qualification-archive .board{border-radius:0;}
+  .qualification-note{font-size:var(--fs-sm);color:var(--ink-soft);padding:0 18px;margin:0 0 12px;}
+
   .board-head{ display:flex; align-items:baseline; justify-content:space-between; gap:10px; }
   .board h3{
     font-family:var(--font-display);
@@ -1320,6 +1325,9 @@
       cpButton: 'Splits in Goud & Zilver \u2192',
       cpError: 'Vul eerst alle scores in voor ronde 1–{n}.',
       boardTitle: 'Klassement',
+      qualificationArchive: 'Kwalificatie · eindstand bekijken',
+      qualificationTitle: 'Kwalificatie · fase 1',
+      qualificationLockedNote: 'De groepen Goud en Zilver zijn bij de splitsing definitief vastgezet. Latere scorecorrecties in de kwalificatie veranderen de groepsindeling niet.',
       boardSub: 'Bij gelijke stand beslist saldo, dan onderling resultaat',
       thRank: '#', thPlayer: 'Speler', thGroup: 'Grp', thDiff: '±', thPts: 'Pt', thAvg: 'Gem',
       recalcNote: 'Punten worden teruggerekend naar {ref} potjes voor een eerlijke vergelijking. * = teruggerekend omdat iemand meer potjes speelde. ▲ = juist opgehoogd, voor wie er vanaf het begin bij was maar door de loting minder potjes kreeg. Spelers die gestopt zijn (UIT) of later zijn toegevoegd houden hun punten precies zoals behaald.',
@@ -1516,6 +1524,9 @@
       cpButton: 'Split into Gold & Silver \u2192',
       cpError: 'Enter every score for rounds 1–{n} first.',
       boardTitle: 'Leaderboard',
+      qualificationArchive: 'Qualification · view final standings',
+      qualificationTitle: 'Qualification · phase 1',
+      qualificationLockedNote: 'Gold and Silver groups were locked when the split was confirmed. Later score corrections to qualification matches do not change the group memberships.',
       boardSub: 'Ties broken by point diff, then head-to-head',
       thRank: '#', thPlayer: 'Player', thGroup: 'Grp', thDiff: '±', thPts: 'Pts', thAvg: 'Avg',
       recalcNote: 'Points are recalculated back to {ref} games for a fair comparison. * = scaled down because they played more games. ▲ = scaled up instead, for someone who was there from the start but drew fewer games by the luck of the rotation. Players who\'ve left (OUT) or joined later keep their points exactly as scored.',
@@ -3758,24 +3769,63 @@
         var pool = state.pools.filter(function(p){ return p.id === g.id; })[0];
         if (!pool || !pool.resultsEnabled) return;
         var result = computeTotals(g.id);
-        var rows = rankPlayers(result.totals, result.h2h);
-        panels.push({ key: g.id, title: g.label + ' \u2013 ' + t('boardTitle'), rows: rows, h2h: result.h2h, showGroupTag: false, cutoffIdx: -1, recalculated: result.recalculated, referenceGames: result.referenceGames });
+        panels.push({ key: g.id, title: g.label + ' – ' + t('boardTitle'),
+          rows: rankPlayers(result.totals, result.h2h), h2h: result.h2h,
+          showGroupTag: false, cutoffIdx: -1,
+          recalculated: result.recalculated, referenceGames: result.referenceGames });
+      });
+    } else if (state.format === 'americano' && state.splitDone){
+      // Phase 2 is a NEW competition. Gold and Silver both start at zero:
+      // the qualification scores are retained only in the historical pool.
+      ['top','bottom'].forEach(function(poolId){
+        var pool = state.pools.find(function(p){ return p.id === poolId; });
+        if (!pool) return;
+        var result = computeTotals(poolId);
+        panels.push({ key: poolId,
+          title: t(poolId === 'top' ? 'poolLabelTop' : 'poolLabelBottom') + ' – ' + t('boardTitle'),
+          rows: rankPlayers(result.totals, result.h2h), h2h: result.h2h,
+          showGroupTag: false, cutoffIdx: -1,
+          recalculated: result.recalculated, referenceGames: result.referenceGames });
       });
     } else {
       var anyResults = state.pools.some(function(p){ return p.resultsEnabled; });
       if (anyResults){
         var result = computeTotals();
-        var rows = rankPlayers(result.totals, result.h2h);
-        var cutoffIdx = -1;
-        if (state.splitDone) cutoffIdx = rows.findIndex(function(r){ return r.group === 'bottom'; });
-        panels.push({ key: 'main', title: t('boardTitle'), rows: rows, h2h: result.h2h, showGroupTag: true, cutoffIdx: cutoffIdx, recalculated: result.recalculated, referenceGames: result.referenceGames });
+        panels.push({ key: 'main', title: t('boardTitle'),
+          rows: rankPlayers(result.totals, result.h2h), h2h: result.h2h,
+          showGroupTag: true, cutoffIdx: -1,
+          recalculated: result.recalculated, referenceGames: result.referenceGames });
       }
     }
 
     boardCol.style.display = panels.length ? '' : 'none';
     panels.forEach(function(p){ boardCol.appendChild(buildBoardPanel(p)); });
 
+    if (state.format === 'americano' && state.splitDone){
+      var qualification = computeTotals('main');
+      var archive = document.createElement('details');
+      archive.className = 'qualification-archive';
+      var summary = document.createElement('summary');
+      summary.textContent = t('qualificationArchive');
+      archive.appendChild(summary);
+      var explanation = document.createElement('p');
+      explanation.className = 'qualification-note';
+      explanation.textContent = t('qualificationLockedNote');
+      archive.appendChild(explanation);
+      archive.appendChild(buildBoardPanel({
+        key:'qualification', title:t('qualificationTitle'),
+        rows:rankPlayers(qualification.totals, qualification.h2h),
+        h2h:qualification.h2h, showGroupTag:false, cutoffIdx:-1,
+        recalculated:qualification.recalculated,
+        referenceGames:qualification.referenceGames
+      }));
+      boardCol.appendChild(archive);
+    }
+
     if (playcountVisible) renderPlayCounts();
+    if (document.body.classList.contains('presentation-mode') && state.step !== 4){
+      renderLiveStandings();
+    }
   }
 
   function doSplit(){
