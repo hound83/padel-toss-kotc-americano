@@ -37,6 +37,12 @@ test('court defaults and name-list drawer retain the ordinary player layout', as
   }
 
   const toss = await formatPage('toss');
+  // Paste-list example names are translated independently of the roster.
+  assert.equal(await toss.locator('#bulkDrawerText').getAttribute('placeholder'), 'Jan\\nEmma\\nThomas\\nSophie'.replaceAll('\\n', '\n'));
+  await toss.locator('#langSwitch .lang-btn[data-lang="en"]').click();
+  assert.equal(await toss.locator('#bulkDrawerText').getAttribute('placeholder'), 'James\\nOlivia\\nHenry\\nCharlotte'.replaceAll('\\n', '\n'));
+  await toss.locator('#langSwitch .lang-btn[data-lang="nl"]').click();
+
   assert.equal(await toss.locator('#playerCountInput').inputValue(),'16');
   await toss.locator('#courtsSelect .court-btn[data-courts="3"]').click();
   assert.equal(await toss.locator('#playerCountInput').inputValue(),'24');
