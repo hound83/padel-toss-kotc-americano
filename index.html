@@ -78,7 +78,15 @@
     padding-bottom:18px;
     border-bottom:2px solid var(--teal-900);
   }
-  .brand{ display:flex; align-items:baseline; gap:12px; }
+  .brand{ display:flex; align-items:center; gap:12px; min-width:0; }
+  .brand-copy{display:flex;flex-direction:column;min-width:0;}
+  .brand-eyebrow{font-size:var(--fs-2xs);font-weight:750;text-transform:uppercase;letter-spacing:.10em;color:var(--ink-soft);}
+  .format-mark{font-size:29px;flex:none;line-height:1;}
+  .masthead-back{background:var(--surface);border:1px solid var(--line);border-radius:9px;color:var(--teal-900);font-size:var(--fs-sm);font-weight:700;cursor:pointer;padding:9px 12px;white-space:nowrap;}
+  .masthead-back:hover{border-color:var(--teal-700);}
+  .masthead-back[hidden],.format-mark[hidden],.brand-eyebrow[hidden]{display:none!important;}
+  #appTitle:focus{outline:none;}
+
   .brand h1{
     font-family:var(--font-display);
     font-weight:800;
@@ -152,7 +160,7 @@
   .panel.visible{ display:block; }
 
   /* The first screen deliberately contains only the four game choices. */
-  .mode-home{min-height:calc(100svh - 180px);display:flex;flex-direction:column;justify-content:center;gap:22px;}
+  .mode-home{min-height:calc(100svh - 180px);display:none;flex-direction:column;justify-content:center;gap:22px;}
   .panel.mode-home.visible{display:flex;}
   .mode-home h2{margin:0;text-align:center;font-size:clamp(26px,4vw,42px);color:var(--teal-900);}
   .mode-home > p{text-align:center;color:var(--ink-soft);margin:-12px 0 4px;}
@@ -483,6 +491,10 @@
     .masthead{align-items:center;gap:8px;}
     .brand h1{font-size:clamp(19px,4.7vw,28px);overflow-wrap:anywhere;}
     .brand{min-width:0;flex:1;gap:7px;}
+    .format-mark{font-size:22px;}
+    .masthead-back{order:3;padding:7px 9px;}
+    .meta-strip{order:4;width:100%;}
+    .lang-switch{order:2;}
     .meta-strip{order:3;width:100%;}
     .lang-btn{padding:6px 9px;}
     .bulk-drawer{padding:18px 16px;}
@@ -842,9 +854,14 @@
 
   <div class="masthead">
     <div class="brand">
-      <h1 id="appTitle">PADEL PLANNER</h1>
+      <span class="format-mark" id="formatMark" aria-hidden="true" hidden></span>
+      <div class="brand-copy">
+        <span class="brand-eyebrow" id="brandEyebrow" data-i18n="chosenFormat" hidden>Gekozen speelvorm</span>
+        <h1 id="appTitle" tabindex="-1">PADEL PLANNER</h1>
+      </div>
       <span class="ball-dot" aria-hidden="true"></span>
     </div>
+    <button class="masthead-back" id="mastheadBack" type="button" data-i18n="backToModes" hidden>← Speelvormen</button>
     <div class="meta-strip" id="metaStrip" style="display:none;"></div>
     <div class="lang-switch" id="langSwitch" aria-label="Language / Taal">
       <button type="button" class="lang-btn active" data-lang="nl" aria-pressed="true">NL</button>
@@ -1238,6 +1255,7 @@
       stepSetup: 'Instellen', stepNames: 'Namen', stepSchedule: 'Schema',
       homeTitle: 'Wat gaan we spelen?', homeSub: 'Kies een speelvorm om te beginnen',
       backToModes: '← Speelvormen',
+      chosenFormat: 'Gekozen speelvorm',
       p1Title: 'Instellingen',
       p1Sub: 'Geef aan hoeveel banen je hebt en hoeveel spelers er komen. Er spelen maar 4 tegelijk per baan — wie niet speelt, wacht tot de volgende ronde.',
       p1PlayersHeading: 'Hoeveel spelers?',
@@ -1437,6 +1455,7 @@
       stepSetup: 'Setup', stepNames: 'Names', stepSchedule: 'Schedule',
       homeTitle: 'What shall we play?', homeSub: 'Choose a format to get started',
       backToModes: '← Formats',
+      chosenFormat: 'Selected format',
       p1Title: 'Settings',
       p1Sub: 'Set how many courts and players you have. Only 4 play on a court at once — whoever isn\'t playing waits for the next round.',
       p1PlayersHeading: 'How many players?',
@@ -1658,18 +1677,29 @@
   // The heading names the format actually being played, so a printed or shared
   // schedule says what it is without needing the setup screen for context.
   function renderAppTitle(){
-    if (state.step === 0){
-      document.getElementById('appTitle').textContent = 'PADEL PLANNER';
+    var isHome = state.step === 0;
+    var title = document.getElementById('appTitle');
+    var icon = document.getElementById('formatMark');
+    var eyebrow = document.getElementById('brandEyebrow');
+    if (isHome){
+      title.textContent = 'PADEL PLANNER';
       document.title = 'Padel Planner';
+      icon.hidden = true;
+      eyebrow.hidden = true;
       return;
     }
-    var key = state.format === 'splitToss' ? 'formatSplitToss'
-            : state.format === 'americano' ? 'formatAmericano'
-            : state.format === 'koc' ? 'formatKoc'
-            : 'formatToss';
-    var el = document.getElementById('appTitle');
-    if (el) el.textContent = t(key);
-    document.title = t(key);
+    var formats = {
+      toss:{key:'formatToss',icon:'🎾'},
+      splitToss:{key:'formatSplitToss',icon:'🗂️'},
+      americano:{key:'formatAmericano',icon:'🏆'},
+      koc:{key:'formatKoc',icon:'👑'}
+    };
+    var format = formats[state.format] || formats.toss;
+    title.textContent = t(format.key);
+    document.title = t(format.key) + ' · Padel Planner';
+    icon.textContent = format.icon;
+    icon.hidden = false;
+    eyebrow.hidden = false;
   }
 
   var state = {
@@ -2402,7 +2432,15 @@
     var c2 = document.getElementById('cancelToScheduleBtn2');
     if (c1) c1.style.display = hasSchedule ? '' : 'none';
     if (c2) c2.style.display = hasSchedule ? '' : 'none';
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    document.getElementById('mastheadBack').hidden = n === 0;
+    // The old home tiles used to stay visible because .mode-home set
+    // display:flex unconditionally. Keep the selected format on a clean screen.
+    // Never animate a long scroll as entire panels change height.
+    window.scrollTo({top:0,behavior:'auto'});
+    requestAnimationFrame(function(){
+      var heading = document.getElementById('appTitle');
+      if (heading) heading.focus({preventScroll:true});
+    });
   }
 
   // ---------- Language switch (global, including schedules and KOC) ----------
@@ -4940,6 +4978,7 @@
     }
   }
   document.getElementById('backToModes').addEventListener('click', backToModePicker);
+  document.getElementById('mastheadBack').addEventListener('click', backToModePicker);
   document.getElementById('kocBack').addEventListener('click', backToModePicker);
 
   // ---------- Local-first recovery ----------
