@@ -47,6 +47,18 @@
 - **Presentatiemodus:** toon de indeling overzichtelijk op een groter scherm.
 - **Nederlands en Engels:** wissel op elk scherm via de taalkeuze rechtsboven.
 
+### Live-presentatiemodus
+
+De presentatiemodus is een afzonderlijke liveweergave, niet het hele lange schema:
+
+- **KOC:** uitsluitend de startindeling per baan, zonder invoervelden of speelvormkeuze.
+- **Toss:** huidige ronde en volgende ronde; gebruik **vorige/volgende** om door te schuiven (er zijn geen uitslagen om automatisch af te leiden wanneer een ronde klaar is).
+- **Americano:** huidige wedstrijden, volgende ronde en het klassement. De actieve ronde schuift automatisch vooruit zodra alle uitslagen van die ronde compleet zijn. Met de pijlen kun je tijdelijk een andere ronde tonen en daarna **Auto** hervatten.
+- **Gesplitste Toss:** de huidige en volgende ronde van alle niveaus. Automatisch doorschuiven kan alleen wanneer alle actieve niveaus resultaten bijhouden; anders gebruik je de pijlen.
+- **Goud/Zilver na de Americano-kwalificatie:** elke groep krijgt een nieuw klassement vanaf nul. De kwalificatieresultaten blijven beschikbaar als historie. Een latere scorecorrectie verandert nooit automatisch de al vastgestelde samenstelling van Goud en Zilver.
+
+De live-rondekeuze wordt samen met het schema opgeslagen. **Volledig schema** brengt je terug naar de beheermodus.
+
 ### Speciaal voor KOC
 
 - Kies **1 tot en met 4 banen** met dezelfde knoppen als bij de andere speelvormen, of **5 tot en met 12 banen** via de dropdown.
