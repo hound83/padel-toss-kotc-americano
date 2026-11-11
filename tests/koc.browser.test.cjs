@@ -9,7 +9,7 @@ const http = require('node:http');
 const {chromium} = require('playwright');
 
 const root = path.join(__dirname, '..');
-const mime = {'.html':'text/html', '.js':'text/javascript', '.svg':'image/svg+xml',
+const mime = {'.html':'text/html','.css':'text/css', '.js':'text/javascript', '.svg':'image/svg+xml',
   '.webmanifest':'application/manifest+json', '.png':'image/png'};
 
 test('real browser: KOC setup, entrants, absence, language, reload and mobile layout', async t => {
@@ -24,7 +24,7 @@ test('real browser: KOC setup, entrants, absence, language, reload and mobile la
     } catch (e) {res.writeHead(404).end();}
   });
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
-  t.after(() => new Promise(resolve => server.close(resolve)));
+  t.after(() => new Promise(resolve => (server.closeAllConnections(), server.close(resolve))));
   const origin = 'http://127.0.0.1:' + server.address().port;
   const browser = await chromium.launch({headless:true,
     ...(process.env.CHROMIUM_EXECUTABLE_PATH ? {executablePath:process.env.CHROMIUM_EXECUTABLE_PATH} : {})});

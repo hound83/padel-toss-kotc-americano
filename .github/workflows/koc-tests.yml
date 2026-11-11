@@ -22,4 +22,20 @@ jobs:
           npm install --no-save --no-package-lock playwright@1.58.0
           npx playwright install --with-deps chromium
       - name: All browser integration tests
-        run: node --test tests/*.browser.test.cjs
+        run: timeout 120s node --test --test-timeout=60000 --test-reporter=spec tests/*.browser.test.cjs
+        env:
+          PADEL_SCREENSHOT_DIR: test-results
+      - name: Verify the published GitHub Pages release
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: node tests/live-site.smoke.cjs
+        env:
+          PADEL_SITE_URL: https://hound83.github.io/padel-toss-kotc-americano/
+          PADEL_SCREENSHOT_DIR: test-results
+      - name: Browser design previews
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: padel-design-previews
+          path: test-results/*.png
+          if-no-files-found: ignore
+          retention-days: 7

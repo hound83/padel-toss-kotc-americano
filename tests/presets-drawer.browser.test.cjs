@@ -13,12 +13,13 @@ test('court defaults and name-list drawer retain the ordinary player layout', as
     const requestPath = new URL(req.url, 'http://127.0.0.1').pathname;
     const file = path.resolve(root, '.' + (requestPath === '/' ? '/index.html' : requestPath));
     if (!file.startsWith(root + path.sep)) return res.writeHead(403).end();
-    try {res.writeHead(200,{'Content-Type':path.extname(file) === '.js' ? 'text/javascript' : 'text/html'})
+    const mime={'.js':'text/javascript','.css':'text/css','.svg':'image/svg+xml','.png':'image/png','.webmanifest':'application/manifest+json'};
+    try {res.writeHead(200,{'Content-Type':mime[path.extname(file)] || 'text/html'})
       .end(fs.readFileSync(file));}
     catch (e) {res.writeHead(404).end();}
   });
   await new Promise(resolve => server.listen(0,'127.0.0.1',resolve));
-  t.after(() => new Promise(resolve => server.close(resolve)));
+  t.after(() => new Promise(resolve => (server.closeAllConnections(), server.close(resolve))));
   const browser = await chromium.launch({headless:true,
     ...(process.env.CHROMIUM_EXECUTABLE_PATH ? {executablePath:process.env.CHROMIUM_EXECUTABLE_PATH} : {})});
   t.after(() => browser.close());

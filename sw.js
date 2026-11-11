@@ -1,6 +1,6 @@
 /* Offline application shell for the GitHub Pages web app. */
-const CACHE_NAME = 'padel-toss-americano-v220';
-const SHELL = ['./', './index.html', './manifest.webmanifest', './icon.svg', './icon-192.png', './icon-512.png'];
+const CACHE_NAME = 'padel-toss-americano-v230';
+const SHELL = ['./', './index.html', './manifest.webmanifest', './icon.svg', './icon-192.png', './icon-512.png', './visual-theme.css', './assets/mode-toss.svg', './assets/mode-koc.svg', './assets/mode-americano.svg', './assets/mode-split.svg'];
 
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(SHELL)));
