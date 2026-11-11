@@ -199,7 +199,7 @@ test('v2.2: clean navigation and live KOC, Toss, Americano and split Toss', asyn
   await splitScores.locator('#ervarenResultsToggle').check();
   await splitScores.locator('#generateBtn').click();
   await checkScorePlacement(splitScores.locator('.match-card').first(),'.team','.players',true);
-  await splitScores.setViewportSize({width:390,height:844});
+  await splitScores.setViewportSize({width:414,height:844});
   await checkScorePlacement(splitScores.locator('.match-card').first(),'.team','.players',true);
   if(screenshotDir)await splitScores.locator('.match-card').first().screenshot({path:path.join(screenshotDir,'mobile-score-card.png')});
   await splitScores.locator('#presentBtn').click();
@@ -241,7 +241,7 @@ test('v2.2: clean navigation and live KOC, Toss, Americano and split Toss', asyn
   await firstScore.fill('26');
   await firstScore.press('Tab');
   assert.equal(await courtRows.first().locator('input[data-team="t2"]').evaluate(input=>input===document.activeElement),true);
-  for(const [width,inline] of [[390,true],[320,false]]){
+  for(const [width,inline] of [[500,true],[414,true],[390,false],[320,false]]){
     await fourCourtAmericano.setViewportSize({width,height:844});
     await checkNamesFit(courtRows.locator('.players'));
     await checkScorePlacement(courtRows.first(),'.team','.players',inline);
