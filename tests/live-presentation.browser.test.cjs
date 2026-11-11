@@ -534,6 +534,8 @@ test('v2.2: clean navigation and live KOC, Toss, Americano and split Toss', asyn
   assert.deepEqual(testSaved.scores['main-1-1'],{t1:0,t2:32});
   assert.ok(Object.keys(testSaved.scores).some(key=>key.startsWith('top-')));
   assert.ok(Object.keys(testSaved.scores).some(key=>key.startsWith('bottom-')));
+  // The HTTP test origin needs explicit registration. The app registers itself on HTTPS.
+  await testScores.evaluate(()=>navigator.serviceWorker.register('./sw.js'));
   await testScores.waitForFunction(()=>!!navigator.serviceWorker.controller);
   await testScores.context().setOffline(true);
   await testScores.reload();
