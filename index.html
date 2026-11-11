@@ -1245,7 +1245,7 @@
   </section>
 
   <footer class="app-footer">
-    <span id="appVersion">v2.1.2</span>
+    <span id="appVersion">v2.2.0</span>
     <details><summary data-i18n="whatsNew">Wat is nieuw?</summary>
       <ul>
         <li data-i18n="changeBulkNames">Slim namenplakpaneel met controle, spelersaantal aanpassen en ongedaan maken.</li>
@@ -1845,6 +1845,7 @@
     splitDone: false,
     boardHidden: { main: false, beginner: false, ervaren: false, gevorderd: false },
     laterAdditions: {}, // name -> true, for players added via Edit Players after initial creation
+    live: {mode:'auto',round:1,autoFloor:1},
     koc: { courts: 4, roster: [], incomingEnabled: false, assignment: null, displayOrder: null, lastSignature: '' }
   };
 
@@ -3248,6 +3249,7 @@
       { id: 'main', label: null, players: pool.slice(), courts: state.courts, resultsEnabled: hasResults, startRound: 1, endRound: split, rounds: mainRounds }
     ];
     state.scores = {};
+    state.live = {mode:'auto',round:1,autoFloor:1};
 
     renderMeta();
     renderSchedule();
@@ -3304,6 +3306,7 @@
       };
     });
     state.scores = {};
+    state.live = {mode:state.levelResults.every(Boolean)?'auto':'manual',round:1,autoFloor:1};
 
     renderMeta();
     renderSchedule();
@@ -4035,6 +4038,11 @@
     state.pools.push({ id: 'top', label: 'Top', players: topNames, courts: topCourtsCount, resultsEnabled: true, startRound: state.splitRoundStored + 1, endRound: state.totalRoundsPlanned, rounds: topRounds });
     state.pools.push({ id: 'bottom', label: 'Bottom', players: bottomNames, courts: bottomCourtsCount, resultsEnabled: true, startRound: state.splitRoundStored + 1, endRound: state.totalRoundsPlanned, rounds: bottomRounds });
     state.splitDone = true;
+    // Group membership is fixed now. Corrected qualifying scores may update
+    // the archived qualification ranking but MUST NEVER trigger re-seeding.
+    var live = ensureLiveState();
+    live.autoFloor = Math.max(live.autoFloor, state.splitRoundStored + 1);
+    live.round = state.splitRoundStored + 1;
 
     renderSchedule();
     renderLeaderboard();
@@ -4939,6 +4947,7 @@
     if (!Array.isArray(state.activeRosterLevels)) state.activeRosterLevels = [[], [], []];
     if (!Array.isArray(state.activeRoster)) state.activeRoster = [];
     if (!state.scores) state.scores = {};
+    ensureLiveState();  // compatibility with earlier v2 saved schedules
     ensureKocRoster();
 
     // Put every control back in step with the restored state.
@@ -5042,6 +5051,7 @@
       pools: [], scores: {}, splitDone: false,
       boardHidden: { main: false, beginner: false, ervaren: false, gevorderd: false },
       laterAdditions: {},
+      live: {mode:'auto',round:1,autoFloor:1},
       koc: { courts: 4, roster: [], incomingEnabled: false, assignment: null, displayOrder: null, lastSignature: '' }
     };
     playcountSort = {};
