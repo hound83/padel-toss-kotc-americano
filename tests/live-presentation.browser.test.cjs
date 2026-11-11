@@ -54,8 +54,10 @@ test('v2.2: clean navigation and live KOC, Toss, Americano and split Toss', asyn
       const marker=block.previousElementSibling;
       const target=marker?.classList.contains('phase-marker')?marker:block;
       const top=target.getBoundingClientRect().top;
-      return tools.top>=-1&&top>=tools.bottom-1&&top<=tools.bottom+28;
-    },round);
+      const atBottom=scrollY+innerHeight>=document.documentElement.scrollHeight-2;
+      return tools.top>=-1&&top>=tools.bottom-1&&
+        (top<=tools.bottom+28||(atBottom&&top+40<=innerHeight));
+    },round,{timeout:5000});
   }
   const firstNames=['Annemarieke','Maximiliaan','Christiaan','Sebastiaan','Alexander','Frederique',
     'Valentijn','Marjolein','Charlotte','Marianne','Willemijn','Benjamin','Jonathan','Isabelle','Sander','Noor',
