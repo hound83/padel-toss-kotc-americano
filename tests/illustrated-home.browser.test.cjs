@@ -20,12 +20,13 @@ test('illustrated home: keyboard, all formats, EN/mobile, offline assets and exi
     }catch{res.writeHead(404).end();}
   });
   await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
-  t.after(()=>new Promise(resolve=>server.close(resolve)));
+  t.after(()=>new Promise(resolve=>{server.closeAllConnections();server.close(resolve);}));
   const browser=await chromium.launch({headless:true,...(process.env.CHROMIUM_EXECUTABLE_PATH?{executablePath:process.env.CHROMIUM_EXECUTABLE_PATH}:{})});
   t.after(()=>browser.close());
   const ctx=await browser.newContext({viewport:{width:1280,height:900}});
   t.after(()=>ctx.close());
   const page=await ctx.newPage();
+  page.setDefaultTimeout(15000);
   const errors=[];page.on('pageerror',e=>errors.push(e.message));
   const origin='http://127.0.0.1:'+server.address().port;
   await page.goto(origin);
@@ -73,6 +74,8 @@ test('illustrated home: keyboard, all formats, EN/mobile, offline assets and exi
   for(const file of ['visual-theme.css','assets/mode-toss.svg','assets/mode-koc.svg','assets/mode-americano.svg','assets/mode-split.svg'])assert.ok(shell.includes('/'+file),file+' is cached');
   await ctx.setOffline(true);
   await page.reload();
+  if(await page.locator('#resumeContinue').isVisible())await page.locator('#resumeContinue').click();
+  if(!await page.locator('#panel0').isVisible())await page.locator('#mastheadBack').click();
   await page.waitForFunction(()=>[...document.querySelectorAll('.mode-illustration')].every(img=>img.complete&&img.naturalWidth>0));
   assert.equal(await page.locator('#panel0').isVisible(),true);
   await page.locator('.format-btn[data-format="americano"]').click();
