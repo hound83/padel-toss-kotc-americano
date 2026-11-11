@@ -1,0 +1,55 @@
+/* Approved illustrated navy/lime design. Court art is shared across modes. */
+.mode-home{min-height:0;justify-content:flex-start;padding:20px 0 8px;gap:22px;}
+.mode-home h2{font-size:clamp(30px,4.3vw,48px);letter-spacing:-.035em;line-height:1.15;}
+.mode-home > p{font-size:clamp(15px,2vw,20px);margin:-6px 0 10px;}
+.mode-home .format-select{gap:20px;}
+.mode-home .format-btn{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.08fr);min-width:0;min-height:242px;padding:0;gap:0;text-align:left;align-items:stretch;border-width:1px;border-radius:14px;overflow:hidden;background:var(--surface);}
+.mode-home .format-btn:hover{border-color:var(--teal-900);box-shadow:0 3px 12px #193b5710;transform:translateY(-2px);}
+.mode-home .format-btn.active{background:var(--surface);border-color:var(--teal-900);}
+.mode-copy{display:flex;flex-direction:column;justify-content:center;align-items:flex-start;gap:12px;padding:24px 0 24px 24px;min-width:0;}
+.mode-home .format-btn .fb-name{font-size:clamp(20px,2.2vw,27px);font-weight:800;letter-spacing:-.025em;text-transform:none;color:var(--teal-900);margin:0;line-height:1.13;}
+.mode-home .format-btn .fb-desc{font-size:var(--fs-sm);line-height:1.5;color:var(--ink);max-width:24ch;}
+.mode-link{display:flex;align-items:center;gap:9px;margin-top:auto;padding-top:12px;font-size:var(--fs-base);font-weight:750;color:var(--teal-900);}
+.mode-link .arrow{font-size:24px;line-height:1;}
+.mode-illustration{display:block;width:100%;height:100%;min-height:226px;padding:10px 8px 8px 0;object-fit:contain;}
+.mode-home .format-btn[data-format="koc"] .mode-illustration{padding-left:4px;}
+.brand .ball-dot{order:-2;width:29px;height:29px;border:0;transform:none;position:relative;overflow:hidden;background:#A5D53D;flex:none;}
+.brand .ball-dot::after{content:"";position:absolute;width:28px;height:36px;top:-7px;left:12px;border:1.6px solid white;border-radius:50%;transform:rotate(30deg);}
+.brand:has(.format-mark:not([hidden])) .ball-dot{display:none;}
+.format-mark{width:120px;height:89px;display:flex;align-items:center;}
+.format-mark img{display:block;width:100%;height:100%;object-fit:contain;}
+.masthead{align-items:center;}
+.brand h1{font-size:clamp(24px,3.5vw,36px);letter-spacing:-.025em;}
+.brand-eyebrow{margin-bottom:4px;}
+.lang-btn{border-color:transparent;background:transparent;padding:7px 9px;border-radius:6px;}
+.lang-btn.active{color:var(--teal-900);background:var(--surface);border-color:var(--line);}
+@media(max-width:860px){
+  .mode-home .format-select{gap:14px;}
+  .mode-home .format-btn{min-height:220px;grid-template-columns:minmax(0,1fr) minmax(0,.9fr);}
+  .mode-copy{padding:20px 0 20px 18px;gap:10px;}
+  .mode-home .format-btn .fb-name{font-size:23px;}
+  .mode-illustration{min-height:198px;}
+}
+@media(max-width:680px){
+  .wrap{padding:22px 16px 60px;}
+  .mode-home{padding:12px 0 0;gap:18px;}
+  .mode-home .format-select{grid-template-columns:1fr;gap:13px;}
+  .mode-home .format-btn{min-height:178px;grid-template-columns:minmax(0,1fr) minmax(0,1fr);padding:0;}
+  .mode-home .format-btn .fb-name{font-size:23px;}
+  .mode-home .format-btn .fb-desc{font-size:var(--fs-sm);}
+  .mode-copy{padding:20px 0 20px 20px;gap:9px;}
+  .mode-illustration{min-height:174px;padding:7px 5px 7px 0;}
+  .mode-link{font-size:var(--fs-sm);padding-top:5px;}
+  .format-mark{width:76px;height:62px;}
+  .brand h1{font-size:clamp(21px,5vw,29px);}
+  .brand .ball-dot{width:23px;height:23px;}
+  .masthead-back{order:3;margin-left:0;}
+}
+@media(max-width:370px){
+  .mode-home .format-btn{grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr);}
+  .mode-home .format-btn .fb-name{font-size:21px;}
+  .mode-copy{padding-left:15px;}
+  .format-mark{width:56px;height:52px;}
+}
+@media(prefers-reduced-motion:reduce){.mode-home .format-btn{transition:none;}.mode-home .format-btn:hover{transform:none;}}
+@media print{.format-mark{display:none!important;}.brand .ball-dot{display:none;}}

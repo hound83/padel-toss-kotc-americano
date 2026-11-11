@@ -8,7 +8,7 @@ const http = require('node:http');
 const {chromium} = require('playwright');
 
 const root = path.join(__dirname, '..');
-const mime = {'.html':'text/html', '.js':'text/javascript', '.svg':'image/svg+xml',
+const mime = {'.html':'text/html','.css':'text/css', '.js':'text/javascript', '.svg':'image/svg+xml',
   '.webmanifest':'application/manifest+json', '.png':'image/png'};
 
 test('paste one name per line in KOC, Toss, Americano, Split Toss and roster editing', async t => {

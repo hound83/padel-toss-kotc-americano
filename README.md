@@ -47,6 +47,12 @@
 - **Presentatiemodus:** toon de indeling overzichtelijk op een groter scherm.
 - **Nederlands en Engels:** wissel op elk scherm via de taalkeuze rechtsboven.
 
+### Geïllustreerde speelvormkeuze (v2.3)
+
+Het startscherm gebruikt marineblauw en limegroen en toont vier getekende baanillustraties. Na het kiezen blijft dezelfde illustratie klein naast de gekozen speelvorm staan. De Americano-afbeelding toont **26–6**: een puntenscore van samen 32 punten, zonder kloknotatie. Dit is uitsluitend een illustratie; de bestaande score-invoer en klassementberekening veranderen niet.
+
+Alle afbeeldingen gebruiken dezelfde geometrisch opgebouwde basisbaan: 20 × 10 meter, servicelijnen op 6,95 meter van het net, middenservicelijn met 20 centimeter uitloop, glazen achterwanden en zijretours, centraal hekwerk en toegang naast het net. De bron staat in `scripts/build-mode-art.cjs`; opnieuw genereren kan met `node scripts/build-mode-art.cjs`. De lichte SVG-bestanden en de nieuwe stylesheet worden samen met de app offline opgeslagen. Er worden geen externe afbeeldingen of lettertypen geladen.
+
 ### Live-presentatiemodus
 
 De presentatiemodus is een afzonderlijke liveweergave, niet het hele lange schema:

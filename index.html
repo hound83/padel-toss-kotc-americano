@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="theme-color" content="#1C437D">
+<meta name="theme-color" content="#193B57">
 <meta name="description" content="Padel Planner: Toss, Gesplitste Toss, Americano en King of the Court in één webapp.">
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="icon" href="./icon.svg" type="image/svg+xml">
@@ -12,22 +12,19 @@
 <!-- Fonts: system fallbacks only (no external font fetch), for reliability on restricted/sandboxed viewers -->
 <style>
   :root{
-    /* Athlon palette. --teal-900 is Athlon's primary navy (#1C437D, taken
-       from Athlon's own site theme-color); the other steps are derived
-       tints/shades of it. Variable names are kept from the original theme
-       so the rest of the stylesheet needs no changes. All foreground/
-       background pairs were checked against WCAG AA. */
-    --teal-900:#1C437D;
-    --teal-700:#27568F;
-    --teal-600:#3670AE;
-    --mist:#EEF3FA;
+    /* Navy/lime palette from the approved Padel Planner concept.
+       Keep the established variable names for the existing app controls. */
+    --teal-900:#193B57;
+    --teal-700:#28536A;
+    --teal-600:#36718A;
+    --mist:#F0F6FA;
     --surface:#FFFFFF;
-    --ball:#FFC72C;
+    --ball:#D8ED79;
     --ball-dark:#7A6000;
     --coral:#C7443A;
-    --ink:#12233D;
-    --ink-soft:#54688A;
-    --line:#D5E0EE;
+    --ink:#173149;
+    --ink-soft:#536B7D;
+    --line:#D3E0E9;
     /* Level colours picked to match the metal each level is named after,
        while still clearing WCAG AA against both the page and white. */
     --lv-silver:#63717F;
@@ -173,7 +170,7 @@
   .app-footer details{max-width:480px;}
   .app-footer summary{cursor:pointer;color:var(--teal-700);font-weight:700;}
   .app-footer ul{margin:8px 0 0;padding-left:20px;}
-  .app-notice{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);z-index:100;max-width:min(94vw,540px);background:var(--teal-900);color:white;border-radius:12px;padding:14px 18px;box-shadow:0 12px 35px #12233D55;display:none;gap:12px;align-items:center;}
+  .app-notice{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);z-index:100;max-width:min(94vw,540px);background:var(--teal-900);color:white;border-radius:12px;padding:14px 18px;box-shadow:0 12px 35px #17314955;display:none;gap:12px;align-items:center;}
   .app-notice.visible{display:flex;}
   .app-notice button{background:var(--ball);border:0;border-radius:8px;padding:9px 12px;font-weight:800;cursor:pointer;}
   .koc-setup{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px 20px;margin:16px 0;}
@@ -917,18 +914,19 @@
     .match-card{ break-inside:avoid; }
   }
 </style>
+<link rel="stylesheet" href="./visual-theme.css">
 </head>
 <body>
 <div class="wrap">
 
   <div class="masthead">
     <div class="brand">
+      <span class="ball-dot" aria-hidden="true"></span>
       <span class="format-mark" id="formatMark" aria-hidden="true" hidden></span>
       <div class="brand-copy">
         <span class="brand-eyebrow" id="brandEyebrow" data-i18n="chosenFormat" hidden>Gekozen speelvorm</span>
         <h1 id="appTitle" tabindex="-1">PADEL PLANNER</h1>
       </div>
-      <span class="ball-dot" aria-hidden="true"></span>
     </div>
     <button class="masthead-back" id="mastheadBack" type="button" data-i18n="backToModes" hidden>← Speelvormen</button>
     <div class="meta-strip" id="metaStrip" style="display:none;"></div>
@@ -946,27 +944,39 @@
 
   <section class="panel mode-home" id="panel0" aria-labelledby="modeHomeTitle">
     <h2 id="modeHomeTitle" data-i18n="homeTitle">Wat gaan we spelen?</h2>
-    <p data-i18n="homeSub">Kies een speelvorm om te beginnen</p>
+    <p data-i18n="homeSub">Kies je speelvorm en maak je indeling.</p>
     <div class="format-select" id="formatSelect">
       <button class="format-btn" type="button" data-format="toss">
-        <span class="mode-icon" aria-hidden="true">🎾</span>
-        <span class="fb-name" data-i18n="formatToss">Toss</span>
-        <span class="fb-desc" data-i18n="formatTossDesc">Alleen een schema, geen uitslagen invullen</span>
-      </button>
-      <button class="format-btn" type="button" data-format="splitToss">
-        <span class="mode-icon" aria-hidden="true">🗂️</span>
-        <span class="fb-name" data-i18n="formatSplitToss">Gesplitste Toss</span>
-        <span class="fb-desc" data-i18n="formatSplitTossDesc">Niveaugroepen apart indelen</span>
-      </button>
-      <button class="format-btn" type="button" data-format="americano">
-        <span class="mode-icon" aria-hidden="true">🏆</span>
-        <span class="fb-name" data-i18n="formatAmericano">Americano</span>
-        <span class="fb-desc" data-i18n="formatAmericanoDesc">Met score en klassement</span>
+        <span class="mode-copy">
+          <span class="fb-name" data-i18n="formatToss">Toss</span>
+          <span class="fb-desc" data-i18n="homeTossDesc">Steeds een andere partner.</span>
+          <span class="mode-link"><span data-i18n="homeTossAction">Kies Toss</span><span class="arrow" aria-hidden="true">→</span></span>
+        </span>
+        <img class="mode-illustration" src="./assets/mode-toss.svg" width="420" height="355" alt="" aria-hidden="true" decoding="async">
       </button>
       <button class="format-btn" type="button" data-format="koc">
-        <span class="mode-icon" aria-hidden="true">👑</span>
-        <span class="fb-name" data-i18n="formatKoc">King of the Court</span>
-        <span class="fb-desc" data-i18n="formatKocDesc">Eén startindeling, daarna zelf doorschuiven</span>
+        <span class="mode-copy">
+          <span class="fb-name" data-i18n="formatKoc">King of the Court</span>
+          <span class="fb-desc" data-i18n="homeKocDesc">Win je potje. Klim een baan omhoog.</span>
+          <span class="mode-link"><span data-i18n="homeKocAction">Kies KOC</span><span class="arrow" aria-hidden="true">→</span></span>
+        </span>
+        <img class="mode-illustration" src="./assets/mode-koc.svg" width="420" height="355" alt="" aria-hidden="true" decoding="async">
+      </button>
+      <button class="format-btn" type="button" data-format="americano">
+        <span class="mode-copy">
+          <span class="fb-name" data-i18n="formatAmericano">Americano</span>
+          <span class="fb-desc" data-i18n="homeAmericanoDesc">Elk punt telt voor jouw klassement.</span>
+          <span class="mode-link"><span data-i18n="homeAmericanoAction">Kies Americano</span><span class="arrow" aria-hidden="true">→</span></span>
+        </span>
+        <img class="mode-illustration" src="./assets/mode-americano.svg" width="420" height="355" alt="" aria-hidden="true" decoding="async">
+      </button>
+      <button class="format-btn" type="button" data-format="splitToss">
+        <span class="mode-copy">
+          <span class="fb-name" data-i18n="formatSplitToss">Gesplitste Toss</span>
+          <span class="fb-desc" data-i18n="homeSplitTossDesc">Samen spelen op je eigen niveau.</span>
+          <span class="mode-link"><span data-i18n="homeSplitTossAction">Kies Gesplitste Toss</span><span class="arrow" aria-hidden="true">→</span></span>
+        </span>
+        <img class="mode-illustration" src="./assets/mode-split.svg" width="420" height="355" alt="" aria-hidden="true" decoding="async">
       </button>
     </div>
   </section>
@@ -1246,9 +1256,10 @@
   </section>
 
   <footer class="app-footer">
-    <span id="appVersion">v2.2.0</span>
+    <span id="appVersion">v2.3.0</span>
     <details><summary data-i18n="whatsNew">Wat is nieuw?</summary>
       <ul>
+        <li data-i18n="changeIllustrations">Nieuwe baanillustraties, marineblauw/lime en een puntenscore van 26–6.</li>
         <li data-i18n="changeBulkNames">Slim namenplakpaneel met controle, spelersaantal aanpassen en ongedaan maken.</li>
         <li data-i18n="changeKocEntry">KOC: vaste startbanen voor spelers 1 en 2 en optionele instroomspelers.</li>
         <li data-i18n="changeKocNames">KOC: dubbele namen worden direct gemarkeerd en geblokkeerd.</li>
@@ -1346,9 +1357,14 @@
   var STR = {
     nl: {
       stepSetup: 'Instellen', stepNames: 'Namen', stepSchedule: 'Schema',
-      homeTitle: 'Wat gaan we spelen?', homeSub: 'Kies een speelvorm om te beginnen',
+      homeTitle: 'Wat gaan we spelen?', homeSub: 'Kies je speelvorm en maak je indeling.',
       backToModes: '← Speelvormen',
       chosenFormat: 'Gekozen speelvorm',
+      homeTossDesc: 'Steeds een andere partner.', homeTossAction: 'Kies Toss',
+      homeKocDesc: 'Win je potje. Klim een baan omhoog.', homeKocAction: 'Kies KOC',
+      homeAmericanoDesc: 'Elk punt telt voor jouw klassement.', homeAmericanoAction: 'Kies Americano',
+      homeSplitTossDesc: 'Samen spelen op je eigen niveau.', homeSplitTossAction: 'Kies Gesplitste Toss',
+      changeIllustrations: 'Nieuwe baanillustraties, marineblauw/lime en een puntenscore van 26–6.',
       p1Title: 'Instellingen',
       p1Sub: 'Geef aan hoeveel banen je hebt en hoeveel spelers er komen. Er spelen maar 4 tegelijk per baan — wie niet speelt, wacht tot de volgende ronde.',
       p1PlayersHeading: 'Hoeveel spelers?',
@@ -1562,9 +1578,14 @@
     },
     en: {
       stepSetup: 'Setup', stepNames: 'Names', stepSchedule: 'Schedule',
-      homeTitle: 'What shall we play?', homeSub: 'Choose a format to get started',
+      homeTitle: 'What shall we play?', homeSub: 'Choose your format and create your lineup.',
       backToModes: '← Formats',
       chosenFormat: 'Selected format',
+      homeTossDesc: 'A different partner each round.', homeTossAction: 'Choose Toss',
+      homeKocDesc: 'Win your match. Move up a court.', homeKocAction: 'Choose KOC',
+      homeAmericanoDesc: 'Every point counts towards your ranking.', homeAmericanoAction: 'Choose Americano',
+      homeSplitTossDesc: 'Play together at your own level.', homeSplitTossAction: 'Choose Split Toss',
+      changeIllustrations: 'New court illustrations, navy/lime and a 26–6 point score.',
       p1Title: 'Settings',
       p1Sub: 'Set how many courts and players you have. Only 4 play on a court at once — whoever isn\'t playing waits for the next round.',
       p1PlayersHeading: 'How many players?',
@@ -1822,7 +1843,14 @@
     var format = formats[state.format] || formats.toss;
     title.textContent = t(format.key);
     document.title = t(format.key) + ' · Padel Planner';
-    icon.textContent = format.icon;
+    // The same art identifies the selected format on every subsequent step.
+    var illustration = document.createElement('img');
+    var assets = {toss:'toss', splitToss:'split', americano:'americano', koc:'koc'};
+    illustration.src = './assets/mode-' + (assets[state.format] || 'toss') + '.svg';
+    illustration.alt = '';
+    illustration.width = 120;
+    illustration.height = 89;
+    icon.replaceChildren(illustration);
     icon.hidden = false;
     eyebrow.hidden = false;
   }

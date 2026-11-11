@@ -9,7 +9,7 @@ const {chromium} = require('playwright');
 
 test('v2.2: clean navigation and live KOC, Toss, Americano and split Toss', async t => {
   const root = path.join(__dirname,'..');
-  const mime={'.html':'text/html','.js':'text/javascript','.webmanifest':'application/manifest+json',
+  const mime={'.html':'text/html','.css':'text/css','.js':'text/javascript','.webmanifest':'application/manifest+json',
     '.svg':'image/svg+xml','.png':'image/png'};
   const server=http.createServer((req,res)=>{
     const pathname=new URL(req.url,'http://127.0.0.1').pathname;
