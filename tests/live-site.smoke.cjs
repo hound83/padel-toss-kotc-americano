@@ -36,9 +36,10 @@ const assert=require('node:assert/strict');
       await page.locator('#mastheadBack').click();
     }
     await ctx.setOffline(true);
-    await page.reload();
+    await page.reload({waitUntil:'domcontentloaded'});
     await page.waitForFunction(()=>[...document.querySelectorAll('.mode-illustration')].every(img=>img.complete&&img.naturalWidth>0));
     assert.equal(await page.locator('#panel0').isVisible(),true);
+    assert.equal(await page.locator('.format-btn').first().evaluate(el=>getComputedStyle(el).display),'grid');
     assert.deepEqual(errors,[]);
     console.log(JSON.stringify({url,version:'v2.3.0',modes:4,desktop:true,mobile:true,score:'26–6',freshInstall:true,offline:true}));
   }finally{await browser.close();}
