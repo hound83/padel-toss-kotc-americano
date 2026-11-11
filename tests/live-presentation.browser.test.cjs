@@ -122,6 +122,7 @@ test('v2.2: clean navigation and live KOC, Toss, Americano and split Toss', asyn
   const koc=await open('koc');
   assert.match(await koc.locator('#appTitle').innerText(),/KING OF THE COURT/);
   await koc.locator('#kocRoll').click();
+  assert.equal(await koc.locator('#testScoreTools').isVisible(),false);
   assert.equal(await koc.locator('#scheduleRoundTools').isVisible(),false);
   await koc.locator('#kocPresent').click();
   assert.equal(await koc.locator('#livePresentation').isVisible(),true);
@@ -152,6 +153,7 @@ test('v2.2: clean navigation and live KOC, Toss, Americano and split Toss', asyn
   assert.equal(await namesStep.getAttribute('aria-current'),'step');
   await fillNames(toss,32);
   await toss.locator('#generateBtn').click();
+  assert.equal(await toss.locator('#testScoreTools').isVisible(),false);
   assert.equal(await toss.locator('.brand-copy #metaStrip').textContent(),'32 spelers · 4 banen · 7 rondes');
   assert.equal(await scheduleStep.getAttribute('aria-current'),'step');
   await namesStep.click();
@@ -242,6 +244,11 @@ test('v2.2: clean navigation and live KOC, Toss, Americano and split Toss', asyn
   await splitMixed.locator('[data-lang="en"]').click();
   assert.equal(await splitMixed.locator('#scheduleRoundLabel').innerText(),'Round 2 / 7');
   assert.equal(await splitMixed.getByRole('button',{name:'Next round'}).isVisible(),true);
+  await splitMixed.getByRole('button',{name:'Fill next incomplete round'}).click();
+  assert.equal(await splitMixed.locator('#testScoreStatus').innerText(),'Filled empty scores in round 2.');
+  assert.equal(await splitMixed.locator('#scheduleRound2 input[data-key]').count(),2);
+  assert.notEqual(await splitMixed.locator('#scheduleRound2 input[data-key]').first().inputValue(),'');
+  assert.equal(await splitMixed.locator('#scheduleRound3 input[data-key]').first().inputValue(),'');
 
   // Score-tracking split Toss: Auto must only advance when all level matches
   // of the current round are fully scored.
@@ -447,6 +454,39 @@ test('v2.2: clean navigation and live KOC, Toss, Americano and split Toss', asyn
   assert.match(await americano.locator('#liveRoundLabel').innerText(),/4\s*\/\s*4/);
   await americano.locator('#liveAllRounds').click();
   assert.equal(await americano.locator('#panel3').isVisible(),true);
+
+  const testScores=await open('americano',true);
+  await testScores.locator('#continueTo2').tap();
+  await testScores.locator('#roundsInput').fill('4');
+  await testScores.locator('#regroupToggle').check();
+  await testScores.locator('#splitRoundInput').fill('2');
+  await testScores.locator('#generateBtn').tap();
+  const fields=round=>testScores.locator('#scheduleRound'+round+' input[data-key]');
+  await fields(1).first().fill('0');
+  await testScores.locator('#testScoreNext').tap();
+  assert.equal(await testScores.locator('#testScoreStatus').innerText(),'Open scores in ronde 1 ingevuld.');
+  assert.equal(await fields(1).first().inputValue(),'0');
+  assert.equal(await fields(1).nth(1).inputValue(),'32');
+  assert.equal(await fields(2).first().inputValue(),'');
+  await checkScheduleRound(testScores,2,2);
+  await testScores.locator('#testScoreAll').tap();
+  assert.equal(await testScores.locator('#testScoreStatus').innerText(),'Alle open scores ingevuld.');
+  const secondRound=await fields(2).evaluateAll(inputs=>inputs.map(input=>input.value));
+  assert.ok(secondRound.every(value=>value!==''));
+  assert.equal(Number(secondRound[0])+Number(secondRound[1]),32);
+  await testScores.locator('#testScoreNext').tap();
+  assert.equal(await testScores.locator('#testScoreStatus').innerText(),'Alle scorevelden zijn al ingevuld.');
+  await testScores.locator('.checkpoint-card button').tap();
+  assert.equal(await fields(3).first().inputValue(),'');
+  await testScores.locator('#testScoreNext').tap();
+  assert.equal(await testScores.locator('#testScoreStatus').innerText(),'Open scores in ronde 3 ingevuld.');
+  assert.equal(await fields(4).first().inputValue(),'');
+  await testScores.locator('#testScoreNext').tap();
+  assert.equal(await testScores.locator('#testScoreStatus').innerText(),'Open scores in ronde 4 ingevuld.');
+  const testSaved=await saveState(testScores);
+  assert.deepEqual(testSaved.scores['main-1-1'],{t1:0,t2:32});
+  assert.ok(Object.keys(testSaved.scores).some(key=>key.startsWith('top-')));
+  assert.ok(Object.keys(testSaved.scores).some(key=>key.startsWith('bottom-')));
 
   // KOC also remains usable as a presentation on a small phone viewport.
   const mobile=await open('koc',true);
