@@ -116,6 +116,7 @@ test('v2.2: clean navigation and live KOC, Toss, Americano and split Toss', asyn
   assert.equal(await koc.locator('#livePresentation').isVisible(),false);
 
   const toss=await open('toss');
+  await toss.setViewportSize({width:1360,height:900});
   assert.equal((await toss.locator('#appTitle').innerText()).toUpperCase(),'TOSS');
   await toss.locator('#courtsSelect .court-btn[data-courts="4"]').click();
   const namesStep=toss.getByRole('button',{name:'Namen',exact:true});
