@@ -6,6 +6,8 @@ const assert=require('node:assert/strict');
 (async()=>{
   const url=process.env.PADEL_SITE_URL;
   if(!url)throw new Error('PADEL_SITE_URL is required');
+  const expectedWorker=fs.readFileSync(path.join(__dirname,'../sw.js'),'utf8');
+  const expectedKocArtwork=fs.readFileSync(path.join(__dirname,'../assets/mode-koc.svg'),'utf8');
   const browser=await chromium.launch({headless:true});
   try{
     const ctx=await browser.newContext({viewport:{width:1280,height:1000}});
@@ -13,11 +15,19 @@ const assert=require('node:assert/strict');
     page.on('pageerror',error=>errors.push(error.message));
     let published=false;
     for(let attempt=0;attempt<36;attempt++){
-      await page.goto(url,{waitUntil:'networkidle'});
-      if(await page.locator('#appVersion').textContent()==='v2.3.0'){published=true;break;}
+      const [worker,artwork]=await Promise.all([
+        ctx.request.get(new URL('./sw.js',url).href),
+        ctx.request.get(new URL('./assets/mode-koc.svg',url).href)
+      ]);
+      if(worker.ok()&&artwork.ok()&&await worker.text()===expectedWorker&&await artwork.text()===expectedKocArtwork){
+        published=true;
+        break;
+      }
       await new Promise(resolve=>setTimeout(resolve,5000));
     }
-    assert.ok(published,'GitHub Pages must serve v2.3.0');
+    assert.ok(published,'GitHub Pages must serve the current worker and KOC artwork');
+    await page.goto(url,{waitUntil:'networkidle'});
+    assert.equal(await page.locator('#appVersion').textContent(),'v2.3.0');
     await page.waitForFunction(()=>document.querySelectorAll('.mode-illustration').length===4&&[...document.querySelectorAll('.mode-illustration')].every(img=>img.complete&&img.naturalWidth>0));
     assert.equal(await page.evaluate(()=>getComputedStyle(document.documentElement).getPropertyValue('--teal-900').trim()),'#193B57');
     await page.evaluate(()=>navigator.serviceWorker.ready);
