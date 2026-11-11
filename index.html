@@ -214,7 +214,7 @@
      leaking into presentation mode. */
   body.presentation-mode .wrap{display:none!important;}
   .live-presentation[hidden]{display:none!important;}
-  .live-presentation{display:none;position:fixed;inset:0;z-index:80;overflow:auto;overscroll-behavior:contain;background:var(--mist);padding:24px 28px 100px;}
+  .live-presentation{display:none;position:fixed;inset:0;z-index:80;overflow:auto;scrollbar-gutter:stable;overscroll-behavior:contain;background:var(--mist);padding:24px 28px 68px;}
   body.presentation-mode .live-presentation{display:block;}
   .live-content{max-width:1680px;margin:0 auto;}
   .live-head{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:22px;padding-bottom:16px;border-bottom:2px solid var(--teal-900);}
@@ -226,18 +226,18 @@
   .round-tools button[aria-pressed="true"]:enabled{border-color:var(--teal-900);background:var(--teal-900);color:var(--ball);}
   .round-tools button[data-round-action]{min-width:44px;}
   .round-tools-label{font-weight:800;color:var(--teal-900);min-width:92px;text-align:center;white-space:nowrap;}
-  .live-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(300px,.43fr);gap:18px;align-items:start;grid-template-areas:"current standings" "next standings";}
-  .live-layout.no-board{grid-template-columns:minmax(0,3fr) minmax(300px,2fr);grid-template-areas:"current next";}
+  .live-page-tools{margin:0 0 12px;}
+  .live-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(300px,.43fr);gap:18px;align-items:start;}
+  .live-layout.no-board{grid-template-columns:minmax(0,1fr);}
+  .live-rounds{display:flex;flex-direction:column;gap:18px;min-width:0;}
+  .live-layout.no-board .live-rounds:not(:has(>[hidden])){display:grid;grid-template-columns:minmax(0,3fr) minmax(300px,2fr);align-items:start;}
   .live-current,.live-upcoming{min-width:0;container-type:inline-size;}
-  .live-current{grid-area:current;}
-  .live-upcoming{grid-area:next;}
-  .live-standings{grid-area:standings;min-width:0;position:sticky;top:12px;display:grid;gap:14px;}
-  .live-layout.no-board .live-standings{display:none;}
+  .live-standings{min-width:0;max-height:var(--live-room,78vh);overflow:auto;display:grid;gap:14px;}
   .live-section-head{margin:0 0 12px;font:800 clamp(19px,2vw,24px) var(--font-display);color:var(--teal-900);}
   .live-next-head{margin-top:4px;font-size:clamp(17px,1.5vw,20px);color:var(--teal-700);}
   .live-match-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:12px;}
   @container (min-width:612px){
-    .live-current .live-match-grid:has(.live-match:nth-child(2)){grid-template-columns:repeat(2,minmax(0,1fr));}
+    .live-current .live-match-grid:has(.live-match:not([hidden]) ~ .live-match:not([hidden])){grid-template-columns:repeat(2,minmax(0,1fr));}
   }
   .live-match{background:#fff;border:1px solid var(--line);border-radius:13px;overflow:hidden;}
   .live-match-head{font-weight:800;font-size:var(--fs-md);color:var(--teal-900);background:#DFE8F5;padding:11px 14px;display:flex;justify-content:space-between;gap:8px;}
@@ -255,10 +255,11 @@
   .live-match-body.has-scores .live-vs{align-self:start;margin-top:9px;}
   .live-level{font-size:var(--fs-sm);color:var(--teal-700);font-weight:800;margin:14px 0 8px;}
   .live-level:first-child{margin-top:0;}
-  .live-waiting{font-size:var(--fs-sm);color:var(--ink-soft);margin:9px 0 12px;}
+  .live-round-group:not([hidden]) ~ .live-round-group{margin-top:10px;}
+  .live-waiting{font-size:var(--fs-sm);color:var(--ink-soft);margin:9px 0 12px;max-height:5.8em;overflow:auto;overflow-wrap:anywhere;}
   .live-board{background:var(--teal-900);color:#fff;border-radius:13px;padding:18px;min-width:0;}
-  .live-board{max-height:min(78vh,850px);overflow:auto;}
-  .round-tools[hidden],.live-koc-grid[hidden],.live-layout[hidden]{display:none!important;}
+  .live-board td{overflow-wrap:anywhere;}
+  .round-tools[hidden],.live-content [hidden]{display:none!important;}
 
   .live-board h3{font:800 var(--fs-lg) var(--font-display);color:var(--ball);margin:0 0 12px;}
   .live-board table{border-collapse:collapse;width:100%;font-size:var(--fs-sm);}
@@ -269,7 +270,7 @@
   .live-empty{color:var(--ink-soft);font-size:var(--fs-base);border:1px dashed var(--line);border-radius:12px;padding:20px;}
   .live-upcoming .live-match-grid{gap:9px;}
   @container (min-width:500px){
-    .live-upcoming .live-match-grid:has(.live-match:nth-child(2)){grid-template-columns:repeat(2,minmax(0,1fr));}
+    .live-upcoming .live-match-grid:has(.live-match:not([hidden]) ~ .live-match:not([hidden])){grid-template-columns:repeat(2,minmax(0,1fr));}
   }
   .live-upcoming .live-match-body{padding:8px;grid-template-columns:minmax(0,1fr) 16px minmax(0,1fr);gap:4px;}
   .live-upcoming .live-match-head{font-size:var(--fs-xs);padding:6px 10px;}
@@ -284,10 +285,27 @@
   .live-koc-card li:last-child{border:0;}
   .live-koc-card .empty{color:var(--ink-soft);}
   @media(max-width:880px){
-    .live-presentation{padding:18px 16px 90px;}
-    .live-layout,.live-layout.no-board{grid-template-columns:1fr;grid-template-areas:"current" "standings" "next";}
-    .live-layout.no-board{grid-template-areas:"current" "next";}
-    .live-standings{position:static;}
+    .live-presentation{padding:18px 16px 68px;}
+    .live-layout,.live-layout.no-board{grid-template-columns:minmax(0,1fr);}
+    .live-layout.no-board .live-rounds:not(:has(>[hidden])){display:flex;}
+  }
+  @media(max-height:820px){
+    .live-presentation{padding-top:14px;}
+    .live-head{gap:8px;margin-bottom:12px;padding-bottom:10px;}
+    .live-subtitle{margin-top:2px;}
+    .live-section-head{margin-bottom:8px;}
+    .live-next-head{margin-top:0;}
+    .live-rounds{gap:12px;}
+    .live-match-grid{gap:8px;}
+    .live-current .live-match-head{padding-block:6px;}
+    .live-current .live-match-body{padding:8px 10px;}
+    .live-current .live-team{gap:3px;}
+    .live-current .live-team span{line-height:1.25;}
+    .live-upcoming .live-match-head{padding-block:4px;}
+    .live-upcoming .live-match-body{padding-block:5px;}
+    .live-round-group:has(.live-match:not([hidden])) > .live-level{display:none;}
+    .live-waiting{margin:6px 0;}
+    .live-koc-card li{padding-block:8px;}
   }
 
   @media(max-width:680px){
@@ -1331,11 +1349,19 @@
         <button type="button" id="liveAllRounds" data-i18n="liveAllRounds"></button>
       </div>
     </header>
+    <div class="round-tools live-page-tools" id="livePageTools" role="group" data-i18n-aria-label="liveScreenNavigation" hidden>
+      <button type="button" id="livePagePrev" data-i18n-aria-label="liveScreenPrevious">&larr;</button>
+      <span class="round-tools-label" id="livePageLabel"></span>
+      <button type="button" id="livePageNext" data-i18n-aria-label="liveScreenNext">&rarr;</button>
+      <button type="button" id="livePagePause" data-i18n="liveScreenPause" aria-pressed="false"></button>
+    </div>
     <div id="liveKoc" class="live-koc-grid"></div>
     <div class="live-layout" id="liveLayout">
-      <main id="liveCurrent" class="live-current"></main>
-      <aside id="liveStandings" class="live-standings"></aside>
-      <section id="liveUpcoming" class="live-upcoming"></section>
+      <div class="live-rounds">
+        <main id="liveCurrent" class="live-current"></main>
+        <section id="liveUpcoming" class="live-upcoming"></section>
+      </div>
+      <aside id="liveStandings" class="live-standings" tabindex="0"></aside>
     </div>
   </div>
 </section>
@@ -1517,6 +1543,11 @@
       liveLevelRest: '{level} speelt deze ronde niet',
       liveLastRound: 'Einde van het schema',
       liveNoResults: 'Er zijn nog geen uitslagen ingevoerd.',
+      liveScreenNavigation: 'Presentatieschermen',
+      liveScreenPrevious: 'Vorig scherm',
+      liveScreenNext: 'Volgend scherm',
+      liveScreenLabel: 'Scherm {n} / {max}',
+      liveScreenPause: 'Pauze',
       qualificationArchive: 'Kwalificatie · eindstand bekijken',
       qualificationTitle: 'Kwalificatie · fase 1',
       finalPhaseHeading: 'FASE 2 · GOUD & ZILVER · NIEUW KLASSEMENT',
@@ -1745,6 +1776,11 @@
       liveLevelRest: '{level} does not play this round',
       liveLastRound: 'End of schedule',
       liveNoResults: 'No results have been entered yet.',
+      liveScreenNavigation: 'Presentation screens',
+      liveScreenPrevious: 'Previous screen',
+      liveScreenNext: 'Next screen',
+      liveScreenLabel: 'Screen {n} / {max}',
+      liveScreenPause: 'Pause',
       qualificationArchive: 'Qualification · view final standings',
       qualificationTitle: 'Qualification · phase 1',
       finalPhaseHeading: 'PHASE 2 · GOLD & SILVER · NEW LEADERBOARD',
@@ -5502,11 +5538,13 @@
     var groups=liveMatchesForRound(round);
     if (!groups.length){target.appendChild(liveElement('p','live-empty',t('liveNoSchedule')));return;}
     groups.forEach(function(group){
+      var section = liveElement('div','live-round-group');
+      target.appendChild(section);
       if (group.pool.label){
-        target.appendChild(liveElement('h3','live-level',poolDisplayLabel(group.pool)));
+        section.appendChild(liveElement('h3','live-level',poolDisplayLabel(group.pool)));
       }
       if (!group.round.courts.length){
-        target.appendChild(liveElement('p','live-waiting',
+        section.appendChild(liveElement('p','live-waiting',
           tf('liveLevelRest',{level:poolDisplayLabel(group.pool)})));
         return;
       }
@@ -5514,10 +5552,11 @@
       group.round.courts.forEach(function(court){
         grid.appendChild(liveMatch(group.pool,court,round,current));
       });
-      target.appendChild(grid);
+      section.appendChild(grid);
       if (group.round.resting && group.round.resting.length){
-        target.appendChild(liveElement('p','live-waiting',
-          tf('liveWaiting',{names:group.round.resting.join(', ')})));
+        var waiting = liveElement('p','live-waiting',tf('liveWaiting',{names:group.round.resting.join(', ')}));
+        waiting.tabIndex = 0;
+        section.appendChild(waiting);
       }
     });
   }
@@ -5564,6 +5603,101 @@
       root.appendChild(card);
     });
   }
+  // Fit whole cards within the projector viewport, keeping the inputs in the DOM.
+  var liveScreenInterval = 12000;
+  var liveScreenPages = [], liveScreenItems = [], liveScreenIndex = 0;
+  var liveScreenTimer, liveScreenResize, liveScreenPaused = false;
+  var livePresentation = document.getElementById('livePresentation');
+  var livePageTools = document.getElementById('livePageTools');
+  var livePagePause = document.getElementById('livePagePause');
+  var livePageLabel = document.getElementById('livePageLabel');
+  var livePageSelector = '.live-match,.live-koc-card,.live-waiting,.live-empty';
+
+  function livePageHasFocus(){
+    return !!document.activeElement.closest('#liveLayout,#liveKoc');
+  }
+  function scheduleLiveScreen(){
+    clearTimeout(liveScreenTimer);
+    if (!livePresentation.hidden && liveScreenPages.length > 1 && !liveScreenPaused &&
+        !document.hidden && !livePageHasFocus()){
+      liveScreenTimer = setTimeout(function(){showLiveScreen(liveScreenIndex + 1);},liveScreenInterval);
+    }
+  }
+  function displayLiveItems(items){
+    var visible = new Set(items);
+    liveScreenItems.forEach(function(item){item.hidden = !visible.has(item);});
+    if (state.format === 'koc') return;
+    var rounds = document.querySelector('.live-rounds');
+    rounds.querySelectorAll('.live-match-grid,.live-round-group,.live-current,.live-upcoming').forEach(function(part){
+      part.hidden = !Array.from(part.querySelectorAll(livePageSelector)).some(function(item){return visible.has(item);});
+    });
+    rounds.hidden = Array.from(rounds.children).every(function(section){return section.hidden;});
+  }
+  function showLiveScreen(index){
+    liveScreenIndex = (index + liveScreenPages.length) % liveScreenPages.length;
+    displayLiveItems(liveScreenPages[liveScreenIndex]);
+    livePageLabel.textContent = tf('liveScreenLabel',{n:liveScreenIndex + 1,max:liveScreenPages.length});
+    livePresentation.scrollTop = 0;
+    scheduleLiveScreen();
+  }
+  function fitLiveScreens(keepPage){
+    if (livePresentation.hidden) return;
+    var koc = state.format === 'koc';
+    var area = document.getElementById(koc ? 'liveKoc' : 'liveLayout');
+    var standings = document.getElementById('liveStandings');
+    var previous = liveScreenPages[liveScreenIndex];
+    var anchor = keepPage && previous && previous[0];
+    liveScreenItems = Array.from(area.querySelectorAll(livePageSelector));
+    standings.hidden = !standings.children.length;
+    if (!koc && !standings.hidden && window.matchMedia('(max-width:880px)').matches){
+      liveScreenItems.push(standings);
+    }
+    function availableHeight(){
+      var top = area.getBoundingClientRect().top - livePresentation.getBoundingClientRect().top;
+      var padding = parseFloat(getComputedStyle(livePresentation).paddingBottom);
+      var room = Math.max(0,livePresentation.clientHeight - top - livePresentation.scrollTop - padding);
+      area.style.setProperty('--live-room',room + 'px');
+      return room;
+    }
+    livePageTools.hidden = true;
+    displayLiveItems(liveScreenItems);
+    var room = availableHeight();
+    liveScreenPages = [liveScreenItems];
+    if (liveScreenItems.length > 1 && area.getBoundingClientRect().height > room + 1){
+      livePageTools.hidden = false;
+      room = availableHeight();
+      liveScreenPages = [];
+      for (var start = 0; start < liveScreenItems.length;){
+        var end = start + 1;
+        while (end < liveScreenItems.length){
+          displayLiveItems(liveScreenItems.slice(start,end + 1));
+          if (area.getBoundingClientRect().height > room + 1) break;
+          end++;
+        }
+        liveScreenPages.push(liveScreenItems.slice(start,end));
+        start = end;
+      }
+      livePageTools.hidden = liveScreenPages.length === 1;
+    }
+    var matchingPage = liveScreenPages.findIndex(function(page){return page.includes(anchor);});
+    showLiveScreen(Math.max(0,matchingPage));
+  }
+  document.getElementById('livePagePrev').addEventListener('click',function(){showLiveScreen(liveScreenIndex - 1);});
+  document.getElementById('livePageNext').addEventListener('click',function(){showLiveScreen(liveScreenIndex + 1);});
+  livePagePause.addEventListener('click',function(){
+    liveScreenPaused = !liveScreenPaused;
+    livePagePause.setAttribute('aria-pressed',String(liveScreenPaused));
+    scheduleLiveScreen();
+  });
+  livePresentation.addEventListener('focusin',scheduleLiveScreen);
+  livePresentation.addEventListener('focusout',function(){requestAnimationFrame(scheduleLiveScreen);});
+  document.addEventListener('visibilitychange',scheduleLiveScreen);
+  window.addEventListener('resize',function(){
+    if (livePresentation.hidden || livePageHasFocus()) return;
+    cancelAnimationFrame(liveScreenResize);
+    liveScreenResize = requestAnimationFrame(function(){fitLiveScreens(true);});
+  });
+
   function renderLivePresentation(){
     if (!document.body.classList.contains('presentation-mode'))return;
     var root=document.getElementById('livePresentation'), koc=state.format==='koc';
@@ -5607,6 +5741,7 @@
     }
     updateRoundControls(document.getElementById('liveRoundTools'),current);
     root.scrollTop=0;
+    fitLiveScreens(false);
   }
   document.querySelectorAll('.round-tools [data-round-action]').forEach(function(button){
     var tools = button.closest('.round-tools'), pointerRound;
@@ -5625,6 +5760,8 @@
   function setPresentation(enabled){
     var root=document.getElementById('livePresentation');
     if (enabled){
+      liveScreenPaused=false;
+      livePagePause.setAttribute('aria-pressed','false');
       root.hidden=false;
       document.body.classList.add('presentation-mode');
       renderLivePresentation();
@@ -5638,6 +5775,8 @@
     } else {
       document.body.classList.remove('presentation-mode');
       root.hidden=true;
+      clearTimeout(liveScreenTimer);
+      cancelAnimationFrame(liveScreenResize);
       if(state.format!=='koc' && state.pools.length){
         renderSchedule();
         renderLeaderboard();

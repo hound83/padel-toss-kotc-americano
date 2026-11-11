@@ -19,7 +19,7 @@ test('illustrated home: keyboard, all formats, EN/mobile, offline assets and exi
     if(!file.startsWith(root+path.sep))return res.writeHead(403).end();
     try{
       let body;
-      if(pathname==='/sw.js')body=legacy?worker.replace('v236','v230'):worker;
+      if(pathname==='/sw.js')body=legacy?worker.replace('v237','v230'):worker;
       else if(pathname==='/assets/mode-koc.svg'&&legacy)body=legacyArtwork;
       else body=fs.readFileSync(file);
       res.writeHead(200,{'Content-Type':mime[path.extname(file)]||'application/octet-stream','Cache-Control':'no-store'}).end(body);
@@ -92,10 +92,10 @@ test('illustrated home: keyboard, all formats, EN/mobile, offline assets and exi
     },{once:true}));
     await reg.update();await activated;
   });
-  await page.waitForFunction(async()=>{const keys=await caches.keys();return keys.includes('padel-toss-americano-v236')&&!keys.includes('padel-toss-americano-v230');});
+  await page.waitForFunction(async()=>{const keys=await caches.keys();return keys.includes('padel-toss-americano-v237')&&!keys.includes('padel-toss-americano-v230');});
   assert.equal(await page.evaluate(()=>localStorage.getItem('visual-upgrade-check')),'keep-this-session');
   console.log('Illustrated home: existing-client cache upgrade preserved local storage.');
-  const shell=await page.evaluate(async()=>{const c=await caches.open('padel-toss-americano-v236');return (await c.keys()).map(r=>new URL(r.url).pathname);});
+  const shell=await page.evaluate(async()=>{const c=await caches.open('padel-toss-americano-v237');return (await c.keys()).map(r=>new URL(r.url).pathname);});
   console.log('Updated offline cache paths:',JSON.stringify(shell));
   for(const file of ['visual-theme.css','assets/mode-toss.svg','assets/mode-koc.svg','assets/mode-americano.svg','assets/mode-split.svg'])assert.ok(shell.includes('/'+file),file+' is ready before client takeover');
   await ctx.setOffline(true);
