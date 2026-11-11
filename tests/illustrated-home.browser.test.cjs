@@ -8,6 +8,8 @@ const {chromium}=require('playwright');
 test('illustrated home: keyboard, all formats, EN/mobile, offline assets and existing-client upgrade',{timeout:90000},async t=>{
   const root=path.join(__dirname,'..');
   const worker=fs.readFileSync(path.join(root,'sw.js'),'utf8');
+  const kocArtwork=fs.readFileSync(path.join(root,'assets/mode-koc.svg'),'utf8');
+  const legacyArtwork=kocArtwork.replace('</svg>','<text x="437" y="241">4</text></svg>');
   let browser,ctx;
   let legacy=true;
   const mime={'.html':'text/html','.css':'text/css','.js':'text/javascript','.svg':'image/svg+xml','.png':'image/png','.webmanifest':'application/manifest+json'};
@@ -16,7 +18,10 @@ test('illustrated home: keyboard, all formats, EN/mobile, offline assets and exi
     const file=path.resolve(root,'.'+(pathname==='/'?'/index.html':pathname));
     if(!file.startsWith(root+path.sep))return res.writeHead(403).end();
     try{
-      const body=pathname==='/sw.js'?(legacy?worker.replace('v230','v220'):worker):fs.readFileSync(file);
+      let body;
+      if(pathname==='/sw.js')body=legacy?worker.replace('v231','v230'):worker;
+      else if(pathname==='/assets/mode-koc.svg'&&legacy)body=legacyArtwork;
+      else body=fs.readFileSync(file);
       res.writeHead(200,{'Content-Type':mime[path.extname(file)]||'application/octet-stream','Cache-Control':'no-store'}).end(body);
     }catch{res.writeHead(404).end();}
   });
@@ -70,7 +75,12 @@ test('illustrated home: keyboard, all formats, EN/mobile, offline assets and exi
   }
   await page.evaluate(()=>navigator.serviceWorker.ready);
   console.log('Illustrated home: keyboard, modes, languages and responsive layouts passed.');
-  await page.waitForFunction(async()=>!!navigator.serviceWorker.controller&&(await caches.keys()).includes('padel-toss-americano-v220'));
+  await page.waitForFunction(async()=>!!navigator.serviceWorker.controller&&(await caches.keys()).includes('padel-toss-americano-v230'));
+  const previousArtwork=await page.evaluate(async()=>{
+    const cache=await caches.open('padel-toss-americano-v230');
+    return (await cache.match('./assets/mode-koc.svg')).text();
+  });
+  assert.match(previousArtwork,/<text\b[^>]*>4<\/text>/);
   await page.evaluate(()=>localStorage.setItem('visual-upgrade-check','keep-this-session'));
   legacy=false;
   await page.evaluate(async()=>{
@@ -82,10 +92,10 @@ test('illustrated home: keyboard, all formats, EN/mobile, offline assets and exi
     },{once:true}));
     await reg.update();await activated;
   });
-  await page.waitForFunction(async()=>{const keys=await caches.keys();return keys.includes('padel-toss-americano-v230')&&!keys.includes('padel-toss-americano-v220');});
+  await page.waitForFunction(async()=>{const keys=await caches.keys();return keys.includes('padel-toss-americano-v231')&&!keys.includes('padel-toss-americano-v230');});
   assert.equal(await page.evaluate(()=>localStorage.getItem('visual-upgrade-check')),'keep-this-session');
   console.log('Illustrated home: existing-client cache upgrade preserved local storage.');
-  const shell=await page.evaluate(async()=>{const c=await caches.open('padel-toss-americano-v230');return (await c.keys()).map(r=>new URL(r.url).pathname);});
+  const shell=await page.evaluate(async()=>{const c=await caches.open('padel-toss-americano-v231');return (await c.keys()).map(r=>new URL(r.url).pathname);});
   console.log('Updated offline cache paths:',JSON.stringify(shell));
   for(const file of ['visual-theme.css','assets/mode-toss.svg','assets/mode-koc.svg','assets/mode-americano.svg','assets/mode-split.svg'])assert.ok(shell.includes('/'+file),file+' is ready before client takeover');
   await ctx.setOffline(true);
@@ -95,6 +105,9 @@ test('illustrated home: keyboard, all formats, EN/mobile, offline assets and exi
   await page.waitForFunction(()=>[...document.querySelectorAll('.mode-illustration')].every(img=>img.complete&&img.naturalWidth>0));
   assert.equal(await page.locator('.format-btn').first().evaluate(el=>getComputedStyle(el).display),'grid','the illustrated stylesheet must work offline');
   assert.equal(await page.locator('#panel0').isVisible(),true);
+  const offlineArtwork=await page.evaluate(async()=>(await fetch('./assets/mode-koc.svg')).text());
+  assert.equal(offlineArtwork,kocArtwork);
+  assert.doesNotMatch(offlineArtwork,/<text\b[^>]*>4<\/text>/);
   await page.locator('.format-btn[data-format="americano"]').click();
   await page.waitForFunction(()=>{const img=document.querySelector('#formatMark img');return img&&img.complete&&img.naturalWidth>0;});
   assert.equal(await page.locator('#brandEyebrow').isVisible(),true);
