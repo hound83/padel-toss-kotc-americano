@@ -226,25 +226,28 @@
   .live-round-tools button.selected{border-color:var(--teal-900);background:var(--teal-900);color:var(--ball);}
   .live-round-label{font-weight:800;color:var(--teal-900);min-width:92px;text-align:center;white-space:nowrap;}
   .live-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(300px,.43fr);gap:18px;align-items:start;grid-template-areas:"current standings" "next standings";}
-  .live-layout.no-board{grid-template-columns:minmax(0,1fr) minmax(300px,.72fr);grid-template-areas:"current next";}
+  .live-layout.no-board{grid-template-columns:minmax(0,3fr) minmax(300px,2fr);grid-template-areas:"current next";}
   .live-current{grid-area:current;min-width:0;}
-  .live-upcoming{grid-area:next;min-width:0;}
+  .live-upcoming{grid-area:next;min-width:0;container-type:inline-size;}
   .live-standings{grid-area:standings;min-width:0;position:sticky;top:12px;display:grid;gap:14px;}
   .live-layout.no-board .live-standings{display:none;}
   .live-section-head{margin:0 0 12px;font:800 clamp(19px,2vw,24px) var(--font-display);color:var(--teal-900);}
-  .live-next-head{margin-top:4px;}
+  .live-next-head{margin-top:4px;font-size:clamp(17px,1.5vw,20px);color:var(--teal-700);}
   .live-match-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,270px),1fr));gap:12px;}
   .live-match{background:#fff;border:1px solid var(--line);border-radius:13px;overflow:hidden;}
   .live-match-head{font-weight:800;font-size:var(--fs-md);color:var(--teal-900);background:#DFE8F5;padding:11px 14px;display:flex;justify-content:space-between;gap:8px;}
   .live-match-head small{font-size:var(--fs-xs);font-weight:600;color:var(--ink-soft);}
+  .live-current .live-match-head{background:var(--teal-900);color:#fff;}
+  .live-current .live-match-head small{color:#D6E5F3;}
   .live-match-body{padding:15px;display:grid;grid-template-columns:minmax(0,1fr) 24px minmax(0,1fr);gap:8px;align-items:center;}
   .live-team{display:grid;gap:5px;min-width:0;}
   .live-team.right{text-align:right;}
   .live-team span{font-weight:700;overflow-wrap:anywhere;font-size:var(--fs-base);}
   .live-vs{text-align:center;color:var(--ink-soft);font-size:var(--fs-xs);}
-  .live-score{display:flex;align-items:center;justify-content:center;gap:10px;padding:0 12px 14px;}
-  .live-score input{width:76px;max-width:30%;font:700 22px var(--font-mono);text-align:center;border:1.5px solid var(--teal-700);border-radius:8px;background:var(--mist);color:var(--teal-900);padding:6px;}
-  .live-score span{color:var(--ink-soft);}
+  .live-current .live-team span{font-size:clamp(var(--fs-base),1.45vw,var(--fs-lg));}
+  .live-match-body.has-scores{align-items:stretch;}
+  .live-match-body.has-scores .live-team{display:flex;flex-direction:column;}
+  .live-match-body.has-scores .live-vs{align-self:start;margin-top:9px;}
   .live-level{font-size:var(--fs-sm);color:var(--teal-700);font-weight:800;margin:14px 0 8px;}
   .live-level:first-child{margin-top:0;}
   .live-waiting{font-size:var(--fs-sm);color:var(--ink-soft);margin:9px 0 12px;}
@@ -260,8 +263,14 @@
   .live-board td:last-child,.live-board th:last-child{text-align:right;font-weight:800;}
   .live-board tr:last-child td{border-bottom:none;}
   .live-empty{color:var(--ink-soft);font-size:var(--fs-base);border:1px dashed var(--line);border-radius:12px;padding:20px;}
-  .live-upcoming .live-match-body{padding:12px;}
-  .live-upcoming .live-match-head{font-size:var(--fs-sm);padding:9px 12px;}
+  .live-upcoming .live-match-grid{grid-template-columns:minmax(0,1fr);gap:9px;}
+  @container (min-width:380px){
+    .live-upcoming .live-match-grid:has(.live-match:nth-child(2)){grid-template-columns:repeat(2,minmax(0,1fr));}
+  }
+  .live-upcoming .live-match-body{padding:8px 10px;grid-template-columns:minmax(0,1fr) 18px minmax(0,1fr);gap:5px;}
+  .live-upcoming .live-match-head{font-size:var(--fs-xs);padding:6px 10px;}
+  .live-upcoming .live-team{gap:3px;}
+  .live-upcoming .live-team span{font-size:var(--fs-sm);font-weight:650;}
   .live-koc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;}
   .live-koc-card{background:#fff;border:1px solid var(--line);border-radius:13px;overflow:hidden;}
   .live-koc-card h3{margin:0;background:#DFE8F5;color:var(--teal-900);padding:12px 14px;font-size:var(--fs-lg);}
@@ -654,17 +663,17 @@
   }
   .team{ flex:1; min-width:0; }
   .team.team-right{ text-align:right; }
-  .team .players{ font-weight:700; font-size:var(--fs-base); line-height:1.3; }
+  .team .players{ font-weight:700; font-size:var(--fs-base); line-height:1.3; overflow-wrap:anywhere; }
   .team .players + .players{ margin-top:2px; }
   .vs{ font-family:var(--font-mono); font-size:var(--fs-xs); color:var(--ink-soft); }
-  .score-row{
-    display:flex; align-items:center; gap:10px;
-    margin-top:10px;
-  }
-  .score-spacer{ flex:1; min-width:0; }
-  .score-inputs{ display:flex; align-items:center; gap:10px; flex:0 0 auto; }
-  .score-row input{
+  .teams-row.has-scores{ align-items:stretch; }
+  .teams-row.has-scores .team{ display:flex; flex-direction:column; }
+  .teams-row.has-scores .vs{ align-self:flex-start; margin-top:9px; }
+  .team-score{ margin-top:auto; padding-top:8px; }
+  .team-score input{
     width:56px;
+    max-width:100%;
+    min-height:44px;
     text-align:center;
     font-family:var(--font-mono);
     font-size:var(--fs-lg);
@@ -675,8 +684,10 @@
     color:var(--teal-900);
     background:var(--mist);
   }
-  .score-row input:focus{ background:#fff; }
-  .score-dash{ font-family:var(--font-mono); color:var(--ink-soft); }
+  .team-score input:focus{ background:#fff; }
+  .live-team .team-score{ padding-top:3px; }
+  .live-team .team-score input{ width:76px; font-size:22px; border-radius:8px; }
+  .live-upcoming .team-score{ font-family:var(--font-mono); font-weight:700; color:var(--teal-900); }
 
   .resting-line{
     margin:10px 0 0;
@@ -1445,6 +1456,7 @@
       roundLabel: 'RONDE',
       courtLabel: 'Baan',
       vsLabel: 'vs',
+      scoreForTeam: 'Score voor {team}',
       restingPrefix: 'Wachten: ',
       poolLabelTop: 'Goud',
       poolLabelBottom: 'Zilver',
@@ -1668,6 +1680,7 @@
       roundLabel: 'ROUND',
       courtLabel: 'Court',
       vsLabel: 'vs',
+      scoreForTeam: 'Score for {team}',
       restingPrefix: 'Waiting: ',
       poolLabelTop: 'Gold',
       poolLabelBottom: 'Silver',
@@ -3425,60 +3438,37 @@
     body.className = 'match-body';
 
     var teamsRow = document.createElement('div');
-    teamsRow.className = 'teams-row';
-    teamsRow.innerHTML =
-      '<div class="team">' +
-        '<div class="players">' + court.team1[0] + '</div>' +
-        '<div class="players">' + court.team1[1] + '</div>' +
-      '</div>' +
-      '<div class="vs">' + t('vsLabel') + '</div>' +
-      '<div class="team team-right">' +
-        '<div class="players">' + court.team2[0] + '</div>' +
-        '<div class="players">' + court.team2[1] + '</div>' +
-      '</div>';
-    body.appendChild(teamsRow);
+    teamsRow.className = 'teams-row' + (pool.resultsEnabled ? ' has-scores' : '');
+    var key = scoreKey(pool.id, court.courtIndex, round);
+    function team(names, side){
+      var block = liveElement('div', side === 't1' ? 'team' : 'team team-right');
+      names.forEach(function(name){ block.appendChild(liveElement('div', 'players', name)); });
+      if (!pool.resultsEnabled) return block;
 
-    if (pool.resultsEnabled){
-      var key = scoreKey(pool.id, court.courtIndex, round);
-      var scoreRow = document.createElement('div');
-      scoreRow.className = 'score-row';
-      var in1 = document.createElement('input');
-      in1.type = 'number'; in1.min = '0'; in1.inputMode = 'numeric';
-      in1.setAttribute('aria-label', court.team1.join(' & '));
-      in1.setAttribute('data-key', key); in1.setAttribute('data-team', 't1');
-      var dash = document.createElement('span');
-      dash.className = 'score-dash'; dash.textContent = '\u2013';
-      var in2 = document.createElement('input');
-      in2.type = 'number'; in2.min = '0'; in2.inputMode = 'numeric';
-      in2.setAttribute('aria-label', court.team2.join(' & '));
-      in2.setAttribute('data-key', key); in2.setAttribute('data-team', 't2');
-
-      [in1, in2].forEach(function(inp){
-        inp.addEventListener('input', function(e){
-          var k = e.target.getAttribute('data-key');
-          var team = e.target.getAttribute('data-team');
-          var val = e.target.value === '' ? null : parseInt(e.target.value, 10);
-          if (!state.scores[k]) state.scores[k] = { t1: null, t2: null };
-          state.scores[k][team] = (val === null || isNaN(val)) ? null : val;
-          renderLeaderboard();
-        });
+      var score = liveElement('div', 'team-score');
+      var input = document.createElement('input');
+      input.type = 'number';
+      input.min = '0';
+      input.inputMode = 'numeric';
+      input.setAttribute('aria-label', tf('scoreForTeam', {team:names.join(' & ')}));
+      input.setAttribute('data-key', key);
+      input.setAttribute('data-team', side);
+      var existing = state.scores[key];
+      if (existing && typeof existing[side] === 'number') input.value = existing[side];
+      input.addEventListener('input', function(){
+        var value = parseInt(input.value, 10);
+        if (!state.scores[key]) state.scores[key] = { t1: null, t2: null };
+        state.scores[key][side] = isNaN(value) ? null : value;
+        renderLeaderboard();
       });
-
-      var scoreLeftSpacer = document.createElement('div');
-      scoreLeftSpacer.className = 'score-spacer';
-      var scoreGroup = document.createElement('div');
-      scoreGroup.className = 'score-inputs';
-      scoreGroup.appendChild(in1);
-      scoreGroup.appendChild(dash);
-      scoreGroup.appendChild(in2);
-      var scoreRightSpacer = document.createElement('div');
-      scoreRightSpacer.className = 'score-spacer';
-
-      scoreRow.appendChild(scoreLeftSpacer);
-      scoreRow.appendChild(scoreGroup);
-      scoreRow.appendChild(scoreRightSpacer);
-      body.appendChild(scoreRow);
+      score.appendChild(input);
+      block.appendChild(score);
+      return block;
     }
+    teamsRow.appendChild(team(court.team1, 't1'));
+    teamsRow.appendChild(liveElement('div', 'vs', t('vsLabel')));
+    teamsRow.appendChild(team(court.team2, 't2'));
+    body.appendChild(teamsRow);
 
     card.appendChild(body);
     return card;
@@ -3590,14 +3580,6 @@
         col.appendChild(buildCheckpointCard());
       }
     }
-
-    document.querySelectorAll('.score-row input').forEach(function(inp){
-      var k = inp.getAttribute('data-key');
-      var team = inp.getAttribute('data-team');
-      if (state.scores[k] && typeof state.scores[k][team] === 'number'){
-        inp.value = state.scores[k][team];
-      }
-    });
 
     var boardCol = document.getElementById('boardCol');
     var anyResults = state.pools.some(function(p){ return p.resultsEnabled; });
@@ -5356,7 +5338,8 @@
     input.type = 'number';
     input.min = '0';
     input.inputMode = 'numeric';
-    input.setAttribute('aria-label',court[side === 't1' ? 'team1':'team2'].join(' & '));
+    var names = court[side === 't1' ? 'team1' : 'team2'];
+    input.setAttribute('aria-label', tf('scoreForTeam', {team:names.join(' & ')}));
     var current = state.scores[key];
     input.value = current && typeof current[side] === 'number' ? String(current[side]) : '';
     input.addEventListener('input',function(){
@@ -5381,32 +5364,25 @@
     var head = liveElement('div','live-match-head',t('courtLabel')+' '+court.courtIndex);
     if (pool.label) head.appendChild(liveElement('small','',poolDisplayLabel(pool)));
     card.appendChild(head);
-    var body = liveElement('div','live-match-body');
-    function team(names,right){
-      var block=liveElement('div','live-team'+(right?' right':''));
+    var result = pool.resultsEnabled ? state.scores[scoreKey(pool.id,court.courtIndex,round)] : null;
+    var hasScores = pool.resultsEnabled && (editable ||
+      (result && (typeof result.t1 === 'number' || typeof result.t2 === 'number')));
+    var body = liveElement('div','live-match-body'+(hasScores?' has-scores':''));
+    function team(names,side){
+      var block=liveElement('div','live-team'+(side === 't2'?' right':''));
       names.forEach(function(name){block.appendChild(liveElement('span','',name));});
+      if (hasScores){
+        var score = liveElement('div','team-score');
+        if (editable) score.appendChild(liveScoreField(pool,court,round,side));
+        else score.textContent = typeof result[side] === 'number' ? String(result[side]) : '\u2013';
+        block.appendChild(score);
+      }
       return block;
     }
-    body.appendChild(team(court.team1,false));
+    body.appendChild(team(court.team1,'t1'));
     body.appendChild(liveElement('span','live-vs',t('vsLabel')));
-    body.appendChild(team(court.team2,true));
+    body.appendChild(team(court.team2,'t2'));
     card.appendChild(body);
-    if (editable && pool.resultsEnabled){
-      var score = liveElement('div','live-score');
-      score.appendChild(liveScoreField(pool,court,round,'t1'));
-      score.appendChild(liveElement('span','','–'));
-      score.appendChild(liveScoreField(pool,court,round,'t2'));
-      card.appendChild(score);
-    } else if (pool.resultsEnabled && !editable){
-      var result = state.scores[scoreKey(pool.id,court.courtIndex,round)];
-      if (result && (typeof result.t1 === 'number' || typeof result.t2 === 'number')){
-        var smallScore = liveElement('div','live-score');
-        smallScore.textContent =
-          (typeof result.t1 === 'number' ? result.t1 : '–')+' : '+
-          (typeof result.t2 === 'number' ? result.t2 : '–');
-        card.appendChild(smallScore);
-      }
-    }
     return card;
   }
   function renderLiveRoundSection(target,round,current){
