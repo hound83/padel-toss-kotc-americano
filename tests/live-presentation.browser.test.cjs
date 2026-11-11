@@ -45,6 +45,36 @@ test('v2.2: clean navigation and live KOC, Toss, Americano and split Toss', asyn
     const download=await event;
     return JSON.parse(fs.readFileSync(await download.path(),'utf8')).state;
   }
+  const firstNames=['Annemarieke','Maximiliaan','Christiaan','Sebastiaan','Alexander','Frederique',
+    'Valentijn','Marjolein','Charlotte','Marianne','Willemijn','Benjamin','Jonathan','Isabelle','Sander','Noor',
+    'Jeroen','Sophie','Marlies','Thomas','Daniel','Marieke','Joost','Nathalie','Lucas','Nina','Eva','Robin',
+    'Floor','Stefan','Maud','David'];
+  async function fillNames(page,count){
+    const inputs=page.locator('#namesGrid .name-field input');
+    assert.equal(await inputs.count(),count);
+    for(const [index,name] of firstNames.slice(0,count).entries())await inputs.nth(index).fill(name);
+  }
+  async function checkNamesFit(names){
+    const wrapped=await names.evaluateAll(elements=>elements.filter(el=>{
+      const text=document.createRange();
+      text.selectNodeContents(el);
+      return text.getClientRects().length!==1||text.getBoundingClientRect().width>el.getBoundingClientRect().width+1;
+    }).map(el=>el.textContent));
+    assert.deepEqual(wrapped,[],'first names fit on one line');
+  }
+  async function checkLiveCourtRows(page,expected){
+    for(const area of ['#liveCurrent','#liveUpcoming']){
+      const rows=await page.locator(area+' .live-match').evaluateAll(cards=>{
+        const counts=new Map();
+        for(const card of cards){
+          const top=card.getBoundingClientRect().top;
+          counts.set(top,(counts.get(top)??0)+1);
+        }
+        return [...counts.values()];
+      });
+      assert.deepEqual(rows,expected,area+' court cards per row');
+    }
+  }
   async function checkScorePlacement(card,teamSelector,nameSelector,inline=false){
     const placement=await card.evaluate((match,{teamSelector,nameSelector,inline})=>
       [...match.querySelectorAll(teamSelector)].map((team,side)=>{
@@ -86,6 +116,7 @@ test('v2.2: clean navigation and live KOC, Toss, Americano and split Toss', asyn
   assert.equal(await koc.locator('#livePresentation').isVisible(),false);
 
   const toss=await open('toss');
+  await toss.setViewportSize({width:1360,height:900});
   assert.equal((await toss.locator('#appTitle').innerText()).toUpperCase(),'TOSS');
   await toss.locator('#courtsSelect .court-btn[data-courts="4"]').click();
   const namesStep=toss.getByRole('button',{name:'Namen',exact:true});
@@ -100,10 +131,12 @@ test('v2.2: clean navigation and live KOC, Toss, Americano and split Toss', asyn
   assert.equal(await toss.locator('#panel0').isVisible(),false);
   assert.equal(await toss.locator('#panel2').isVisible(),true);
   assert.equal(await namesStep.getAttribute('aria-current'),'step');
+  await fillNames(toss,32);
   await toss.locator('#generateBtn').click();
   assert.equal(await toss.locator('.brand-copy #metaStrip').textContent(),'32 spelers · 4 banen · 7 rondes');
   assert.equal(await scheduleStep.getAttribute('aria-current'),'step');
   await namesStep.click();
+  await toss.waitForFunction(()=>document.activeElement.id==='appTitle');
   await scheduleStep.press('Enter');
   assert.equal(await toss.locator('#panel3').isVisible(),true);
   await toss.locator('#presentBtn').click();
@@ -113,14 +146,15 @@ test('v2.2: clean navigation and live KOC, Toss, Americano and split Toss', asyn
     const now=layout.querySelector('#liveCurrent');
     const next=layout.querySelector('#liveUpcoming');
     const first=now.querySelector('.live-match').getBoundingClientRect();
-    const [a,b,c]=[...next.querySelectorAll('.live-match')].map(card=>card.getBoundingClientRect());
+    const upcoming=next.querySelector('.live-match').getBoundingClientRect();
     return {
       currentWider:now.offsetWidth>next.offsetWidth,
-      upcomingCompact:a.width<first.width&&a.height<first.height,
-      upcomingTwoAcross:a.top===b.top&&a.left<b.left&&a.top<c.top
+      upcomingCompact:upcoming.width<first.width&&upcoming.height<first.height
     };
   });
-  assert.deepEqual(roundLayout,{currentWider:true,upcomingCompact:true,upcomingTwoAcross:true});
+  assert.deepEqual(roundLayout,{currentWider:true,upcomingCompact:true});
+  await checkLiveCourtRows(toss,[2,2]);
+  await checkNamesFit(toss.locator('#liveCurrent .live-team span, #liveUpcoming .live-team span'));
   const screenshotDir=process.env.PADEL_SCREENSHOT_DIR;
   if(screenshotDir){
     fs.mkdirSync(screenshotDir,{recursive:true});
@@ -133,6 +167,13 @@ test('v2.2: clean navigation and live KOC, Toss, Americano and split Toss', asyn
   assert.match(await toss.locator('#liveRoundLabel').innerText(),/2\s*\/\s*7/);
   await toss.locator('#liveAllRounds').click();
   assert.equal(await toss.locator('#panel3').isVisible(),true);
+  await toss.waitForFunction(()=>!document.fullscreenElement);
+  await toss.setViewportSize({width:1060,height:900});
+  await toss.locator('#presentBtn').click();
+  await checkLiveCourtRows(toss,[1,1,1,1]);
+  await checkNamesFit(toss.locator('#liveCurrent .live-team span, #liveUpcoming .live-team span'));
+  if(screenshotDir)await toss.screenshot({path:path.join(screenshotDir,'presentation-four-courts-narrow.png')});
+  await toss.locator('#presentExit').click();
 
   const split=await open('splitToss',true);
   await split.getByRole('button',{name:'Namen',exact:true}).tap();
@@ -158,7 +199,7 @@ test('v2.2: clean navigation and live KOC, Toss, Americano and split Toss', asyn
   await splitScores.locator('#ervarenResultsToggle').check();
   await splitScores.locator('#generateBtn').click();
   await checkScorePlacement(splitScores.locator('.match-card').first(),'.team','.players',true);
-  await splitScores.setViewportSize({width:390,height:844});
+  await splitScores.setViewportSize({width:414,height:844});
   await checkScorePlacement(splitScores.locator('.match-card').first(),'.team','.players',true);
   if(screenshotDir)await splitScores.locator('.match-card').first().screenshot({path:path.join(screenshotDir,'mobile-score-card.png')});
   await splitScores.locator('#presentBtn').click();
@@ -176,6 +217,7 @@ test('v2.2: clean navigation and live KOC, Toss, Americano and split Toss', asyn
   const fourCourtAmericano=await open('americano');
   await fourCourtAmericano.locator('#courtsSelect .court-btn[data-courts="4"]').click();
   await fourCourtAmericano.locator('#continueTo2').click();
+  await fillNames(fourCourtAmericano,16);
   await fourCourtAmericano.locator('#generateBtn').click();
   const firstRound=fourCourtAmericano.locator('.round-block').first();
   const courtRows=firstRound.locator('.match-card');
@@ -199,6 +241,19 @@ test('v2.2: clean navigation and live KOC, Toss, Americano and split Toss', asyn
   await firstScore.fill('26');
   await firstScore.press('Tab');
   assert.equal(await courtRows.first().locator('input[data-team="t2"]').evaluate(input=>input===document.activeElement),true);
+  for(const [width,inline] of [[500,true],[414,true],[390,false],[320,false]]){
+    await fourCourtAmericano.setViewportSize({width,height:844});
+    await checkNamesFit(courtRows.locator('.players'));
+    await checkScorePlacement(courtRows.first(),'.team','.players',inline);
+  }
+  if(screenshotDir)await firstRound.screenshot({path:path.join(screenshotDir,'schedule-four-courts-narrow.png')});
+  await fourCourtAmericano.setViewportSize({width:1600,height:1000});
+  await fourCourtAmericano.locator('#presentBtn').click();
+  assert.equal(await fourCourtAmericano.locator('#liveStandings .live-board').count(),1);
+  await checkLiveCourtRows(fourCourtAmericano,[2,2]);
+  await checkNamesFit(fourCourtAmericano.locator('#liveCurrent .live-team span, #liveUpcoming .live-team span'));
+  if(screenshotDir)await fourCourtAmericano.screenshot({path:path.join(screenshotDir,'presentation-americano-four-courts.png')});
+  await fourCourtAmericano.locator('#presentExit').click();
 
   // Americano qualification and the new Gold/Silver competitions must not
   // contaminate each other's scores.
