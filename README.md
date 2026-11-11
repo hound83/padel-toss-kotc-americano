@@ -65,7 +65,7 @@ De presentatiemodus is een afzonderlijke liveweergave, niet het hele lange schem
 - **Gesplitste Toss:** de huidige en volgende ronde van alle niveaus. Automatisch doorschuiven kan alleen wanneer alle actieve niveaus resultaten bijhouden; anders gebruik je de pijlen.
 - **Goud/Zilver na de Americano-kwalificatie:** elke groep krijgt een nieuw klassement vanaf nul. De kwalificatieresultaten blijven beschikbaar als historie. Een latere scorecorrectie verandert nooit automatisch de al vastgestelde samenstelling van Goud en Zilver.
 
-De live-rondekeuze wordt samen met het schema opgeslagen. **Volledig schema** brengt je terug naar de beheermodus.
+Dezelfde rondeknoppen staan boven het gewone schema en blijven in beeld tijdens het scrollen. Met de pijlen of **Auto** spring je naar de gekozen ronde. **Volledig schema** brengt je vanuit de presentatiemodus terug naar die ronde. De rondekeuze wordt samen met het schema opgeslagen.
 
 ### Speciaal voor KOC
 
