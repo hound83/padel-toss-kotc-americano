@@ -19,7 +19,7 @@ test('court defaults and name-list drawer retain the ordinary player layout', as
     catch (e) {res.writeHead(404).end();}
   });
   await new Promise(resolve => server.listen(0,'127.0.0.1',resolve));
-  t.after(() => new Promise(resolve => server.close(resolve)));
+  t.after(() => new Promise(resolve => (server.closeAllConnections(), server.close(resolve))));
   const browser = await chromium.launch({headless:true,
     ...(process.env.CHROMIUM_EXECUTABLE_PATH ? {executablePath:process.env.CHROMIUM_EXECUTABLE_PATH} : {})});
   t.after(() => browser.close());

@@ -22,7 +22,7 @@ jobs:
           npm install --no-save --no-package-lock playwright@1.58.0
           npx playwright install --with-deps chromium
       - name: All browser integration tests
-        run: timeout 120s node --test --test-reporter=spec tests/*.browser.test.cjs
+        run: timeout 120s node --test --test-timeout=60000 --test-reporter=spec tests/*.browser.test.cjs
         env:
           PADEL_SCREENSHOT_DIR: test-results
       - name: Verify the published GitHub Pages release

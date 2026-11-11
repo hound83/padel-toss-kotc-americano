@@ -19,7 +19,7 @@ test('v2.2: clean navigation and live KOC, Toss, Americano and split Toss', asyn
       .end(fs.readFileSync(file));}catch(e){res.writeHead(404).end();}
   });
   await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
-  t.after(()=>new Promise(resolve=>server.close(resolve)));
+  t.after(()=>new Promise(resolve=>(server.closeAllConnections(), server.close(resolve))));
   const url='http://127.0.0.1:'+server.address().port;
   const browser=await chromium.launch({headless:true,
     ...(process.env.CHROMIUM_EXECUTABLE_PATH?
