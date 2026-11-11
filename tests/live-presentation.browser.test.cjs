@@ -161,6 +161,13 @@ test('v2.2: clean navigation and live KOC, Toss, Americano and split Toss', asyn
     'completing every court moves the current round forward');
   await americano.locator('#livePrev').click();
   assert.match(await americano.locator('#liveRoundLabel').innerText(),/3\s*\/\s*4/);
+  // A later correction must change points, not the already-achieved round
+  // progression. The override stays on round 3 until Auto is resumed.
+  await americano.locator('#liveCurrent .live-match').nth(0)
+    .locator('.live-score input').nth(0).fill('');
+  await americano.locator('#liveCurrent .live-match').nth(0)
+    .locator('.live-score input').nth(0).press('Tab');
+  assert.match(await americano.locator('#liveRoundLabel').innerText(),/3\s*\/\s*4/);
   await americano.locator('#liveAllRounds').click();
   const afterManual=await saveState(americano);
   assert.equal(afterManual.live.mode,'manual');
