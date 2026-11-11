@@ -249,6 +249,10 @@
   .live-level:first-child{margin-top:0;}
   .live-waiting{font-size:var(--fs-sm);color:var(--ink-soft);margin:9px 0 12px;}
   .live-board{background:var(--teal-900);color:#fff;border-radius:13px;padding:18px;min-width:0;}
+  .live-board{max-height:min(78vh,850px);overflow:auto;}
+  .live-round-tools[hidden],.live-koc-grid[hidden],.live-layout[hidden]{display:none!important;}
+  .live-round-tools button.selected:disabled{background:#E8EDF4;color:var(--ink-soft);border-color:var(--line);}
+
   .live-board h3{font:800 var(--fs-lg) var(--font-display);color:var(--ball);margin:0 0 12px;}
   .live-board table{border-collapse:collapse;width:100%;font-size:var(--fs-sm);}
   .live-board th{text-align:left;color:#B5CAE4;border-bottom:1px solid #44679B;padding:5px;font-size:var(--fs-2xs);}
@@ -1431,6 +1435,21 @@
       cpButton: 'Splits in Goud & Zilver \u2192',
       cpError: 'Vul eerst alle scores in voor ronde 1–{n}.',
       boardTitle: 'Klassement',
+      liveCurrentHeading: 'Nu spelen · ronde {n}',
+      liveUpcomingHeading: 'Hierna · ronde {n}',
+      liveRoundLabel: 'Ronde {n} / {max}',
+      liveNoNext: 'Dit is de laatste geplande ronde.',
+      liveNoSchedule: 'Er is nog geen indeling gemaakt.',
+      liveAuto: 'Auto',
+      liveAutoTitle: 'Volg automatisch de eerste nog niet volledig gescoorde ronde',
+      liveAutoDisabled: 'Auto wordt beschikbaar zodra er uitslagen zijn. Zonder scores kies je zelf de ronde.',
+      liveAllRounds: 'Volledig schema',
+      liveKocSubtitle: 'Startindeling · daarna zelf doorschuiven',
+      livePlaying: 'Huidige ronde · {n} van {max}',
+      liveWaiting: 'Wachten: {names}',
+      liveLevelRest: '{level} speelt deze ronde niet',
+      liveLastRound: 'Einde van het schema',
+      liveNoResults: 'Er zijn nog geen uitslagen ingevoerd.',
       qualificationArchive: 'Kwalificatie · eindstand bekijken',
       qualificationTitle: 'Kwalificatie · fase 1',
       qualificationLockedNote: 'De groepen Goud en Zilver zijn bij de splitsing definitief vastgezet. Latere scorecorrecties in de kwalificatie veranderen de groepsindeling niet.',
@@ -1631,6 +1650,21 @@
       cpButton: 'Split into Gold & Silver \u2192',
       cpError: 'Enter every score for rounds 1–{n} first.',
       boardTitle: 'Leaderboard',
+      liveCurrentHeading: 'Now playing · round {n}',
+      liveUpcomingHeading: 'Up next · round {n}',
+      liveRoundLabel: 'Round {n} / {max}',
+      liveNoNext: 'This is the final scheduled round.',
+      liveNoSchedule: 'No lineup has been generated yet.',
+      liveAuto: 'Auto',
+      liveAutoTitle: 'Automatically show the earliest round without complete scores',
+      liveAutoDisabled: 'Auto becomes available when results are entered. Without scores, choose the round manually.',
+      liveAllRounds: 'Full schedule',
+      liveKocSubtitle: 'Starting lineup · move courts after the results',
+      livePlaying: 'Current round · {n} of {max}',
+      liveWaiting: 'Waiting: {names}',
+      liveLevelRest: '{level} does not play this round',
+      liveLastRound: 'End of schedule',
+      liveNoResults: 'No results have been entered yet.',
       qualificationArchive: 'Qualification · view final standings',
       qualificationTitle: 'Qualification · phase 1',
       qualificationLockedNote: 'Gold and Silver groups were locked when the split was confirmed. Later score corrections to qualification matches do not change the group memberships.',
@@ -5159,23 +5193,330 @@
     doStartOver();
   });
 
+  // ---------- Live match presentation ----------
+  // Keep presentation separate from setup and historical rounds. These
+  // settings are stored with the schedule, while fullscreen UI is transient.
+  function ensureLiveState(){
+    if (!state.live || typeof state.live !== 'object'){
+      state.live = {mode:'auto', round:1, autoFloor:1};
+    }
+    if (state.live.mode !== 'manual') state.live.mode = 'auto';
+    state.live.round = Math.max(1, Number(state.live.round) || 1);
+    state.live.autoFloor = Math.max(1, Number(state.live.autoFloor) || 1);
+    return state.live;
+  }
+  function liveMaxRound(){
+    return state.pools.reduce(function(high,pool){
+      return Math.max(high,Number(pool.endRound) || 0);
+    },0);
+  }
+  function liveAutoEligible(){
+    if (state.format === 'americano') return state.pools.some(function(p){return p.resultsEnabled;});
+    if (state.format === 'splitToss') return state.pools.length > 0 &&
+      state.pools.every(function(p){return p.resultsEnabled;});
+    return false;
+  }
+  function liveHasScore(){
+    return Object.keys(state.scores || {}).some(function(key){
+      var sc = state.scores[key];
+      return sc && (typeof sc.t1 === 'number' || typeof sc.t2 === 'number');
+    });
+  }
+  function liveMatchesForRound(round){
+    var groups = [];
+    state.pools.forEach(function(pool){
+      if (round < pool.startRound || round > pool.endRound) return;
+      var rd = pool.rounds.find(function(r){return r.round === round;});
+      if (rd) groups.push({pool:pool, round:rd});
+    });
+    return groups;
+  }
+  function liveRoundComplete(round){
+    var count = 0, complete = true;
+    liveMatchesForRound(round).forEach(function(group){
+      group.round.courts.forEach(function(court){
+        count++;
+        var score = state.scores[scoreKey(group.pool.id,court.courtIndex,round)];
+        if (!score || typeof score.t1 !== 'number' || typeof score.t2 !== 'number') complete = false;
+      });
+    });
+    return count > 0 && complete;
+  }
+  function liveAutomaticRound(){
+    var max = liveMaxRound(), candidate = max || 1;
+    for (var round = 1; round <= max; round++){
+      if (!liveRoundComplete(round)){ candidate = round; break; }
+    }
+    var live = ensureLiveState();
+    // A score correction in an earlier finished round must never pull the
+    // currently displayed round backwards without an explicit override.
+    live.autoFloor = Math.min(Math.max(1,max),Math.max(live.autoFloor,candidate));
+    return live.autoFloor;
+  }
+  function liveCurrentRound(){
+    var live = ensureLiveState(), max = Math.max(1,liveMaxRound());
+    if (liveAutoEligible() && live.mode === 'auto') return liveAutomaticRound();
+    return Math.min(max,live.round);
+  }
+  function liveElement(tag,cls,text){
+    var el = document.createElement(tag);
+    if (cls) el.className = cls;
+    if (text !== undefined) el.textContent = text;
+    return el;
+  }
+  function liveScoreField(pool,court,round,side){
+    var key = scoreKey(pool.id,court.courtIndex,round);
+    var input = liveElement('input','');
+    input.type = 'number';
+    input.min = '0';
+    input.inputMode = 'numeric';
+    input.setAttribute('aria-label',court[side === 't1' ? 'team1':'team2'].join(' & '));
+    var current = state.scores[key];
+    input.value = current && typeof current[side] === 'number' ? String(current[side]) : '';
+    input.addEventListener('input',function(){
+      var value = input.value === '' ? null : Number(input.value);
+      if (!state.scores[key]) state.scores[key] = {t1:null,t2:null};
+      state.scores[key][side] = Number.isFinite(value) && value >= 0 ? value : null;
+      renderLeaderboard();
+      updateLiveControls();
+      scheduleAutosave();
+    });
+    input.addEventListener('change',function(){
+      // The normal schedule must reflect scores entered on the projector.
+      renderSchedule();
+      scheduleAutosave();
+      var displayed = Number(document.getElementById('livePresentation').dataset.round) || 1;
+      if (liveCurrentRound() !== displayed) renderLivePresentation();
+    });
+    return input;
+  }
+  function liveMatch(pool,court,round,editable){
+    var card = liveElement('article','live-match');
+    var head = liveElement('div','live-match-head',t('courtLabel')+' '+court.courtIndex);
+    if (pool.label) head.appendChild(liveElement('small','',poolDisplayLabel(pool)));
+    card.appendChild(head);
+    var body = liveElement('div','live-match-body');
+    function team(names,right){
+      var block=liveElement('div','live-team'+(right?' right':''));
+      names.forEach(function(name){block.appendChild(liveElement('span','',name));});
+      return block;
+    }
+    body.appendChild(team(court.team1,false));
+    body.appendChild(liveElement('span','live-vs',t('vsLabel')));
+    body.appendChild(team(court.team2,true));
+    card.appendChild(body);
+    if (editable && pool.resultsEnabled){
+      var score = liveElement('div','live-score');
+      score.appendChild(liveScoreField(pool,court,round,'t1'));
+      score.appendChild(liveElement('span','','–'));
+      score.appendChild(liveScoreField(pool,court,round,'t2'));
+      card.appendChild(score);
+    } else if (pool.resultsEnabled && !editable){
+      var result = state.scores[scoreKey(pool.id,court.courtIndex,round)];
+      if (result && (typeof result.t1 === 'number' || typeof result.t2 === 'number')){
+        var smallScore = liveElement('div','live-score');
+        smallScore.textContent =
+          (typeof result.t1 === 'number' ? result.t1 : '–')+' : '+
+          (typeof result.t2 === 'number' ? result.t2 : '–');
+        card.appendChild(smallScore);
+      }
+    }
+    return card;
+  }
+  function renderLiveRoundSection(target,round,current){
+    target.innerHTML = '';
+    if (!round || round > liveMaxRound()){
+      target.appendChild(liveElement('p','live-empty',t('liveNoNext')));
+      return;
+    }
+    target.appendChild(liveElement('h2','live-section-head'+(current?'':' live-next-head'),
+      tf(current?'liveCurrentHeading':'liveUpcomingHeading',{n:round})));
+    var groups=liveMatchesForRound(round);
+    if (!groups.length){target.appendChild(liveElement('p','live-empty',t('liveNoSchedule')));return;}
+    groups.forEach(function(group){
+      if (group.pool.label){
+        target.appendChild(liveElement('h3','live-level',poolDisplayLabel(group.pool)));
+      }
+      if (!group.round.courts.length){
+        target.appendChild(liveElement('p','live-waiting',
+          tf('liveLevelRest',{level:poolDisplayLabel(group.pool)})));
+        return;
+      }
+      var grid = liveElement('div','live-match-grid');
+      group.round.courts.forEach(function(court){
+        grid.appendChild(liveMatch(group.pool,court,round,current));
+      });
+      target.appendChild(grid);
+      if (group.round.resting && group.round.resting.length){
+        target.appendChild(liveElement('p','live-waiting',
+          tf('liveWaiting',{names:group.round.resting.join(', ')})));
+      }
+    });
+  }
+  function renderLiveStandings(){
+    var root=document.getElementById('liveStandings');
+    root.innerHTML='';
+    if (state.format==='koc')return;
+    var pools=[];
+    if (state.format==='americano' && state.splitDone){
+      pools=['top','bottom'].map(function(id){
+        return {id:id,name:t(id==='top'?'poolLabelTop':'poolLabelBottom')};
+      });
+    } else if (state.format==='splitToss'){
+      pools=state.pools.filter(function(p){return p.resultsEnabled;}).map(function(p){
+        return {id:p.id,name:poolDisplayLabel(p)};
+      });
+    } else if (state.format==='americano'){
+      pools=[{id:null,name:t('boardTitle')}];
+    }
+    pools.forEach(function(selection){
+      var result=computeTotals(selection.id);
+      var ranked=rankPlayers(result.totals,result.h2h);
+      var card=liveElement('section','live-board');
+      card.appendChild(liveElement('h3','',selection.name+
+        (selection.id ? ' · '+t('boardTitle') : '')));
+      var table=liveElement('table','');
+      var thead=liveElement('thead','');
+      var tr=liveElement('tr','');
+      [t('thRank'),t('thPlayer'),t('thPts')].forEach(function(label){
+        tr.appendChild(liveElement('th','',label));
+      });
+      thead.appendChild(tr);
+      table.appendChild(thead);
+      var tbody=liveElement('tbody','');
+      ranked.forEach(function(player,i){
+        var row=liveElement('tr','');
+        row.appendChild(liveElement('td','',String(i+1)));
+        row.appendChild(liveElement('td','',player.name));
+        row.appendChild(liveElement('td','',String(player.adjPoints)));
+        tbody.appendChild(row);
+      });
+      table.appendChild(tbody);
+      card.appendChild(table);
+      root.appendChild(card);
+    });
+  }
+  function updateLiveControls(){
+    var tools=document.getElementById('liveRoundTools');
+    tools.hidden=state.format==='koc';
+    if (state.format==='koc')return;
+    var max=Math.max(1,liveMaxRound()),live=ensureLiveState();
+    var current=Number(document.getElementById('livePresentation').dataset.round)||
+      liveCurrentRound();
+    document.getElementById('liveRoundLabel').textContent=
+      tf('liveRoundLabel',{n:current,max:max});
+    document.getElementById('livePrev').disabled=current<=1;
+    document.getElementById('liveNext').disabled=current>=max;
+    var auto=document.getElementById('liveAuto');
+    var eligible=liveAutoEligible();
+    auto.textContent=t('liveAuto');
+    auto.classList.toggle('selected',eligible && live.mode==='auto');
+    auto.disabled=!eligible || !liveHasScore();
+    auto.title=t(auto.disabled?'liveAutoDisabled':'liveAutoTitle');
+    document.getElementById('liveAllRounds').textContent=t('liveAllRounds');
+  }
+  function renderLivePresentation(){
+    if (!document.body.classList.contains('presentation-mode'))return;
+    var root=document.getElementById('livePresentation'), koc=state.format==='koc';
+    document.getElementById('liveTitle').textContent=
+      (koc?'👑 ':state.format==='splitToss'?'🗂️ ':state.format==='americano'?'🏆 ':'🎾 ')+
+      t(koc?'formatKoc':state.format==='splitToss'?'formatSplitToss':
+        state.format==='americano'?'formatAmericano':'formatToss');
+    document.getElementById('liveSubtitle').textContent=
+      koc?t('liveKocSubtitle'):tf('livePlaying',
+        {n:liveCurrentRound(),max:liveMaxRound()});
+    document.getElementById('liveKoc').hidden=!koc;
+    document.getElementById('liveLayout').hidden=koc;
+    if (koc){
+      var list=document.getElementById('liveKoc');
+      list.innerHTML='';
+      var schedule=ensureKocRoster();
+      if (!schedule.assignment){
+        list.appendChild(liveElement('p','live-empty',t('kocNoSchedule')));
+      } else {
+        for (var court=schedule.courts;court>=1;court--){
+          var card=liveElement('article','live-koc-card'+
+            (court===schedule.courts?' crown':''));
+          card.appendChild(liveElement('h3','',t('courtLabel')+' '+court+
+            (court===schedule.courts?' 👑':'')));
+          var ul=liveElement('ul','');
+          var players=(schedule.displayOrder||Object.keys(schedule.assignment).map(Number))
+            .filter(function(i){return schedule.assignment[i]===court;});
+          players.forEach(function(i){ul.appendChild(liveElement('li','',kocPlayerName(i)));});
+          for(var x=players.length;x<4;x++) ul.appendChild(liveElement('li','empty','—'));
+          card.appendChild(ul);
+          list.appendChild(card);
+        }
+      }
+    } else {
+      var current=liveCurrentRound();
+      root.dataset.round=String(current);
+      document.getElementById('liveSubtitle').textContent=
+        tf('livePlaying',{n:current,max:liveMaxRound()});
+      renderLiveRoundSection(document.getElementById('liveCurrent'),current,true);
+      renderLiveRoundSection(document.getElementById('liveUpcoming'),current+1,false);
+      renderLiveStandings();
+      document.getElementById('liveLayout').classList.toggle('no-board',
+        !document.getElementById('liveStandings').children.length);
+    }
+    updateLiveControls();
+    root.scrollTop=0;
+  }
+  document.getElementById('livePrev').addEventListener('click',function(){
+    var live=ensureLiveState();
+    live.round=Math.max(1,liveCurrentRound()-1);
+    live.mode='manual';renderLivePresentation();scheduleAutosave();
+  });
+  document.getElementById('liveNext').addEventListener('click',function(){
+    var live=ensureLiveState();
+    live.round=Math.min(liveMaxRound(),liveCurrentRound()+1);
+    live.mode='manual';renderLivePresentation();scheduleAutosave();
+  });
+  document.getElementById('liveAuto').addEventListener('click',function(){
+    if(!liveAutoEligible()||!liveHasScore())return;
+    ensureLiveState().mode='auto';
+    renderLivePresentation();scheduleAutosave();
+  });
+  document.getElementById('liveAllRounds').addEventListener('click',function(){
+    setPresentation(false);
+  });
+
   // ---------- Presentation mode ----------
   function setPresentation(enabled){
-    document.body.classList.toggle('presentation-mode', enabled);
-    if (enabled && document.documentElement.requestFullscreen){
-      var result = document.documentElement.requestFullscreen();
-      if (result && result.catch) result.catch(function(){});
-    } else if (!enabled && document.fullscreenElement && document.exitFullscreen){
-      document.exitFullscreen().catch(function(){});
+    var root=document.getElementById('livePresentation');
+    if (enabled){
+      root.hidden=false;
+      document.body.classList.add('presentation-mode');
+      renderLivePresentation();
+      requestAnimationFrame(function(){
+        document.getElementById('liveTitle').focus({preventScroll:true});
+      });
+      if (document.documentElement.requestFullscreen){
+        var requested=document.documentElement.requestFullscreen();
+        if(requested && requested.catch)requested.catch(function(){});
+      }
+    } else {
+      document.body.classList.remove('presentation-mode');
+      root.hidden=true;
+      if(state.format!=='koc' && state.pools.length){
+        renderSchedule();
+        renderLeaderboard();
+      }
+      if(document.fullscreenElement && document.exitFullscreen){
+        var closing=document.exitFullscreen();
+        if(closing && closing.catch)closing.catch(function(){});
+      }
     }
   }
-  document.getElementById('presentBtn').addEventListener('click', function(){setPresentation(true);});
-  document.getElementById('kocPresent').addEventListener('click', function(){
-    if (!kocDuplicateIndices().length) setPresentation(true);
+  document.getElementById('presentBtn').addEventListener('click',function(){setPresentation(true);});
+  document.getElementById('kocPresent').addEventListener('click',function(){
+    if(!kocDuplicateIndices().length)setPresentation(true);
   });
-  document.getElementById('presentExit').addEventListener('click', function(){setPresentation(false);});
-  document.addEventListener('fullscreenchange', function(){
-    if (!document.fullscreenElement) document.body.classList.remove('presentation-mode');
+  document.getElementById('presentExit').addEventListener('click',function(){setPresentation(false);});
+  document.addEventListener('fullscreenchange',function(){
+    if(!document.fullscreenElement && document.body.classList.contains('presentation-mode')){
+      setPresentation(false);
+    }
   });
 
   // ---------- Install/offline support & safe update notification ----------
