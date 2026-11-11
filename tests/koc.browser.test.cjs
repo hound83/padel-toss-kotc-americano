@@ -35,6 +35,8 @@ test('real browser: KOC setup, entrants, absence, language, reload and mobile la
   const page = await context.newPage();
   await page.goto(origin);
   await page.locator('.format-btn[data-format="koc"]').click();
+  assert.equal(await page.locator('.brand-copy #metaStrip').textContent(),'16 spelers · 4 banen');
+  assert.equal(await page.locator('#stepsNav').isVisible(),false);
   assert.equal(await page.locator('#kocRoster .koc-player').count(),16);
   assert.equal(await page.locator('.koc-entry-marker').count(),0);
   await page.locator('#kocEntryToggle').check();
@@ -71,6 +73,7 @@ test('real browser: KOC setup, entrants, absence, language, reload and mobile la
 
   // The fifth player is absent; of four entrants one must now start on court 2.
   await page.locator('.koc-player').nth(4).locator('input[type=checkbox]').first().uncheck();
+  assert.equal(await page.locator('#metaStrip').textContent(),'15 spelers · 4 banen');
   assert.equal(await page.locator('#kocResult .koc-court').count(),0,'old assignment is invalidated');
   await page.locator('#kocRoll').click();
   cards = await courtNames();
@@ -145,7 +148,7 @@ test('real browser: KOC setup, entrants, absence, language, reload and mobile la
     if(!('serviceWorker' in navigator))return false;
     await navigator.serviceWorker.ready;
     const keys = await caches.keys();
-    return keys.includes('padel-toss-americano-v231') &&
+    return keys.includes('padel-toss-americano-v232') &&
       !keys.includes('padel-toss-americano-v202');
   });
 });

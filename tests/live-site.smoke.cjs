@@ -7,6 +7,7 @@ const assert=require('node:assert/strict');
   const url=process.env.PADEL_SITE_URL;
   if(!url)throw new Error('PADEL_SITE_URL is required');
   const expectedWorker=fs.readFileSync(path.join(__dirname,'../sw.js'),'utf8');
+  const expectedPage=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');
   const expectedKocArtwork=fs.readFileSync(path.join(__dirname,'../assets/mode-koc.svg'),'utf8');
   const browser=await chromium.launch({headless:true});
   try{
@@ -15,17 +16,19 @@ const assert=require('node:assert/strict');
     page.on('pageerror',error=>errors.push(error.message));
     let published=false;
     for(let attempt=0;attempt<36;attempt++){
-      const [worker,artwork]=await Promise.all([
+      const [worker,artwork,document]=await Promise.all([
         ctx.request.get(new URL('./sw.js',url).href),
-        ctx.request.get(new URL('./assets/mode-koc.svg',url).href)
+        ctx.request.get(new URL('./assets/mode-koc.svg',url).href),
+        ctx.request.get(url)
       ]);
-      if(worker.ok()&&artwork.ok()&&await worker.text()===expectedWorker&&await artwork.text()===expectedKocArtwork){
+      if(worker.ok()&&artwork.ok()&&document.ok()&&await worker.text()===expectedWorker&&
+        await artwork.text()===expectedKocArtwork&&await document.text()===expectedPage){
         published=true;
         break;
       }
       await new Promise(resolve=>setTimeout(resolve,5000));
     }
-    assert.ok(published,'GitHub Pages must serve the current worker and KOC artwork');
+    assert.ok(published,'GitHub Pages must serve the current page, worker and KOC artwork');
     await page.goto(url,{waitUntil:'networkidle'});
     assert.equal(await page.locator('#appVersion').textContent(),'v2.3.0');
     await page.waitForFunction(()=>document.querySelectorAll('.mode-illustration').length===4&&[...document.querySelectorAll('.mode-illustration')].every(img=>img.complete&&img.naturalWidth>0));
@@ -43,6 +46,8 @@ const assert=require('node:assert/strict');
       await page.locator('.format-btn[data-format="'+mode+'"]').click();
       await page.waitForFunction(()=>{const img=document.querySelector('#formatMark img');return img&&img.complete&&img.naturalWidth>0;});
       assert.equal(await page.locator('#brandEyebrow').isVisible(),true);
+      if(mode==='koc')assert.equal(await page.locator('.brand-copy #metaStrip').textContent(),'16 spelers · 4 banen');
+      else assert.equal(await page.getByRole('button',{name:'Namen',exact:true}).isEnabled(),true);
       await page.locator('#mastheadBack').click();
     }
     await ctx.setOffline(true);
