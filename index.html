@@ -5668,6 +5668,7 @@
   var liveScreenInterval = 12000;
   var liveScreenPages = [], liveScreenItems = [], liveScreenIndex = 0;
   var liveScreenTimer, liveScreenResize, liveScreenPaused = false;
+  var liveScreenResizePending = false;
   var livePresentation = document.getElementById('livePresentation');
   var livePageTools = document.getElementById('livePageTools');
   var livePagePause = document.getElementById('livePagePause');
@@ -5681,7 +5682,9 @@
     clearTimeout(liveScreenTimer);
     if (!livePresentation.hidden && liveScreenPages.length > 1 && !liveScreenPaused &&
         !document.hidden && !livePageHasFocus()){
-      liveScreenTimer = setTimeout(function(){showLiveScreen(liveScreenIndex + 1);},liveScreenInterval);
+      liveScreenTimer = setTimeout(function(){
+        if (!livePageHasFocus()) showLiveScreen(liveScreenIndex + 1);
+      },liveScreenInterval);
     }
   }
   function displayLiveItems(items){
@@ -5703,6 +5706,8 @@
   }
   function fitLiveScreens(keepPage){
     if (livePresentation.hidden) return;
+    liveScreenResizePending = keepPage && livePageHasFocus();
+    if (liveScreenResizePending) return;
     var koc = state.format === 'koc';
     var area = document.getElementById(koc ? 'liveKoc' : 'liveLayout');
     var standings = document.getElementById('liveStandings');
@@ -5751,10 +5756,15 @@
     scheduleLiveScreen();
   });
   livePresentation.addEventListener('focusin',scheduleLiveScreen);
-  livePresentation.addEventListener('focusout',function(){requestAnimationFrame(scheduleLiveScreen);});
+  livePresentation.addEventListener('focusout',function(){
+    requestAnimationFrame(function(){
+      if (liveScreenResizePending) fitLiveScreens(true);
+      else scheduleLiveScreen();
+    });
+  });
   document.addEventListener('visibilitychange',scheduleLiveScreen);
   window.addEventListener('resize',function(){
-    if (livePresentation.hidden || livePageHasFocus()) return;
+    if (livePresentation.hidden) return;
     cancelAnimationFrame(liveScreenResize);
     liveScreenResize = requestAnimationFrame(function(){fitLiveScreens(true);});
   });
