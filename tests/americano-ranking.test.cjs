@@ -12,6 +12,25 @@ const ranking = new Function('state','scoreKey','activeRosterForPool',
   html.slice(start,end) + '\nreturn {computeTotals,rankPlayers,assessAmericanoStrength,neutralScoreRange};');
 const scoreKey = (pool,court,round) => `${pool}-${court}-${round}`;
 
+test('only a shared rank crossing the cutoff is drawn',()=>{
+  const start=html.indexOf('  function splitQualificationRanks(');
+  const end=html.indexOf('  function doSplit(',start);
+  assert.ok(start>=0&&end>start);
+  const calls=[];
+  const split=new Function('shuffle',html.slice(start,end)+'\nreturn splitQualificationRanks;')(names=>{
+    calls.push(names.slice());
+    return names.slice().reverse();
+  });
+  const ranked=[1,2,3,3,3,3,7,8].map((rank,i)=>({rank,name:String.fromCharCode(65+i)}));
+  assert.deepEqual(split(ranked,2),{gold:['A','B'],silver:['C','D','E','F','G','H'],draw:null});
+  assert.deepEqual(split(ranked,6),{gold:['A','B','C','D','E','F'],silver:['G','H'],draw:null});
+  assert.deepEqual(calls,[]);
+  assert.deepEqual(split(ranked,4),{gold:['A','B','F','E'],silver:['D','C','G','H'],
+    draw:{rank:3,gold:['F','E'],silver:['D','C']}});
+  assert.deepEqual(calls,[['C','D','E','F']]);
+  assert.deepEqual(ranked.map(row=>row.name),['A','B','C','D','E','F','G','H']);
+});
+
 function fixture(playerCount=40,courts=9,rounds=12){
   const players = Array.from({length:playerCount},(_,i)=>`Speler ${i+1}`);
   const ability = Object.fromEntries(players.map((name,i)=>[name,(i / (playerCount - 1) - .5) * .45]));

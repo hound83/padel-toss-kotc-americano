@@ -391,8 +391,8 @@ test('v2.2: clean navigation and live KOC, Toss, Americano and split Toss', asyn
   for(const round of [1,2]){
     for(const court of [1,2]){
       const key='main-'+court+'-'+round;
-      await americano.locator('input[data-key="'+key+'"][data-team="t1"]').fill('12');
-      await americano.locator('input[data-key="'+key+'"][data-team="t2"]').fill('5');
+      await americano.locator('input[data-key="'+key+'"][data-team="t1"]').fill('16');
+      await americano.locator('input[data-key="'+key+'"][data-team="t2"]').fill('16');
     }
     await americano.locator('input[data-key="main-2-'+round+'"][data-team="t2"]').press('Tab');
     await checkScheduleRound(americano,2,2,round===1);
@@ -400,7 +400,7 @@ test('v2.2: clean navigation and live KOC, Toss, Americano and split Toss', asyn
   await americano.getByRole('button',{name:'Instellen',exact:true}).click();
   assert.equal(await americano.locator('#panel1').isVisible(),true);
   await americano.getByRole('button',{name:'Schema',exact:true}).click();
-  assert.equal(await americano.locator('input[data-key="main-1-1"][data-team="t1"]').inputValue(),'12');
+  assert.equal(await americano.locator('input[data-key="main-1-1"][data-team="t1"]').inputValue(),'16');
   assert.equal(await americano.locator('.checkpoint-card').count(),1);
   await americano.locator('.checkpoint-card button').click();
   await checkScheduleRound(americano,3,4,true);
@@ -415,12 +415,18 @@ test('v2.2: clean navigation and live KOC, Toss, Americano and split Toss', asyn
   const before=await saveState(americano);
   const lockedGold=before.pools.find(p=>p.id==='top').players.slice();
   const lockedSilver=before.pools.find(p=>p.id==='bottom').players.slice();
+  assert.deepEqual(before.qualificationDraw,{rank:1,gold:lockedGold,silver:lockedSilver});
+  assert.equal(new Set([...lockedGold,...lockedSilver]).size,8);
+  assert.equal(lockedGold.length,4);
+  const drawText=await americano.locator('.phase-draw').innerText();
+  assert.match(drawText,/Loting voor gedeelde plek 1.*Goud:.*Zilver:/);
   await americano.locator('input[data-key="main-1-1"][data-team="t1"]').fill('999');
   const corrected=await saveState(americano);
   assert.deepEqual(corrected.pools.find(p=>p.id==='top').players,lockedGold,
     'qualification correction cannot reassign Gold');
   assert.deepEqual(corrected.pools.find(p=>p.id==='bottom').players,lockedSilver,
     'qualification correction cannot reassign Silver');
+  assert.deepEqual(corrected.qualificationDraw,before.qualificationDraw);
   assert.ok((await americano.locator('#boardCol > .board td.pts').allTextContents())
     .every(n=>Number(n)===0),'phase-2 scoring is independent of qualification');
   await americano.locator('#presentBtn').click();
@@ -452,6 +458,7 @@ test('v2.2: clean navigation and live KOC, Toss, Americano and split Toss', asyn
   await americano.reload();
   await americano.locator('#resumeContinue').click();
   await checkScheduleRound(americano,3,4,true);
+  assert.equal(await americano.locator('.phase-draw').innerText(),drawText);
   await americano.locator('#scheduleAuto').click();
   await checkScheduleRound(americano,4,4);
   assert.equal(await americano.locator('#scheduleNext').isEnabled(),false);

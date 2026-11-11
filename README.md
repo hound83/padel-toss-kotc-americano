@@ -59,7 +59,7 @@ De baanopbouw volgt de [FIP Rules of Padel, editie 2026](https://www.padelfip.co
 
 Het klassement scrolt in een eigen paneel. Klik op een speler om te zien hoe de werkelijk behaalde punten en het saldo leiden tot het puntentotaal en het rangsaldo.
 
-De volgorde is punten, rangsaldo en bij een gelijke stand tussen twee spelers het onderlinge puntenverschil. Bij drie of meer spelers met dezelfde punten en hetzelfde rangsaldo blijft de plaats gedeeld. Als die plaats op de grens tussen Goud en Zilver valt, gebruikt de splitsing de volgorde van de spelerslijst.
+De volgorde is punten, rangsaldo en bij een gelijke stand tussen twee spelers het onderlinge puntenverschil. Bij drie of meer spelers met dezelfde punten en hetzelfde rangsaldo blijft de plaats gedeeld. Als die plaats op de grens tussen Goud en Zilver valt, loot de planner eenmalig onder de gelijk geëindigde spelers voor de resterende plekken in Goud. De uitslag van de loting staat bij de overgang naar Goud en Zilver en wordt bewaard met het schema.
 
 De planner schat spelerssterkte per fase uit de volledig ingevulde potjes, met beide teams in de berekening. De correctie telt mee als voorspellingen voor weggelaten rondes minstens 5% minder gemiddelde absolute fout hebben dan zowel het spelersgemiddelde als een gelijkspel. Bij onvoldoende gegevens blijft de gebruikelijke evenredige omrekening gelden.
 
