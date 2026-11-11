@@ -141,3 +141,104 @@ test('large competition recomputes and reuses the fit',()=>{
   const cached=(performance.now()-cachedStart)/10;
   console.log(`96 players, 192 matches: ${cold.toFixed(1)} ms recalculation; ${cached.toFixed(1)} ms cached`);
 });
+
+test('24- and 20-player rehearsal compares both methods across 12 seeded cases',()=>{
+  const scheduleStart=html.indexOf('  function usableCourts(');
+  const scheduleEnd=html.indexOf('  function splitCourtsBetween(',scheduleStart);
+  const shuffleStart=html.indexOf('  function shuffle(');
+  const shuffleEnd=html.indexOf('  function ensureKocRoster(',shuffleStart);
+  assert.ok(shuffleStart>=0&&shuffleEnd>shuffleStart&&scheduleStart>=0&&scheduleEnd>scheduleStart);
+  const scheduler=new Function('Math',html.slice(shuffleStart,shuffleEnd)+html.slice(scheduleStart,scheduleEnd)+
+    '\nreturn generateGlobalSchedule;');
+  const splitStart=html.indexOf('  function qualificationBoundary(');
+  const splitEnd=html.indexOf('  var splitPreview =',splitStart);
+  assert.ok(splitStart>=0&&splitEnd>splitStart);
+  const qualification=new Function('state','rankPlayers',html.slice(splitStart,splitEnd)+'\nreturn qualificationPlan;');
+  function rng(seed){
+    return ()=>{
+      seed=(Math.imul(1664525,seed)+1013904223)>>>0;
+      return seed/4294967296;
+    };
+  }
+  const results=[];
+  for(const {size,rounds,matches,reference} of [
+    {size:24,rounds:9,matches:6,reference:6},
+    {size:24,rounds:10,matches:6,reference:7},
+    {size:20,rounds:8,matches:7,reference:6}
+  ]){
+    const players=Array.from({length:size},(_,i)=>'Speler '+(i+1));
+    const strength=new Map(players.map((name,i)=>[name,.48*(.5-i/(size-1))]));
+    const average=team=>team.reduce((total,name)=>total+strength.get(name),0)/team.length;
+    for(const expectedRank of [6,14]){
+      const player=players[expectedRank-1];
+      for(const direction of [1,-1]){
+        // Pick on the draw alone, before producing scores or computing standings.
+        // The field strength has mean zero, so the neutral lineup contribution is zero.
+        let schedule,seed,draw,ownCourts;
+        for(seed=1;seed<=500;seed++){
+          const seededMath=Object.create(Math,{random:{value:rng(seed)}});
+          schedule=scheduler(seededMath)(players,rounds,0,4);
+          ownCourts=schedule.flatMap(round=>round.courts.filter(court=>
+            court.team1.includes(player)||court.team2.includes(player)));
+          draw=ownCourts.reduce((sum,court)=>{
+            const team=court.team1.includes(player)?court.team1:court.team2;
+            const opponents=team===court.team1?court.team2:court.team1;
+            return sum+strength.get(team.find(name=>name!==player))-2*average(opponents);
+          },0)/ownCourts.length;
+          if(ownCourts.length===matches&&direction*draw>=.06)break;
+        }
+        assert.ok(seed<=500,'qualifying draw for '+[size,rounds,expectedRank,direction]);
+        const pool={id:'main',players,resultsEnabled:true,rounds:schedule};
+        const state={format:'americano',activeRoster:players,pools:[pool],scores:{},laterAdditions:{}};
+        const noise=rng(125097);
+        let raw=0;
+        for(const round of schedule){
+          assert.equal(new Set(round.resting.concat(round.courts.flatMap(court=>court.team1.concat(court.team2)))).size,size);
+          for(const court of round.courts){
+            const diff=2*(average(court.team1)-average(court.team2));
+            const t1=Math.round(16*(1+diff)+(noise()-.5)*5);
+            const t2=32-t1;
+            assert.ok(t1>=0&&t2>=0);
+            state.scores[scoreKey('main',court.courtIndex,round.round)]={t1,t2};
+            if(court.team1.includes(player))raw+=t1;
+            if(court.team2.includes(player))raw+=t2;
+          }
+        }
+        const api=ranking(state,scoreKey,()=>players);
+        const planFor=qualification(state,api.rankPlayers);
+        const weighted=api.computeTotals('main');
+        const linear=api.computeTotals('main',false);
+        const plans=[linear,weighted].map(planFor);
+        function groups(plan){
+          return new Map(plan.ranked.map((row,index)=>{
+            const {boundary,topCount}=plan;
+            if(boundary&&index>=boundary.start&&index<boundary.end){
+              return [row.name,boundary.goldSlots+'/'+(boundary.end-boundary.start)];
+            }
+            return [row.name,index<topCount?'Gold':'Silver'];
+          }));
+        }
+        const [linearGroups,proposedGroups]=plans.map(groups);
+        const groupChanges=players.filter(name=>linearGroups.get(name)!==proposedGroups.get(name)).length;
+        const methods=[linear,weighted].map((result,method)=>{
+          const plan=plans[method];
+          const index=plan.ranked.findIndex(row=>row.name===player);
+          const row=plan.ranked[index];
+          assert.equal(plan.topCount,size/2);
+          assert.equal(result.referenceGames,reference);
+          assert.equal(row.played,matches);
+          assert.equal(row.points,raw);
+          const group=(method===0?linearGroups:proposedGroups).get(player);
+          return {points:row.adjPoints,margin:row.rankDiff,rank:row.rank,group};
+        });
+        assert.equal(methods[0].points,Math.round(raw*reference/matches));
+        if(!weighted.weighted)assert.deepEqual(methods[0],methods[1]);
+        results.push({expectedRank,size,rounds,seed,draw:direction===1?'favourable':'unfavourable',matches,reference,raw,
+          status:weighted.weightingStatus,linear:methods[0],proposed:methods[1],groupChanges});
+      }
+    }
+  }
+  assert.equal(results.length,12);
+  assert.ok(results.some(result=>result.status==='weighted'));
+  if(process.env.PADEL_REHEARSAL_RESULTS)console.log(JSON.stringify(results));
+});

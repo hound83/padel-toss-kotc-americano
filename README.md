@@ -67,6 +67,12 @@ De planner schat spelerssterkte per fase uit de volledig ingevulde potjes, met b
 
 Na afloop van een fase kan een deelnemer die door de loting minder potjes kreeg een geschatte uitslag krijgen tegen een gemiddeld duo met een gemiddelde partner. Punten en saldo volgen uit diezelfde uitslag. De spreiding onder de spelersnaam simuleert mogelijke scores op basis van voorspelfouten uit weggelaten rondes. De vaste schatting bepaalt het klassement.
 
+### Oefenmodus
+
+Open de [oefenmodus](https://hound83.github.io/padel-toss-kotc-americano/?rehearsal=1) om in een schema met score-invoer de volgende open ronde of alle open scores automatisch te vullen. De oefensessie wordt apart bewaard in dezelfde browser. Open de [gewone planner](https://hound83.github.io/padel-toss-kotc-americano/) om je echte wedstrijdsessie te hervatten.
+
+De [Americano-repetitie](docs/americano-rehearsal.md) toont de gevolgen voor punten, rangsaldo, plek en groepsindeling in 12 gesimuleerde scenario’s.
+
 ### Live-presentatiemodus
 
 De presentatiemodus is een afzonderlijke liveweergave, niet het hele lange schema:
