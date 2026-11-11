@@ -796,6 +796,7 @@
   .board + .board{ margin-top:16px; }
   .qualification-archive{margin-top:18px;border:1px solid var(--line);border-radius:12px;background:var(--surface);overflow:hidden;}
   .phase-marker{margin:18px 0 26px;padding:16px 20px;border-radius:12px;background:var(--teal-900);color:var(--ball);font-size:var(--fs-lg);font-weight:800;letter-spacing:.03em;}
+  .phase-draw{margin:8px 0 0;color:#d7e9ff;font-size:var(--fs-sm);font-weight:400;letter-spacing:normal;overflow-wrap:anywhere;}
   .qualification-archive summary{padding:14px 18px;cursor:pointer;font-weight:700;color:var(--teal-900);}
   .qualification-archive .board{border-radius:0;}
   .qualification-note{font-size:var(--fs-sm);color:var(--ink-soft);padding:0 18px;margin:0 0 12px;}
@@ -1341,7 +1342,7 @@
   </section>
 
   <footer class="app-footer">
-    <span id="appVersion">v2.4.0</span>
+    <span id="appVersion">v2.4.1</span>
     <details><summary data-i18n="whatsNew">Wat is nieuw?</summary>
       <ul>
         <li data-i18n="changeIllustrations">Nieuwe baanillustraties, marineblauw/lime en een puntenscore van 26–6.</li>
@@ -1550,7 +1551,8 @@
       restingPoolSuffix: ' wachten: ',
       cpEyebrow: 'TUSSENSTAND',
       cpHeading: 'Bekijk het klassement en splits in Goud en Zilver',
-      cpBody: 'Vul alle scores hierboven in om verder te gaan in Goud en Zilver. Bij een gedeelde plek op de grens beslist de volgorde van de spelerslijst.',
+      cpBody: 'Vul alle scores hierboven in om verder te gaan in Goud en Zilver. Bij een gedeelde plek op de grens loot de planner eenmalig om de resterende plekken in Goud.',
+      qualificationDrawResult: 'Loting voor gedeelde plek {rank}. Goud: {gold}. Zilver: {silver}.',
       cpButton: 'Splits in Goud & Zilver \u2192',
       cpError: 'Vul eerst alle scores in voor ronde 1–{n}.',
       boardTitle: 'Klassement',
@@ -1798,7 +1800,8 @@
       restingPoolSuffix: ' waiting: ',
       cpEyebrow: 'HALFTIME',
       cpHeading: 'Check the leaderboard, then split into Gold and Silver',
-      cpBody: 'Enter all scores above to continue in Gold and Silver. If a shared rank crosses the cutoff, the roster order decides.',
+      cpBody: 'Enter all scores above to continue in Gold and Silver. If a shared rank crosses the cutoff, the planner draws lots once for the remaining Gold places.',
+      qualificationDrawResult: 'Draw for shared rank {rank}. Gold: {gold}. Silver: {silver}.',
       cpButton: 'Split into Gold & Silver \u2192',
       cpError: 'Enter every score for rounds 1–{n} first.',
       boardTitle: 'Leaderboard',
@@ -2021,6 +2024,7 @@
     pools: [],
     scores: {},
     splitDone: false,
+    qualificationDraw: null,
     boardHidden: { main: false, beginner: false, ervaren: false, gevorderd: false },
     laterAdditions: {}, // name -> true, for players added via Edit Players after initial creation
     live: {mode:'auto',round:1,autoFloor:1},
@@ -3449,6 +3453,7 @@
     state.totalRoundsPlanned = totalRounds;
     state.splitRoundStored = split;
     state.splitDone = false;
+    state.qualificationDraw = null;
     state.activeRoster = pool.slice();
 
     var mainRounds = generateGlobalSchedule(pool, split, 0, state.courts);
@@ -3467,6 +3472,7 @@
     var totalRounds = state.rounds;
     state.totalRoundsPlanned = totalRounds;
     state.splitDone = false;
+    state.qualificationDraw = null;
 
     state.activeRosterLevels = [[], [], []];
     rosters.forEach(function(r){ state.activeRosterLevels[r.levelIdx] = r.names.slice(); });
@@ -3710,6 +3716,13 @@
       if (state.format === 'americano' && state.splitDone &&
           r === state.splitRoundStored + 1){
         var phaseMarker = liveElement('div','phase-marker',t('finalPhaseHeading'));
+        var draw = state.qualificationDraw;
+        if (draw && Number.isInteger(draw.rank) && Array.isArray(draw.gold) && Array.isArray(draw.silver)){
+          var note = liveElement('p','phase-draw',tf('qualificationDrawResult',{
+            rank:draw.rank,gold:draw.gold.join(', '),silver:draw.silver.join(', ')
+          }));
+          phaseMarker.appendChild(note);
+        }
         col.appendChild(phaseMarker);
       }
       col.appendChild(block);
@@ -4359,7 +4372,24 @@
     }
   }
 
+  function splitQualificationRanks(ranked, topCount){
+    var names = ranked.map(function(row){return row.name;});
+    var draw = null;
+    var firstSilver = ranked[topCount];
+    if (topCount > 0 && firstSilver && ranked[topCount - 1].rank === firstSilver.rank){
+      var rank = firstSilver.rank;
+      var firstTied = ranked.findIndex(function(row){return row.rank === rank;});
+      var tiedCount = ranked.filter(function(row){return row.rank === rank;}).length;
+      var drawn = shuffle(names.slice(firstTied,firstTied + tiedCount));
+      names.splice(firstTied,tiedCount,...drawn);
+      var goldSlots = topCount - firstTied;
+      draw = {rank:rank,gold:drawn.slice(0,goldSlots),silver:drawn.slice(goldSlots)};
+    }
+    return {gold:names.slice(0,topCount),silver:names.slice(topCount),draw:draw};
+  }
+
   function doSplit(){
+    if (state.splitDone) return true;
     var main = state.pools[0];
     var allFilled = true;
     main.rounds.forEach(function(rd){
@@ -4376,9 +4406,9 @@
       return state.activeRoster.indexOf(r.name) !== -1;
     });
 
-    var topCount = Math.ceil(ranked.length / 2);
-    var topNames = ranked.slice(0, topCount).map(function(r){ return r.name; });
-    var bottomNames = ranked.slice(topCount).map(function(r){ return r.name; });
+    var split = splitQualificationRanks(ranked,Math.ceil(ranked.length / 2));
+    var topNames = split.gold;
+    var bottomNames = split.silver;
 
     var remainingRounds = state.totalRoundsPlanned - state.splitRoundStored;
     var topPool = shuffle(topNames);
@@ -4406,6 +4436,7 @@
     state.pools.push({ id: 'top', label: 'Top', players: topNames, courts: topCourtsCount, resultsEnabled: true, startRound: state.splitRoundStored + 1, endRound: state.totalRoundsPlanned, rounds: topRounds });
     state.pools.push({ id: 'bottom', label: 'Bottom', players: bottomNames, courts: bottomCourtsCount, resultsEnabled: true, startRound: state.splitRoundStored + 1, endRound: state.totalRoundsPlanned, rounds: bottomRounds });
     state.splitDone = true;
+    state.qualificationDraw = split.draw;
     // Group membership is fixed now. Corrected qualifying scores may update
     // the archived qualification ranking but MUST NEVER trigger re-seeding.
     var live = ensureLiveState();
@@ -5419,7 +5450,7 @@
       regroupEnabled: false, splitRound: 4,
       names: [], levelNames: [[], [], []],
       activeRoster: [], activeRosterLevels: [[], [], []],
-      pools: [], scores: {}, splitDone: false,
+      pools: [], scores: {}, splitDone: false, qualificationDraw: null,
       boardHidden: { main: false, beginner: false, ervaren: false, gevorderd: false },
       laterAdditions: {},
       live: {mode:'auto',round:1,autoFloor:1},
@@ -6040,7 +6071,9 @@
       document.body.classList.add('presentation-mode');
       renderLivePresentation();
       requestAnimationFrame(function(){
-        document.getElementById('liveTitle').focus({preventScroll:true});
+        if (!root.hidden && !root.contains(document.activeElement)){
+          document.getElementById('liveTitle').focus({preventScroll:true});
+        }
       });
       if (document.documentElement.requestFullscreen){
         var requested=document.documentElement.requestFullscreen();
