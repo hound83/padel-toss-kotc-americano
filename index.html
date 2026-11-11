@@ -102,14 +102,11 @@
     transform:translateY(-2px);
   }
   .meta-strip{
-    font-family:var(--font-mono);
+    margin:4px 0 0;
     font-size:var(--fs-sm);
-    color:var(--teal-700);
-    display:flex;
-    gap:14px;
-    flex-wrap:wrap;
+    color:var(--ink-soft);
+    line-height:1.5;
   }
-  .meta-strip span{ background:var(--surface); border:1px solid var(--line); padding:4px 10px; border-radius:20px; }
 
   /* ---------- Language switch ---------- */
   .lang-switch{ display:flex; gap:6px; margin:0 0 0 auto; flex-shrink:0; align-self:center; }
@@ -129,21 +126,27 @@
   /* ---------- Step progress ---------- */
   .steps{
     display:flex;
+    flex-wrap:wrap;
     gap:8px;
     margin-bottom:34px;
-    font-family:var(--font-mono);
-    font-size:var(--fs-xs);
-    color:var(--ink-soft);
   }
+  .steps[hidden]{ display:none; }
   .steps .step{
     display:flex; align-items:center; gap:8px;
-    padding:6px 12px 6px 6px;
-    border-radius:20px;
+    min-height:44px;
+    padding:6px 12px 6px 8px;
+    border-radius:9px;
     background:var(--surface);
-    border:1px solid var(--line);
+    border:1px solid var(--teal-700);
+    color:var(--teal-900);
+    font:600 var(--fs-xs) var(--font-body);
+    cursor:pointer;
   }
-  .steps .step.active{ border-color:var(--teal-900); color:var(--teal-900); font-weight:600; }
-  .steps .step.done{ color:var(--teal-600); }
+  .steps .step:not(:disabled):hover{ background:var(--mist); border-color:var(--teal-900); text-decoration:underline; }
+  .steps .step:focus-visible{ outline:3px solid var(--teal-600); outline-offset:2px; }
+  .steps .step:disabled{ cursor:default; }
+  .steps .step:disabled:not(.active){ background:var(--mist); border-color:var(--line); color:var(--ink-soft); }
+  .steps .step.active{ border-color:var(--teal-900); font-weight:700; }
   .steps .num{
     width:20px; height:20px; border-radius:50%;
     background:var(--mist);
@@ -558,9 +561,7 @@
     .brand{min-width:0;flex:1;gap:7px;}
     .format-mark{font-size:22px;}
     .masthead-back{order:3;padding:7px 9px;}
-    .meta-strip{order:4;width:100%;}
     .lang-switch{order:2;}
-    .meta-strip{order:3;width:100%;}
     .lang-btn{padding:6px 9px;}
     .bulk-drawer{padding:18px 16px;}
   }
@@ -926,21 +927,21 @@
       <div class="brand-copy">
         <span class="brand-eyebrow" id="brandEyebrow" data-i18n="chosenFormat" hidden>Gekozen speelvorm</span>
         <h1 id="appTitle" tabindex="-1">PADEL PLANNER</h1>
+        <p class="meta-strip" id="metaStrip" hidden></p>
       </div>
     </div>
     <button class="masthead-back" id="mastheadBack" type="button" data-i18n="backToModes" hidden>← Speelvormen</button>
-    <div class="meta-strip" id="metaStrip" style="display:none;"></div>
     <div class="lang-switch" id="langSwitch" aria-label="Language / Taal">
       <button type="button" class="lang-btn active" data-lang="nl" aria-pressed="true">NL</button>
       <button type="button" class="lang-btn" data-lang="en" aria-pressed="false">EN</button>
     </div>
   </div>
 
-  <div class="steps" id="stepsNav">
-    <div class="step" data-step="1"><span class="num">1</span> <span data-i18n="stepSetup">Instellen</span></div>
-    <div class="step" data-step="2"><span class="num">2</span> <span data-i18n="stepNames">Namen</span></div>
-    <div class="step" data-step="3"><span class="num">3</span> <span data-i18n="stepSchedule">Schema</span></div>
-  </div>
+  <nav class="steps" id="stepsNav" aria-label="Stappen" data-i18n-aria-label="stepsLabel" hidden>
+    <button class="step" type="button" data-step="1" aria-controls="panel1"><span class="num" aria-hidden="true">1</span> <span data-i18n="stepSetup">Instellen</span></button>
+    <button class="step" type="button" data-step="2" aria-controls="panel2"><span class="num" aria-hidden="true">2</span> <span data-i18n="stepNames">Namen</span></button>
+    <button class="step" type="button" data-step="3" aria-controls="panel3"><span class="num" aria-hidden="true">3</span> <span data-i18n="stepSchedule">Schema</span></button>
+  </nav>
 
   <section class="panel mode-home" id="panel0" aria-labelledby="modeHomeTitle">
     <h2 id="modeHomeTitle" data-i18n="homeTitle">Wat gaan we spelen?</h2>
@@ -1357,6 +1358,7 @@
   var STR = {
     nl: {
       stepSetup: 'Instellen', stepNames: 'Namen', stepSchedule: 'Schema',
+      stepsLabel: 'Stappen', playerUnitSingular: 'speler', roundUnitPlural: 'rondes',
       homeTitle: 'Wat gaan we spelen?', homeSub: 'Kies je speelvorm en maak je indeling.',
       backToModes: '← Speelvormen',
       chosenFormat: 'Gekozen speelvorm',
@@ -1579,6 +1581,7 @@
     },
     en: {
       stepSetup: 'Setup', stepNames: 'Names', stepSchedule: 'Schedule',
+      stepsLabel: 'Steps', playerUnitSingular: 'player', roundUnitPlural: 'rounds',
       homeTitle: 'What shall we play?', homeSub: 'Choose your format and create your lineup.',
       backToModes: '← Formats',
       chosenFormat: 'Selected format',
@@ -2049,6 +2052,7 @@
         k.assignment = null;
         k.displayOrder = null;
         var hasDuplicates = renderKocCount();
+        renderMeta();
         renderKocResult();
         document.getElementById('kocRoll').textContent = t('kocRoll');
         document.getElementById('kocStatus').textContent = t(hasDuplicates ? 'kocDup' : 'kocChanged');
@@ -2097,6 +2101,7 @@
       roster.appendChild(row);
     });
     var hasDuplicates = renderKocCount();
+    if (state.step === 4) renderMeta();
     renderKocResult();
     document.getElementById('kocRoll').textContent = t(k.assignment ? 'kocReroll' : 'kocRoll');
     document.getElementById('kocStatus').textContent =
@@ -2563,6 +2568,30 @@
   }
 
   // ---------- step nav ----------
+  function renderStepNavigation(){
+    var nav = document.getElementById('stepsNav');
+    var current = state.step;
+    nav.hidden = current === 0 || current === 4 || document.getElementById('panelEdit').classList.contains('visible');
+    nav.querySelectorAll('.step').forEach(function(button){
+      var step = Number(button.getAttribute('data-step'));
+      var active = step === current;
+      button.classList.toggle('active', active);
+      button.classList.toggle('done', step < current);
+      button.disabled = active || (step === 2 && current === 1 && continueTo2Btn.disabled) ||
+        (step === 3 && !state.pools.length);
+      if (active) button.setAttribute('aria-current', 'step');
+      else button.removeAttribute('aria-current');
+    });
+  }
+
+  document.querySelectorAll('#stepsNav .step').forEach(function(button){
+    button.addEventListener('click', function(){
+      var step = Number(button.getAttribute('data-step'));
+      if (step === 2 && state.step === 1) continueTo2Btn.click();
+      else goToStep(step);
+    });
+  });
+
   function goToStep(n){
     if (state.step !== n) clearBulkUndo();
     state.step = n;
@@ -2577,12 +2606,9 @@
       document.getElementById('panel'+i).classList.toggle('visible', i === n);
     });
     document.getElementById('panelKoc').classList.toggle('visible', n === 4);
-    document.getElementById('stepsNav').style.display = (n === 0 || n === 4) ? 'none' : '';
-    document.querySelectorAll('#stepsNav .step').forEach(function(el){
-      var s = parseInt(el.getAttribute('data-step'), 10);
-      el.classList.toggle('active', s === n);
-      el.classList.toggle('done', s < n);
-    });
+    renderStepNavigation();
+    if (n === 4) renderMeta();
+    else document.getElementById('metaStrip').hidden = n === 0 || !state.pools.length;
     var hasSchedule = state.pools.length > 0;
     var c1 = document.getElementById('cancelToScheduleBtn1');
     var c2 = document.getElementById('cancelToScheduleBtn2');
@@ -2757,6 +2783,7 @@
       countError.textContent = t('levelCountError');
       countError.classList.toggle('visible', !valid);
       continueTo2Btn.disabled = !valid;
+      renderStepNavigation();
       if (!valid){ courtsPreview.innerHTML = ''; return; }
 
       var used = [];
@@ -2870,6 +2897,7 @@
     countError.textContent = t('countError');
     countError.classList.toggle('visible', !valid);
     continueTo2Btn.disabled = !valid;
+    renderStepNavigation();
     document.querySelectorAll('.chip').forEach(function(chip){
       chip.classList.toggle('active', valid && parseInt(chip.getAttribute('data-count'), 10) === v);
     });
@@ -3348,21 +3376,30 @@
 
   function renderMeta(){
     var m = document.getElementById('metaStrip');
-    m.style.display = 'flex';
+    var isKoc = state.format === 'koc';
+    var courts = isKoc ? ensureKocRoster().courts : state.courts;
+    var players = isKoc ? kocAttendees().length : state.playerCount;
     var parts = [];
     if (state.format === 'splitToss'){
-      activeLevelIndexes().forEach(function(i){
-        parts.push('<span>' + t(LEVELS[i].labelKey) + ': ' + state.levelCounts[i] + '</span>');
+      players = 0;
+      var groups = activeLevelIndexes().map(function(i){
+        players += state.levelCounts[i];
+        return t(LEVELS[i].labelKey) + ' ' + state.levelCounts[i];
       });
+      parts.push(players + ' ' + t('p1PlayersUnit') + ' (' + groups.join(', ') + ')');
     } else {
-      parts.push('<span>' + state.playerCount + ' ' + t('p1PlayersUnit') + '</span>');
+      parts.push(players + ' ' + t(players === 1 ? 'playerUnitSingular' : 'p1PlayersUnit'));
     }
-    parts.push('<span>' + state.courts + ' ' + (state.courts > 1 ? t('courtUnitPlural') : t('courtUnitSingular')) + '</span>');
-    parts.push('<span>' + state.totalRoundsPlanned + ' \u00d7 ' + t('roundLabel').toLowerCase() + '</span>');
-    if (state.format !== 'splitToss' && state.regroupEnabled && effectiveResultsEnabled() && state.playerCount >= 8 && state.courts >= 2){
-      parts.push('<span>' + tf('splitAfterLabel', {}) + ' ' + state.splitRoundStored + '</span>');
+    parts.push(courts + ' ' + t(courts === 1 ? 'courtUnitSingular' : 'courtUnitPlural'));
+    if (!isKoc){
+      var rounds = state.totalRoundsPlanned;
+      parts.push(rounds + ' ' + (rounds === 1 ? t('roundLabel').toLowerCase() : t('roundUnitPlural')));
+      if (state.format !== 'splitToss' && state.regroupEnabled && effectiveResultsEnabled() && players >= 8 && courts >= 2){
+        parts.push(t('splitAfterLabel') + ' ' + state.splitRoundStored);
+      }
     }
-    m.innerHTML = parts.join('');
+    m.textContent = parts.join(' \u00b7 ');
+    m.hidden = false;
   }
 
   function scoreKey(poolId, courtIndex, round){ return poolId + '-' + courtIndex + '-' + round; }
@@ -4617,12 +4654,14 @@
     if (isSplit) renderEditRosterSplit(); else renderEditRoster();
     document.getElementById('panel3').classList.remove('visible');
     panelEdit.classList.add('visible');
+    renderStepNavigation();
     window.scrollTo({ top: 0, behavior: 'smooth' });
   });
 
   document.getElementById('editCancelBtn').addEventListener('click', function(){
     panelEdit.classList.remove('visible');
     document.getElementById('panel3').classList.add('visible');
+    renderStepNavigation();
   });
 
   // Reads a roster-list element's rows into {originalName, value} objects
@@ -4876,6 +4915,7 @@
     renderLeaderboard();
     panelEdit.classList.remove('visible');
     document.getElementById('panel3').classList.add('visible');
+    renderStepNavigation();
   });
 
   var confirmOverlay = document.getElementById('confirmOverlay');
@@ -5024,7 +5064,6 @@
       renderLeaderboard();
       goToStep(3);
     } else {
-      document.getElementById('metaStrip').style.display = 'none';
       document.getElementById('roundsCol').innerHTML = '';
       document.getElementById('boardCol').innerHTML = '';
       goToStep(1);
@@ -5122,7 +5161,6 @@
     playcountPanel.style.display = 'none';
     playcountToggleBtn.textContent = t('playcountToggleShow');
 
-    document.getElementById('metaStrip').style.display = 'none';
     renderKoc();
     goToStep(0);
     clearAutosave();

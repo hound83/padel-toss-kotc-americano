@@ -62,10 +62,24 @@ test('v2.2: clean navigation and live KOC, Toss, Americano and split Toss', asyn
 
   const toss=await open('toss');
   assert.equal((await toss.locator('#appTitle').innerText()).toUpperCase(),'TOSS');
-  await toss.locator('#continueTo2').click();
+  const namesStep=toss.getByRole('button',{name:'Namen',exact:true});
+  const scheduleStep=toss.getByRole('button',{name:'Schema',exact:true});
+  assert.equal(await scheduleStep.isEnabled(),false);
+  const playerCount=toss.locator('#playerCountInput');
+  const defaultCount=await playerCount.inputValue();
+  await playerCount.fill('2');
+  assert.equal(await namesStep.isEnabled(),false);
+  await playerCount.fill(defaultCount);
+  await namesStep.press('Enter');
   assert.equal(await toss.locator('#panel0').isVisible(),false);
   assert.equal(await toss.locator('#panel2').isVisible(),true);
+  assert.equal(await namesStep.getAttribute('aria-current'),'step');
   await toss.locator('#generateBtn').click();
+  assert.equal(await toss.locator('.brand-copy #metaStrip').textContent(),'16 spelers · 2 banen · 7 rondes');
+  assert.equal(await scheduleStep.getAttribute('aria-current'),'step');
+  await namesStep.click();
+  await scheduleStep.press('Enter');
+  assert.equal(await toss.locator('#panel3').isVisible(),true);
   await toss.locator('#presentBtn').click();
   assert.equal(await toss.locator('#liveCurrent .live-match').count(),2);
   assert.equal(await toss.locator('#liveUpcoming .live-match').count(),2);
@@ -77,9 +91,11 @@ test('v2.2: clean navigation and live KOC, Toss, Americano and split Toss', asyn
   await toss.locator('#liveAllRounds').click();
   assert.equal(await toss.locator('#panel3').isVisible(),true);
 
-  const split=await open('splitToss');
-  await split.locator('#continueTo2').click();
+  const split=await open('splitToss',true);
+  await split.getByRole('button',{name:'Namen',exact:true}).tap();
   await split.locator('#generateBtn').click();
+  assert.equal(await split.locator('#metaStrip').textContent(),'16 spelers (Zilver 8, Goud 8) · 2 banen · 7 rondes');
+  assert.equal(await split.evaluate(()=>document.documentElement.scrollWidth>innerWidth+2),false);
   await split.locator('#presentBtn').click();
   assert.equal(await split.locator('#liveCurrent .live-match').count(),2);
   assert.equal(await split.locator('#liveStandings .live-board').count(),0);
@@ -119,6 +135,7 @@ test('v2.2: clean navigation and live KOC, Toss, Americano and split Toss', asyn
   await americano.locator('#splitRoundInput').press('Tab');
   await americano.locator('#generateBtn').click();
   assert.equal(await americano.locator('#panel3').isVisible(),true);
+  assert.equal(await americano.locator('#metaStrip').textContent(),'8 spelers · 2 banen · 4 rondes · Splits na ronde 2');
   for(const round of [1,2]){
     for(const court of [1,2]){
       const key='main-'+court+'-'+round;
@@ -126,6 +143,10 @@ test('v2.2: clean navigation and live KOC, Toss, Americano and split Toss', asyn
       await americano.locator('input[data-key="'+key+'"][data-team="t2"]').fill('5');
     }
   }
+  await americano.getByRole('button',{name:'Instellen',exact:true}).click();
+  assert.equal(await americano.locator('#panel1').isVisible(),true);
+  await americano.getByRole('button',{name:'Schema',exact:true}).click();
+  assert.equal(await americano.locator('input[data-key="main-1-1"][data-team="t1"]').inputValue(),'12');
   assert.equal(await americano.locator('.checkpoint-card').count(),1);
   await americano.locator('.checkpoint-card button').click();
   assert.equal(await americano.locator('.qualification-archive').count(),1);
