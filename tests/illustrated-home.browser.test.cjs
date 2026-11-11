@@ -73,14 +73,23 @@ test('illustrated home: keyboard, all formats, EN/mobile, offline assets and exi
   await page.waitForFunction(async()=>!!navigator.serviceWorker.controller&&(await caches.keys()).includes('padel-toss-americano-v220'));
   await page.evaluate(()=>localStorage.setItem('visual-upgrade-check','keep-this-session'));
   legacy=false;
-  await page.evaluate(async()=>{const reg=await navigator.serviceWorker.getRegistration();await reg.update();});
+  await page.evaluate(async()=>{
+    const reg=await navigator.serviceWorker.getRegistration();
+    const activated=new Promise((resolve,reject)=>reg.addEventListener('updatefound',()=>{
+      const next=reg.installing;
+      const check=()=>{if(next.state==='activated')resolve();else if(next.state==='redundant')reject(new Error('Worker installation failed'));};
+      next.addEventListener('statechange',check);check();
+    },{once:true}));
+    await reg.update();await activated;
+  });
   await page.waitForFunction(async()=>{const keys=await caches.keys();return keys.includes('padel-toss-americano-v230')&&!keys.includes('padel-toss-americano-v220');});
   assert.equal(await page.evaluate(()=>localStorage.getItem('visual-upgrade-check')),'keep-this-session');
   console.log('Illustrated home: existing-client cache upgrade preserved local storage.');
   const shell=await page.evaluate(async()=>{const c=await caches.open('padel-toss-americano-v230');return (await c.keys()).map(r=>new URL(r.url).pathname);});
   console.log('Updated offline cache paths:',JSON.stringify(shell));
+  for(const file of ['visual-theme.css','assets/mode-toss.svg','assets/mode-koc.svg','assets/mode-americano.svg','assets/mode-split.svg'])assert.ok(shell.includes('/'+file),file+' is ready before client takeover');
   await ctx.setOffline(true);
-  await page.reload();
+  await page.reload({waitUntil:'domcontentloaded'});
   if(await page.locator('#resumeContinue').isVisible())await page.locator('#resumeContinue').click();
   if(!await page.locator('#panel0').isVisible())await page.locator('#mastheadBack').click();
   await page.waitForFunction(()=>[...document.querySelectorAll('.mode-illustration')].every(img=>img.complete&&img.naturalWidth>0));
