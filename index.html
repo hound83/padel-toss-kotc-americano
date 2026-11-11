@@ -1060,7 +1060,7 @@
           <span class="fb-desc" data-i18n="homeSplitTossDesc">Samen spelen op je eigen niveau.</span>
           <span class="mode-link"><span data-i18n="homeSplitTossAction">Kies Gesplitste Toss</span><span class="arrow" aria-hidden="true">→</span></span>
         </span>
-        <img class="mode-illustration" src="./assets/mode-split.svg" width="420" height="355" alt="" aria-hidden="true" decoding="async">
+        <img class="mode-illustration" id="splitTossIllustration" src="./assets/mode-split.svg" width="420" height="355" alt="" aria-hidden="true" decoding="async">
       </button>
     </div>
   </section>
@@ -2034,7 +2034,12 @@
       el.setAttribute('aria-label', t(el.getAttribute('data-i18n-aria-label')));
     });
     document.documentElement.lang = state.lang;
+    document.getElementById('splitTossIllustration').src = splitTossArtwork();
     renderAppTitle();
+  }
+
+  function splitTossArtwork(){
+    return state.lang === 'en' ? './assets/mode-split-en.svg' : './assets/mode-split.svg';
   }
 
   // The heading names the format actually being played, so a printed or shared
@@ -2062,8 +2067,8 @@
     document.title = t(format.key) + ' · Padel Planner';
     // The same art identifies the selected format on every subsequent step.
     var illustration = document.createElement('img');
-    var assets = {toss:'toss', splitToss:'split', americano:'americano', koc:'koc'};
-    illustration.src = './assets/mode-' + (assets[state.format] || 'toss') + '.svg';
+    var assets = {toss:'toss', americano:'americano', koc:'koc'};
+    illustration.src = state.format === 'splitToss' ? splitTossArtwork() : './assets/mode-' + (assets[state.format] || 'toss') + '.svg';
     illustration.alt = '';
     illustration.width = 120;
     illustration.height = 89;
