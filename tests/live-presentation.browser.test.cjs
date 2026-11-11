@@ -326,6 +326,7 @@ test('v2.2: clean navigation and live KOC, Toss, Americano and split Toss', asyn
   assert.equal(await fourCourtAmericano.locator('#livePageTools').isVisible(),false);
   assert.equal(await fourCourtAmericano.locator('#liveCurrent .live-match:visible').count(),4);
   assert.equal(await fourCourtAmericano.locator('#liveUpcoming .live-match:visible').count(),4);
+  assert.equal(await fourCourtAmericano.locator('#liveStandings').evaluate(board=>board.scrollHeight<=board.clientHeight+1),true);
   await fourCourtAmericano.locator('#presentExit').click();
   await fourCourtAmericano.waitForFunction(()=>!document.fullscreenElement);
   await fourCourtAmericano.setViewportSize({width:390,height:700});
