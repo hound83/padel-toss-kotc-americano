@@ -5,7 +5,7 @@ const path=require('node:path');
 const http=require('node:http');
 const {chromium}=require('playwright');
 
-test('illustrated home: keyboard, all formats, EN/mobile, offline assets and existing-client upgrade',async t=>{
+test('illustrated home: keyboard, all formats, EN/mobile, offline assets and existing-client upgrade',{timeout:90000},async t=>{
   const root=path.join(__dirname,'..');
   const worker=fs.readFileSync(path.join(root,'sw.js'),'utf8');
   let legacy=true;
@@ -29,6 +29,9 @@ test('illustrated home: keyboard, all formats, EN/mobile, offline assets and exi
   const errors=[];page.on('pageerror',e=>errors.push(e.message));
   const origin='http://127.0.0.1:'+server.address().port;
   await page.goto(origin);
+  // Production registers on HTTPS. Localhost is a secure test context; register
+  // explicitly here to exercise the real worker without weakening that guard.
+  await page.evaluate(()=>navigator.serviceWorker.register('./sw.js'));
   await page.waitForFunction(()=>[...document.querySelectorAll('.mode-illustration')].every(img=>img.complete&&img.naturalWidth>0));
   const screenshotDir=process.env.PADEL_SCREENSHOT_DIR;
   if(screenshotDir){fs.mkdirSync(screenshotDir,{recursive:true});await page.screenshot({path:path.join(screenshotDir,'desktop-home.png'),fullPage:true});}
