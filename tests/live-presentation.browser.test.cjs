@@ -321,11 +321,11 @@ test('v2.2: clean navigation and live KOC, Toss, Americano and split Toss', asyn
   await fourCourtAmericano.waitForFunction(()=>!document.fullscreenElement);
   await fourCourtAmericano.setViewportSize({width:1280,height:720});
   await fourCourtAmericano.locator('#presentBtn').click();
+  if(screenshotDir)await fourCourtAmericano.screenshot({path:path.join(screenshotDir,'presentation-americano-720p.png')});
   await checkPresentationFits(fourCourtAmericano);
   assert.equal(await fourCourtAmericano.locator('#livePageTools').isVisible(),false);
   assert.equal(await fourCourtAmericano.locator('#liveCurrent .live-match:visible').count(),4);
   assert.equal(await fourCourtAmericano.locator('#liveUpcoming .live-match:visible').count(),4);
-  if(screenshotDir)await fourCourtAmericano.screenshot({path:path.join(screenshotDir,'presentation-americano-720p.png')});
   await fourCourtAmericano.locator('#presentExit').click();
   await fourCourtAmericano.waitForFunction(()=>!document.fullscreenElement);
   await fourCourtAmericano.setViewportSize({width:390,height:700});
