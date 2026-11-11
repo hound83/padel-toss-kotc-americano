@@ -19,7 +19,7 @@ test('illustrated home: keyboard, all formats, EN/mobile, offline assets and exi
     if(!file.startsWith(root+path.sep))return res.writeHead(403).end();
     try{
       let body;
-      if(pathname==='/sw.js')body=legacy?worker.replace('v243','v230'):worker;
+      if(pathname==='/sw.js')body=legacy?worker.replace('v243-split-groups','v230'):worker;
       else if(pathname==='/assets/mode-koc.svg'&&legacy)body=legacyArtwork;
       else body=fs.readFileSync(file);
       res.writeHead(200,{'Content-Type':mime[path.extname(file)]||'application/octet-stream','Cache-Control':'no-store'}).end(body);
@@ -49,6 +49,11 @@ test('illustrated home: keyboard, all formats, EN/mobile, offline assets and exi
   assert.equal(await page.locator('.mode-illustration').count(),4);
   const art=await (await ctx.request.get(origin+'/assets/mode-americano.svg')).text();
   assert.ok(art.includes('26–6'),'illustrated score is a point score, never a clock');
+  const splitNl=await (await ctx.request.get(origin+'/assets/mode-split.svg')).text();
+  const splitEn=await (await ctx.request.get(origin+'/assets/mode-split-en.svg')).text();
+  assert.match(splitNl,/<text[^>]*>Groep<\/text><text[^>]*>Zilver<\/text>.*<text[^>]*>Groep<\/text><text[^>]*>Goud<\/text>/);
+  assert.match(splitEn,/<text[^>]*>Group<\/text><text[^>]*>Silver<\/text>.*<text[^>]*>Group<\/text><text[^>]*>Gold<\/text>/);
+  assert.equal(await page.locator('#splitTossIllustration').getAttribute('src'),'./assets/mode-split.svg');
   await page.locator('.format-btn[data-format="toss"]').focus();
   await page.keyboard.press('Enter');
   assert.equal(await page.locator('#panel0').isVisible(),false);
@@ -65,9 +70,25 @@ test('illustrated home: keyboard, all formats, EN/mobile, offline assets and exi
   await page.locator('[data-lang="en"]').click();
   assert.equal(await page.locator('#modeHomeTitle').innerText(),'What shall we play?');
   assert.equal(await page.locator('[data-i18n="homeAmericanoAction"]').innerText(),'Choose Americano');
+  assert.equal(await page.locator('#splitTossIllustration').getAttribute('src'),'./assets/mode-split-en.svg');
+  const splitCard=page.locator('.format-btn[data-format="splitToss"]');
+  await splitCard.click();
+  assert.equal(await page.locator('#formatMark img').getAttribute('src'),'./assets/mode-split-en.svg');
+  await page.locator('[data-lang="nl"]').click();
+  assert.equal(await page.locator('#formatMark img').getAttribute('src'),'./assets/mode-split.svg');
+  await page.locator('#mastheadBack').click();
+  await page.locator('#splitTossIllustration').evaluate(img=>img.decode());
   for(const width of [320,390,768,1280]){
     await page.setViewportSize({width,height:900});
     if(screenshotDir&&width===390)await page.screenshot({path:path.join(screenshotDir,'mobile-home.png'),fullPage:true});
+    if(screenshotDir&&[320,1280].includes(width))await splitCard.screenshot({path:path.join(screenshotDir,'split-groups-'+width+'.png')});
+    const groupNameSize=await page.locator('#splitTossIllustration').evaluate(img=>{
+      const style=getComputedStyle(img);
+      const width=img.clientWidth-parseFloat(style.paddingLeft)-parseFloat(style.paddingRight);
+      const height=img.clientHeight-parseFloat(style.paddingTop)-parseFloat(style.paddingBottom);
+      return 54*Math.min(width/590,height/400);
+    });
+    assert.ok(groupNameSize>=10,'group names stay at least 10 CSS px at '+width+'px');
     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,'home fits '+width+'px');
     await page.locator('.format-btn[data-format="koc"]').click();
     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,'selected-format header fits '+width+'px');
@@ -92,12 +113,12 @@ test('illustrated home: keyboard, all formats, EN/mobile, offline assets and exi
     },{once:true}));
     await reg.update();await activated;
   });
-  await page.waitForFunction(async()=>{const keys=await caches.keys();return keys.includes('padel-toss-americano-v243')&&!keys.includes('padel-toss-americano-v230');});
+  await page.waitForFunction(async()=>{const keys=await caches.keys();return keys.includes('padel-toss-americano-v243-split-groups')&&!keys.includes('padel-toss-americano-v230');});
   assert.equal(await page.evaluate(()=>localStorage.getItem('visual-upgrade-check')),'keep-this-session');
   console.log('Illustrated home: existing-client cache upgrade preserved local storage.');
-  const shell=await page.evaluate(async()=>{const c=await caches.open('padel-toss-americano-v243');return (await c.keys()).map(r=>new URL(r.url).pathname);});
+  const shell=await page.evaluate(async()=>{const c=await caches.open('padel-toss-americano-v243-split-groups');return (await c.keys()).map(r=>new URL(r.url).pathname);});
   console.log('Updated offline cache paths:',JSON.stringify(shell));
-  for(const file of ['visual-theme.css','assets/mode-toss.svg','assets/mode-koc.svg','assets/mode-americano.svg','assets/mode-split.svg'])assert.ok(shell.includes('/'+file),file+' is ready before client takeover');
+  for(const file of ['visual-theme.css','assets/mode-toss.svg','assets/mode-koc.svg','assets/mode-americano.svg','assets/mode-split.svg','assets/mode-split-en.svg'])assert.ok(shell.includes('/'+file),file+' is ready before client takeover');
   await ctx.setOffline(true);
   await page.reload({waitUntil:'domcontentloaded'});
   if(await page.locator('#resumeContinue').isVisible())await page.locator('#resumeContinue').click();
@@ -108,6 +129,13 @@ test('illustrated home: keyboard, all formats, EN/mobile, offline assets and exi
   const offlineArtwork=await page.evaluate(async()=>(await fetch('./assets/mode-koc.svg')).text());
   assert.equal(offlineArtwork,kocArtwork);
   assert.doesNotMatch(offlineArtwork,/<text\b[^>]*>4<\/text>/);
+  for(const [lang,asset,expected] of [['nl','mode-split.svg',splitNl],['en','mode-split-en.svg',splitEn]]){
+    await page.locator('[data-lang="'+lang+'"]').click();
+    const source='./assets/'+asset;
+    assert.equal(await page.locator('#splitTossIllustration').getAttribute('src'),source);
+    const actual=await page.evaluate(async url=>(await fetch(url)).text(),source);
+    assert.equal(actual,expected);
+  }
   await page.locator('.format-btn[data-format="americano"]').click();
   await page.waitForFunction(()=>{const img=document.querySelector('#formatMark img');return img&&img.complete&&img.naturalWidth>0;});
   assert.equal(await page.locator('#brandEyebrow').isVisible(),true);
