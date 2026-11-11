@@ -61,6 +61,8 @@ Het klassement scrolt in een eigen paneel. Klik op een speler om te zien hoe de 
 
 De volgorde is punten, rangsaldo en bij een gelijke stand tussen twee spelers het onderlinge puntenverschil. Bij drie of meer spelers met dezelfde punten en hetzelfde rangsaldo blijft de plaats gedeeld. Als die plaats op de grens tussen Goud en Zilver valt, loot de planner eenmalig onder de gelijk geëindigde spelers voor de resterende plekken in Goud. De uitslag van de loting staat bij de overgang naar Goud en Zilver en wordt bewaard met het schema.
 
+Met **Bekijk de voorgestelde splitsing** vergelijk je de lineaire indeling met het voorstel. Je ziet wie rond de grens staat, waar de weging verschil maakt en hoeveel plekken eventueel worden verloot. Je kunt alle spelers tonen of terug naar de uitslagen. De definitieve indeling en eventuele loting volgen bij **Splitsing bevestigen**.
+
 De planner schat spelerssterkte per fase uit de volledig ingevulde potjes, met beide teams in de berekening. De correctie telt mee als voorspellingen voor weggelaten rondes minstens 5% minder gemiddelde absolute fout hebben dan zowel het spelersgemiddelde als een gelijkspel. Bij onvoldoende gegevens blijft de gebruikelijke evenredige omrekening gelden.
 
 Na afloop van een fase kan een deelnemer die door de loting minder potjes kreeg een geschatte uitslag krijgen tegen een gemiddeld duo met een gemiddelde partner. Punten en saldo volgen uit diezelfde uitslag. De spreiding onder de spelersnaam simuleert mogelijke scores op basis van voorspelfouten uit weggelaten rondes. De vaste schatting bepaalt het klassement.

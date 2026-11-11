@@ -975,6 +975,20 @@
   }
   .modal-box p{ margin:0 0 20px; font-size:var(--fs-base); color:var(--ink); }
   .modal-actions{ display:flex; gap:10px; justify-content:flex-end; }
+  body:has(.split-preview[open]){overflow:hidden;}
+  .split-preview{width:min(660px,calc(100% - 24px));max-height:calc(100dvh - 24px);padding:0;border:1px solid var(--line);border-radius:14px;background:var(--surface);color:var(--ink);overscroll-behavior:contain;}
+  .split-preview::backdrop{background:rgba(18,35,61,.55);}
+  .split-preview-content{padding:20px;}
+  .split-preview h2{margin:0 0 10px;font-size:var(--fs-lg);}
+  .split-preview p{margin:8px 0;font-size:var(--fs-sm);}
+  .split-preview-method{color:var(--ink-soft);}
+  .split-preview-draw{padding:10px 12px;background:#fff5d2;border-radius:8px;}
+  .split-preview table{width:100%;border-collapse:collapse;font-size:var(--fs-sm);}
+  .split-preview th,.split-preview td{padding:7px 6px;border-bottom:1px solid var(--line);text-align:left;overflow-wrap:anywhere;}
+  .split-preview tr.split-changed{background:#eaf4fc;}
+  .split-preview-more{margin-top:10px;}
+  .split-preview .modal-actions{position:sticky;bottom:0;background:var(--surface);border-top:1px solid var(--line);padding:12px 20px;flex-wrap:wrap;}
+  @media (max-width:520px){.split-preview-content,.split-preview .modal-actions{padding:12px;}}
 
   @media print{
     .steps, .schedule-actions, .schedule-round-tools, .board, .checkpoint-card, .lang-switch, .test-score-tools{ display:none !important; }
@@ -1342,7 +1356,7 @@
   </section>
 
   <footer class="app-footer">
-    <span id="appVersion">v2.4.1</span>
+    <span id="appVersion">v2.4.2</span>
     <details><summary data-i18n="whatsNew">Wat is nieuw?</summary>
       <ul>
         <li data-i18n="changeIllustrations">Nieuwe baanillustraties, marineblauw/lime en een puntenscore van 26–6.</li>
@@ -1436,6 +1450,24 @@
     </div>
   </div>
 </div>
+<dialog class="split-preview" id="splitPreview" aria-labelledby="splitPreviewTitle">
+  <div class="split-preview-content">
+    <h2 id="splitPreviewTitle" data-i18n="splitPreviewTitle">Vooruitblik op Goud en Zilver</h2>
+    <p id="splitPreviewSizes"></p>
+    <p class="split-preview-method" id="splitPreviewMethod"></p>
+    <p class="split-preview-draw" id="splitPreviewDraw" hidden></p>
+    <p id="splitPreviewChanges"></p>
+    <table aria-describedby="splitPreviewChanges">
+      <thead><tr><th scope="col" data-i18n="thRank">#</th><th scope="col" data-i18n="thPlayer">Speler</th><th scope="col" data-i18n="splitPreviewLinear">Lineair</th><th scope="col" data-i18n="splitPreviewProposal">Voorstel</th></tr></thead>
+      <tbody id="splitPreviewRows"></tbody>
+    </table>
+    <button class="btn btn-ghost split-preview-more" id="splitPreviewMore" type="button" aria-expanded="false" aria-controls="splitPreviewRows"></button>
+  </div>
+  <form method="dialog" class="modal-actions">
+    <button class="btn btn-ghost" type="submit" data-i18n="splitPreviewBack" autofocus>Terug naar uitslagen</button>
+    <button class="btn btn-primary" id="splitPreviewConfirm" type="button" data-i18n="splitPreviewConfirm">Splitsing bevestigen</button>
+  </form>
+</dialog>
 
 <script>
 (function(){
@@ -1553,7 +1585,23 @@
       cpHeading: 'Bekijk het klassement en splits in Goud en Zilver',
       cpBody: 'Vul alle scores hierboven in om verder te gaan in Goud en Zilver. Bij een gedeelde plek op de grens loot de planner eenmalig om de resterende plekken in Goud.',
       qualificationDrawResult: 'Loting voor gedeelde plek {rank}. Goud: {gold}. Zilver: {silver}.',
-      cpButton: 'Splits in Goud & Zilver \u2192',
+      cpButton: 'Bekijk de voorgestelde splitsing \u2192',
+      splitPreviewTitle: 'Vooruitblik op Goud en Zilver',
+      splitPreviewSizes: '{gold} spelers in Goud, {silver} in Zilver.',
+      splitPreviewWeighted: 'De gewogen berekening voorspelde de weggelaten rondes beter en bepaalt dit voorstel.',
+      splitPreviewFew: 'De planner gebruikt de lineaire berekening. Er zijn te weinig vergelijkbare uitslagen om de weging te beoordelen.',
+      splitPreviewAccuracy: 'De planner gebruikt de lineaire berekening. De weging voorspelde de weggelaten rondes onvoldoende beter.',
+      splitPreviewDraw: '{count} spelers delen plek {rank}. Bij bevestiging loot de planner onder hen om {slots} plek(ken) in Goud.',
+      splitPreviewChanged: 'Rond de grens en bij {count} speler(s) voor wie de weging Goud, Zilver of de kans op loting verandert.',
+      splitPreviewNoChanges: 'Rond de grens. De gewogen berekening geeft dezelfde groepen en eventuele loting als de lineaire berekening.',
+      splitPreviewBoundary: 'Spelers rond de grens.',
+      splitPreviewLinear: 'Lineair',
+      splitPreviewProposal: 'Voorstel',
+      splitPreviewDrawLabel: 'Loting ({slots}/{count})',
+      splitPreviewShow: 'Toon alle spelers',
+      splitPreviewHide: 'Toon alleen de grens en wijzigingen',
+      splitPreviewBack: 'Terug naar uitslagen',
+      splitPreviewConfirm: 'Splitsing bevestigen',
       cpError: 'Vul eerst alle scores in voor ronde 1–{n}.',
       boardTitle: 'Klassement',
       liveCurrentHeading: 'Nu spelen · ronde {n}',
@@ -1802,7 +1850,23 @@
       cpHeading: 'Check the leaderboard, then split into Gold and Silver',
       cpBody: 'Enter all scores above to continue in Gold and Silver. If a shared rank crosses the cutoff, the planner draws lots once for the remaining Gold places.',
       qualificationDrawResult: 'Draw for shared rank {rank}. Gold: {gold}. Silver: {silver}.',
-      cpButton: 'Split into Gold & Silver \u2192',
+      cpButton: 'Review the proposed split \u2192',
+      splitPreviewTitle: 'Preview Gold and Silver',
+      splitPreviewSizes: '{gold} players in Gold, {silver} in Silver.',
+      splitPreviewWeighted: 'The weighted calculation predicted the held-out rounds better and determines this proposal.',
+      splitPreviewFew: 'The planner uses the linear calculation. There are too few comparable results to assess the weighting.',
+      splitPreviewAccuracy: 'The planner uses the linear calculation. The weighted predictions did not improve enough on the held-out rounds.',
+      splitPreviewDraw: '{count} players share rank {rank}. On confirmation, the planner draws among them for {slots} Gold place(s).',
+      splitPreviewChanged: 'Players near the cutoff and {count} player(s) whose group or draw status changes with weighting.',
+      splitPreviewNoChanges: 'Players near the cutoff. Weighting gives the same groups and draw as the linear calculation.',
+      splitPreviewBoundary: 'Players near the cutoff.',
+      splitPreviewLinear: 'Linear',
+      splitPreviewProposal: 'Proposal',
+      splitPreviewDrawLabel: 'Draw ({slots}/{count})',
+      splitPreviewShow: 'Show all players',
+      splitPreviewHide: 'Show only the cutoff and changes',
+      splitPreviewBack: 'Back to results',
+      splitPreviewConfirm: 'Confirm the split',
       cpError: 'Enter every score for rounds 1–{n} first.',
       boardTitle: 'Leaderboard',
       liveCurrentHeading: 'Now playing · round {n}',
@@ -3633,7 +3697,7 @@
     err.className = 'error-msg';
     err.textContent = tf('cpError', { n: state.splitRoundStored });
     btn.addEventListener('click', function(){
-      var ok = doSplit();
+      var ok = openQualificationPreview();
       err.classList.toggle('visible', !ok);
     });
     card.appendChild(btn);
@@ -3950,7 +4014,9 @@
   }
 
   function assessAmericanoStrength(games, playerCount){
-    if (games.length < 12 || new Set(games.map(function(game){return game.round;})).size < 3) return null;
+    if (games.length < 12 || new Set(games.map(function(game){return game.round;})).size < 3){
+      return {status:'few',model:null};
+    }
     var baselineError = 0, neutralError = 0, modelError = 0, observations = 0, residuals = [];
     for (var fold = 0; fold < 3; fold++){
       var training = games.filter(function(game){return game.round % 3 !== fold;});
@@ -3972,9 +4038,10 @@
         });
       });
     }
-    if (observations < 48 || modelError >= Math.min(baselineError,neutralError) * .95) return null;
-    return {strength:fitAmericanoStrength(games, playerCount), residuals:residuals,
-      baselineError:baselineError / observations, modelError:modelError / observations};
+    if (observations < 48) return {status:'few',model:null};
+    if (modelError >= Math.min(baselineError,neutralError) * .95) return {status:'accuracy',model:null};
+    return {status:'weighted',model:{strength:fitAmericanoStrength(games, playerCount),residuals:residuals,
+      baselineError:baselineError / observations,modelError:modelError / observations}};
   }
 
   function neutralScoreRange(score, length, residuals){
@@ -3989,10 +4056,10 @@
   }
 
   var americanoStrengthCache = new Map();
-  function computeTotals(poolFilter){
+  function computeTotals(poolFilter, applyWeighting = true){
     var totals = Object.create(null);
     var h2h = Object.create(null);
-    var americano = state.format === 'americano';
+    var americano = state.format === 'americano' && applyWeighting;
     var games = [], scoreLengths = [], scheduled = 0, completed = 0, rosterOrder = 0;
     function bumpH2H(a, b, amount){
       if (!h2h[a]) h2h[a] = Object.create(null);
@@ -4064,7 +4131,7 @@
     // THEIR points get scaled UP to the reference too, marked distinctly
     // from a scale-down so it's clear which direction the adjustment went.
     var rowsArr = Object.keys(totals).map(function(k){ return totals[k]; });
-    var model = null, nominalLength = 0;
+    var model = null, nominalLength = 0, weightingStatus = 'few';
     if (americano && games.length){
       var playerNames = Object.keys(totals);
       var playerIndices = new Map(playerNames.map(function(name,i){return [name,i];}));
@@ -4073,10 +4140,11 @@
       var cacheKey = poolFilter || 'main';
       var cached = americanoStrengthCache.get(cacheKey);
       if (!cached || cached.signature !== signature){
-        cached = {signature:signature,model:assessAmericanoStrength(games,rowsArr.length)};
+        cached = {signature:signature,assessment:assessAmericanoStrength(games,rowsArr.length)};
         americanoStrengthCache.set(cacheKey,cached);
       }
-      model = cached.model;
+      model = cached.assessment.model;
+      weightingStatus = cached.assessment.status;
       scoreLengths.sort(function(a,b){return a-b;});
       nominalLength = scoreLengths[Math.floor((scoreLengths.length - 1) / 2)];
       if (model){
@@ -4141,7 +4209,8 @@
       row.referenceGames = referenceGames;
     });
 
-    return { totals: totals, h2h: h2h, referenceGames: referenceGames, recalculated: recalculated, weighted: !!model };
+    return { totals: totals, h2h: h2h, referenceGames: referenceGames, recalculated: recalculated,
+      weighted: !!model, weightingStatus:weightingStatus };
   }
 
   function compareStanding(a, b){
@@ -4372,41 +4441,120 @@
     }
   }
 
+  function qualificationBoundary(ranked, topCount){
+    var firstSilver = ranked[topCount];
+    if (!topCount || !firstSilver || ranked[topCount - 1].rank !== firstSilver.rank) return null;
+    var rank = firstSilver.rank;
+    var start = ranked.findIndex(function(row){return row.rank === rank;});
+    var end = topCount + 1;
+    while (end < ranked.length && ranked[end].rank === rank) end++;
+    return {rank:rank,start:start,end:end,goldSlots:topCount-start};
+  }
+
   function splitQualificationRanks(ranked, topCount){
     var names = ranked.map(function(row){return row.name;});
     var draw = null;
-    var firstSilver = ranked[topCount];
-    if (topCount > 0 && firstSilver && ranked[topCount - 1].rank === firstSilver.rank){
-      var rank = firstSilver.rank;
-      var firstTied = ranked.findIndex(function(row){return row.rank === rank;});
-      var tiedCount = ranked.filter(function(row){return row.rank === rank;}).length;
-      var drawn = shuffle(names.slice(firstTied,firstTied + tiedCount));
-      names.splice(firstTied,tiedCount,...drawn);
-      var goldSlots = topCount - firstTied;
-      draw = {rank:rank,gold:drawn.slice(0,goldSlots),silver:drawn.slice(goldSlots)};
+    var boundary = qualificationBoundary(ranked,topCount);
+    if (boundary){
+      var drawn = shuffle(names.slice(boundary.start,boundary.end));
+      names.splice(boundary.start,boundary.end-boundary.start,...drawn);
+      draw = {rank:boundary.rank,gold:drawn.slice(0,boundary.goldSlots),silver:drawn.slice(boundary.goldSlots)};
     }
     return {gold:names.slice(0,topCount),silver:names.slice(topCount),draw:draw};
   }
 
-  function doSplit(){
-    if (state.splitDone) return true;
+  function qualificationReady(){
     var main = state.pools[0];
-    var allFilled = true;
-    main.rounds.forEach(function(rd){
-      rd.courts.forEach(function(c){
-        var key = scoreKey('main', c.courtIndex, rd.round);
-        var sc = state.scores[key];
-        if (!sc || typeof sc.t1 !== 'number' || typeof sc.t2 !== 'number') allFilled = false;
+    if (state.format !== 'americano' || state.splitDone || !main || main.id !== 'main') return false;
+    return main.rounds.every(function(rd){
+      return rd.courts.every(function(c){
+        var sc = state.scores[scoreKey('main',c.courtIndex,rd.round)];
+        return sc && typeof sc.t1 === 'number' && typeof sc.t2 === 'number';
       });
     });
-    if (!allFilled) return false;
+  }
 
-    var result = computeTotals();
+  function qualificationPlan(result){
     var ranked = rankPlayers(result.totals, result.h2h).filter(function(r){
       return state.activeRoster.indexOf(r.name) !== -1;
     });
+    var topCount = Math.ceil(ranked.length / 2);
+    return {ranked:ranked,topCount:topCount,boundary:qualificationBoundary(ranked,topCount)};
+  }
 
-    var split = splitQualificationRanks(ranked,Math.ceil(ranked.length / 2));
+  function splitPreviewGroup(plan,index){
+    var b = plan.boundary;
+    if (b && index >= b.start && index < b.end){
+      return tf('splitPreviewDrawLabel',{slots:b.goldSlots,count:b.end-b.start});
+    }
+    return t(index < plan.topCount ? 'poolLabelTop' : 'poolLabelBottom');
+  }
+
+  var splitPreview = document.getElementById('splitPreview');
+  var splitPreviewSource = null;
+  function openQualificationPreview(){
+    if (!qualificationReady()) return false;
+    var result = computeTotals('main');
+    var proposed = qualificationPlan(result);
+    var linear = result.weighted ? qualificationPlan(computeTotals('main',false)) : proposed;
+    var linearGroups = new Map(linear.ranked.map(function(row,i){return [row.name,splitPreviewGroup(linear,i)];}));
+    document.getElementById('splitPreviewSizes').textContent = tf('splitPreviewSizes',{
+      gold:proposed.topCount,silver:proposed.ranked.length-proposed.topCount
+    });
+    var methodKey = {weighted:'splitPreviewWeighted',few:'splitPreviewFew',accuracy:'splitPreviewAccuracy'};
+    document.getElementById('splitPreviewMethod').textContent = t(methodKey[result.weightingStatus]);
+    var drawNote = document.getElementById('splitPreviewDraw');
+    var b = proposed.boundary;
+    drawNote.hidden = !b;
+    drawNote.textContent = b ? tf('splitPreviewDraw',{count:b.end-b.start,rank:b.rank,slots:b.goldSlots}) : '';
+
+    var rows = document.getElementById('splitPreviewRows');
+    rows.replaceChildren();
+    var changed = 0;
+    proposed.ranked.forEach(function(row,index){
+      var group = splitPreviewGroup(proposed,index), previous = linearGroups.get(row.name);
+      var moved = group !== previous;
+      if (moved) changed++;
+      var line = document.createElement('tr');
+      line.classList.toggle('split-changed',moved);
+      var inDraw = b && index >= b.start && index < b.end;
+      if (!moved && !inDraw &&
+          (index < proposed.topCount - 3 || index >= proposed.topCount + 3)){
+        line.dataset.extra = '';
+        line.hidden = true;
+      }
+      [row.rank,row.name,previous,group].forEach(function(value){line.appendChild(liveElement('td','',value));});
+      rows.appendChild(line);
+    });
+    document.getElementById('splitPreviewChanges').textContent = changed ? tf('splitPreviewChanged',{count:changed}) :
+      t(result.weighted ? 'splitPreviewNoChanges' : 'splitPreviewBoundary');
+    var more = document.getElementById('splitPreviewMore');
+    more.hidden = !rows.querySelector('[data-extra]');
+    more.setAttribute('aria-expanded','false');
+    more.textContent = t('splitPreviewShow');
+    splitPreviewSource = state;
+    splitPreview.showModal();
+    return true;
+  }
+
+  document.getElementById('splitPreviewMore').addEventListener('click',function(){
+    var expanded = this.getAttribute('aria-expanded') === 'false';
+    document.querySelectorAll('#splitPreviewRows [data-extra]').forEach(function(row){row.hidden = !expanded;});
+    this.setAttribute('aria-expanded',String(expanded));
+    this.textContent = t(expanded ? 'splitPreviewHide' : 'splitPreviewShow');
+  });
+  document.getElementById('splitPreviewConfirm').addEventListener('click',function(){
+    var canConfirm = state === splitPreviewSource;
+    splitPreview.close();
+    if (canConfirm) doSplit();
+  });
+  splitPreview.addEventListener('close',function(){if (!splitPreview.open) splitPreviewSource = null;});
+
+  function doSplit(){
+    if (!qualificationReady()) return;
+    var main = state.pools[0];
+    var plan = qualificationPlan(computeTotals('main'));
+    var split = splitQualificationRanks(plan.ranked,plan.topCount);
     var topNames = split.gold;
     var bottomNames = split.silver;
 

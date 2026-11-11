@@ -388,6 +388,9 @@ test('v2.2: clean navigation and live KOC, Toss, Americano and split Toss', asyn
   await americano.locator('#generateBtn').click();
   assert.equal(await americano.locator('#panel3').isVisible(),true);
   assert.equal(await americano.locator('#metaStrip').textContent(),'8 spelers · 2 banen · 4 rondes · Splits na ronde 2');
+  await americano.locator('.checkpoint-card button').click();
+  assert.equal(await americano.locator('#splitPreview').isVisible(),false);
+  assert.equal(await americano.locator('.checkpoint-card .error-msg').isVisible(),true);
   for(const round of [1,2]){
     for(const court of [1,2]){
       const key='main-'+court+'-'+round;
@@ -403,6 +406,17 @@ test('v2.2: clean navigation and live KOC, Toss, Americano and split Toss', asyn
   assert.equal(await americano.locator('input[data-key="main-1-1"][data-team="t1"]').inputValue(),'16');
   assert.equal(await americano.locator('.checkpoint-card').count(),1);
   await americano.locator('.checkpoint-card button').click();
+  const splitPreview=americano.getByRole('dialog',{name:'Vooruitblik op Goud en Zilver'});
+  assert.equal(await splitPreview.isVisible(),true);
+  assert.match(await splitPreview.locator('#splitPreviewMethod').innerText(),/te weinig vergelijkbare uitslagen/);
+  assert.match(await splitPreview.locator('#splitPreviewDraw').innerText(),/8 spelers delen plek 1.*4 plek/);
+  assert.equal(await splitPreview.locator('tbody tr:visible').count(),8);
+  assert.equal(await americano.locator('.phase-draw').count(),0,'preview must not draw lots');
+  await americano.keyboard.press('Escape');
+  assert.equal(await splitPreview.isVisible(),false);
+  assert.equal(await americano.locator('.phase-marker').count(),0);
+  await americano.locator('.checkpoint-card button').click();
+  await splitPreview.getByRole('button',{name:'Splitsing bevestigen'}).click();
   await checkScheduleRound(americano,3,4,true);
   assert.equal(await americano.locator('.qualification-archive').count(),1);
   assert.equal(await americano.locator('#boardCol > .board').count(),2);
@@ -489,6 +503,13 @@ test('v2.2: clean navigation and live KOC, Toss, Americano and split Toss', asyn
   await testScores.locator('#testScoreNext').tap();
   assert.equal(await testScores.locator('#testScoreStatus').innerText(),'Alle scorevelden zijn al ingevuld.');
   await testScores.locator('.checkpoint-card button').tap();
+  const mobileSplit=testScores.getByRole('dialog',{name:'Vooruitblik op Goud en Zilver'});
+  if(screenshotDir)await testScores.screenshot({path:path.join(screenshotDir,'americano-split-mobile.png')});
+  await mobileSplit.getByRole('button',{name:'Terug naar uitslagen'}).tap();
+  assert.equal(await mobileSplit.isVisible(),false);
+  assert.equal(await fields(3).count(),0);
+  await testScores.locator('.checkpoint-card button').tap();
+  await mobileSplit.getByRole('button',{name:'Splitsing bevestigen'}).tap();
   assert.equal(await fields(3).first().inputValue(),'');
   await testScores.locator('#testScoreNext').tap();
   assert.equal(await testScores.locator('#testScoreStatus').innerText(),'Open scores in ronde 3 ingevuld.');
@@ -505,6 +526,8 @@ test('v2.2: clean navigation and live KOC, Toss, Americano and split Toss', asyn
   await large.locator('#playerCountInput').fill('40');
   await large.locator('#continueTo2').click();
   await large.locator('#roundsInput').fill('12');
+  await large.locator('#regroupToggle').check();
+  await large.locator('#splitRoundInput').fill('11');
   await large.locator('#generateBtn').click();
   const imported=await saveState(large);
   imported.live.mode='manual';
@@ -536,6 +559,16 @@ test('v2.2: clean navigation and live KOC, Toss, Americano and split Toss', asyn
   await projected.getByRole('button',{name:'Bekijk spreiding'}).click();
   assert.match(await projected.getByRole('status').innerText(),/80%/);
   if(screenshotDir)await large.screenshot({path:path.join(screenshotDir,'americano-2.4-rangsaldo.png')});
+  await large.locator('.checkpoint-card button').click();
+  const weightedSplit=large.getByRole('dialog',{name:'Vooruitblik op Goud en Zilver'});
+  assert.match(await weightedSplit.locator('#splitPreviewMethod').innerText(),/gewogen berekening/);
+  const allPlayers=weightedSplit.getByRole('button',{name:'Toon alle spelers'});
+  assert.ok(await weightedSplit.locator('tbody tr:visible').count()<40);
+  await allPlayers.click();
+  assert.equal(await weightedSplit.locator('tbody tr:visible').count(),40);
+  await weightedSplit.getByRole('button',{name:'Toon alleen de grens en wijzigingen'}).click();
+  if(screenshotDir)await large.screenshot({path:path.join(screenshotDir,'americano-split-preview.png')});
+  await weightedSplit.getByRole('button',{name:'Terug naar uitslagen'}).click();
 
   // KOC also remains usable as a presentation on a small phone viewport.
   const mobile=await open('koc',true);

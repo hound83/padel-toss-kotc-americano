@@ -13,17 +13,18 @@ const ranking = new Function('state','scoreKey','activeRosterForPool',
 const scoreKey = (pool,court,round) => `${pool}-${court}-${round}`;
 
 test('only a shared rank crossing the cutoff is drawn',()=>{
-  const start=html.indexOf('  function splitQualificationRanks(');
-  const end=html.indexOf('  function doSplit(',start);
+  const start=html.indexOf('  function qualificationBoundary(');
+  const end=html.indexOf('  function qualificationReady(',start);
   assert.ok(start>=0&&end>start);
   const calls=[];
-  const split=new Function('shuffle',html.slice(start,end)+'\nreturn splitQualificationRanks;')(names=>{
+  const {boundary,split}=new Function('shuffle',html.slice(start,end)+'\nreturn {boundary:qualificationBoundary,split:splitQualificationRanks};')(names=>{
     calls.push(names.slice());
     return names.slice().reverse();
   });
   const ranked=[1,2,3,3,3,3,7,8].map((rank,i)=>({rank,name:String.fromCharCode(65+i)}));
   assert.deepEqual(split(ranked,2),{gold:['A','B'],silver:['C','D','E','F','G','H'],draw:null});
   assert.deepEqual(split(ranked,6),{gold:['A','B','C','D','E','F'],silver:['G','H'],draw:null});
+  assert.deepEqual(boundary(ranked,4),{rank:3,start:2,end:6,goldSlots:2});
   assert.deepEqual(calls,[]);
   assert.deepEqual(split(ranked,4),{gold:['A','B','F','E'],silver:['D','C','G','H'],
     draw:{rank:3,gold:['F','E'],silver:['D','C']}});
@@ -65,12 +66,18 @@ test('held-out rounds favour a lineup-aware estimate on a structured 40-player c
   const games=pool.rounds.flatMap(rd=>rd.courts.map(court=>({round:rd.round,
     players:court.team1.concat(court.team2).map(name=>pool.players.indexOf(name)),
     margin:(state.scores[scoreKey('main',court.courtIndex,rd.round)].t1-16)/16})));
-  const model=api.assessAmericanoStrength(games,pool.players.length);
+  const assessment=api.assessAmericanoStrength(games,pool.players.length);
+  const model=assessment.model;
+  assert.equal(assessment.status,'weighted');
   assert.ok(model);
   assert.ok(model.modelError < model.baselineError);
   console.log(`Held-out MAE at 32 points: average ${(16*model.baselineError).toFixed(2)}, weighted ${(16*model.modelError).toFixed(2)}`);
   const results=api.computeTotals();
   assert.equal(results.weighted,true);
+  const linear=api.computeTotals('main',false);
+  assert.equal(linear.weighted,false);
+  assert.ok(Object.values(linear.totals).every(row=>row.rankDiff===row.adjDiff&&!row.projection));
+  assert.equal(api.computeTotals().weightingStatus,'weighted');
   const projected=Object.values(results.totals).find(row=>row.projection);
   assert.ok(projected);
   const {count,score,length,residuals}=projected.projection;
@@ -93,11 +100,20 @@ test('sparse or neutral evidence retains the proportional adjustment',()=>{
   Object.values(state.scores).forEach(score=>{score.t1=score.t2=16;});
   const result=api.computeTotals();
   assert.equal(result.weighted,false);
+  assert.equal(result.weightingStatus,'few');
   for(const row of Object.values(result.totals)){
     assert.equal(row.rankDiff,row.adjDiff);
     assert.equal(row.projection,undefined);
     if(row.recalcDir==='up') assert.equal(row.adjPoints,Math.round(row.points/row.played*result.referenceGames));
   }
+});
+
+test('enough data can still reject weighting on accuracy',()=>{
+  const {state,api}=fixture();
+  Object.values(state.scores).forEach(score=>{score.t1=score.t2=16;});
+  const result=api.computeTotals();
+  assert.equal(result.weighted,false);
+  assert.equal(result.weightingStatus,'accuracy');
 });
 
 test('ranking margin precedes head-to-head and three-way ties share rank',()=>{
