@@ -55,6 +55,16 @@ Alle afbeeldingen gebruiken dezelfde geometrisch opgebouwde basisbaan: 20 × 10 
 
 De baanopbouw volgt de [FIP Rules of Padel, editie 2026](https://www.padelfip.com/wp-content/uploads/2025/12/FIP_Rules-of-Padel-1.pdf), onderdelen Dimensions, Enclosures en Access. De browserchecks bewaren desktop- en mobiele schermafbeeldingen; na een merge controleert CI ook de werkelijk gepubliceerde website, inclusief de nieuwe illustraties en offline laden.
 
+### Americano-klassement (v2.4)
+
+Het klassement scrolt in een eigen paneel. Klik op een speler om te zien hoe de werkelijk behaalde punten en het saldo leiden tot het puntentotaal en het rangsaldo.
+
+De volgorde is punten, rangsaldo en bij een gelijke stand tussen twee spelers het onderlinge puntenverschil. Bij drie of meer spelers met dezelfde punten en hetzelfde rangsaldo blijft de plaats gedeeld. Als die plaats op de grens tussen Goud en Zilver valt, gebruikt de splitsing de volgorde van de spelerslijst.
+
+De planner schat spelerssterkte per fase uit de volledig ingevulde potjes, met beide teams in de berekening. De correctie telt mee als voorspellingen voor weggelaten rondes minstens 5% minder gemiddelde absolute fout hebben dan zowel het spelersgemiddelde als een gelijkspel. Bij onvoldoende gegevens blijft de gebruikelijke evenredige omrekening gelden.
+
+Na afloop van een fase kan een deelnemer die door de loting minder potjes kreeg een geschatte uitslag krijgen tegen een gemiddeld duo met een gemiddelde partner. Punten en saldo volgen uit diezelfde uitslag. De spreiding onder de spelersnaam simuleert mogelijke scores op basis van voorspelfouten uit weggelaten rondes. De vaste schatting bepaalt het klassement.
+
 ### Live-presentatiemodus
 
 De presentatiemodus is een afzonderlijke liveweergave, niet het hele lange schema:
