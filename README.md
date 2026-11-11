@@ -67,6 +67,8 @@ De presentatiemodus is een afzonderlijke liveweergave, niet het hele lange schem
 
 Dezelfde rondeknoppen staan boven het gewone schema en blijven in beeld tijdens het scrollen. Met de pijlen of **Auto** spring je naar de gekozen ronde. **Volledig schema** brengt je vanuit de presentatiemodus terug naar die ronde. De rondekeuze wordt samen met het schema opgeslagen.
 
+Als de baanindeling groter is dan het scherm, verdeelt de presentatie de kaarten over meerdere schermen. Ze wisselen elke 12 seconden. Met de schermpijlen blader je zelf en met **Pauze** zet je het wisselen stil. Tijdens score-invoer blijft het actieve scherm in beeld.
+
 ### Speciaal voor KOC
 
 - Kies **1 tot en met 4 banen** met dezelfde knoppen als bij de andere speelvormen, of **5 tot en met 12 banen** via de dropdown.

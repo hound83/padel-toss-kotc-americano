@@ -89,6 +89,10 @@ test('v2.2: clean navigation and live KOC, Toss, Americano and split Toss', asyn
       assert.deepEqual(rows,expected,area+' court cards per row');
     }
   }
+  async function checkPresentationFits(page){
+    const size=await page.locator('#livePresentation').evaluate(root=>({height:root.clientHeight,content:root.scrollHeight}));
+    assert.ok(size.content<=size.height+2,`presentation uses ${size.content}px of ${size.height}px`);
+  }
   async function checkScorePlacement(card,teamSelector,nameSelector,inline=false){
     const placement=await card.evaluate((match,{teamSelector,nameSelector,inline})=>
       [...match.querySelectorAll(teamSelector)].map((team,side)=>{
@@ -314,6 +318,51 @@ test('v2.2: clean navigation and live KOC, Toss, Americano and split Toss', asyn
   await checkNamesFit(fourCourtAmericano.locator('#liveCurrent .live-team span, #liveUpcoming .live-team span'));
   if(screenshotDir)await fourCourtAmericano.screenshot({path:path.join(screenshotDir,'presentation-americano-four-courts.png')});
   await fourCourtAmericano.locator('#presentExit').click();
+  await fourCourtAmericano.waitForFunction(()=>!document.fullscreenElement);
+  await fourCourtAmericano.setViewportSize({width:1280,height:720});
+  await fourCourtAmericano.locator('#presentBtn').click();
+  if(screenshotDir)await fourCourtAmericano.screenshot({path:path.join(screenshotDir,'presentation-americano-720p.png')});
+  await checkPresentationFits(fourCourtAmericano);
+  assert.equal(await fourCourtAmericano.locator('#livePageTools').isVisible(),false);
+  assert.equal(await fourCourtAmericano.locator('#liveCurrent .live-match:visible').count(),4);
+  assert.equal(await fourCourtAmericano.locator('#liveUpcoming .live-match:visible').count(),4);
+  assert.equal(await fourCourtAmericano.locator('#liveStandings').evaluate(board=>board.scrollHeight<=board.clientHeight+1),true);
+  await fourCourtAmericano.locator('#presentExit').click();
+  await fourCourtAmericano.waitForFunction(()=>!document.fullscreenElement);
+  await fourCourtAmericano.setViewportSize({width:390,height:700});
+  await fourCourtAmericano.clock.install();
+  await fourCourtAmericano.locator('#presentBtn').click();
+  const screenLabel=fourCourtAmericano.locator('#livePageLabel');
+  const firstScreen=await screenLabel.innerText();
+  assert.match(firstScreen,/^Scherm 1 \/ [2-9]/);
+  const screenTotal=Number(firstScreen.split('/')[1]);
+  await checkPresentationFits(fourCourtAmericano);
+  const visibleField=fourCourtAmericano.locator('#liveCurrent input:visible').first();
+  await visibleField.fill('24');
+  await fourCourtAmericano.clock.runFor(13000);
+  assert.equal(await screenLabel.innerText(),firstScreen,'the screen stays while entering a score');
+  await visibleField.blur();
+  await fourCourtAmericano.clock.runFor(12100);
+  assert.equal(await screenLabel.innerText(),`Scherm 2 / ${screenTotal}`);
+  await fourCourtAmericano.locator('#livePagePause').click();
+  await fourCourtAmericano.clock.runFor(13000);
+  assert.equal(await screenLabel.innerText(),`Scherm 2 / ${screenTotal}`);
+  await fourCourtAmericano.locator('#livePagePrev').click();
+  assert.equal(await screenLabel.innerText(),firstScreen);
+  assert.equal(await visibleField.inputValue(),'24','score remains when the screen comes back');
+  if(screenshotDir)await fourCourtAmericano.screenshot({path:path.join(screenshotDir,'presentation-americano-paged.png')});
+  const seen=new Set();
+  for(let screen=0;screen<screenTotal;screen++){
+    await checkPresentationFits(fourCourtAmericano);
+    for(const section of ['liveCurrent','liveUpcoming']){
+      for(const court of await fourCourtAmericano.locator('#'+section+' .live-match:visible .live-match-head').allTextContents()){
+        seen.add(section+' '+court);
+      }
+    }
+    await fourCourtAmericano.locator('#livePageNext').click();
+  }
+  assert.equal(seen.size,8,'every current and upcoming court appears on a screen');
+  await fourCourtAmericano.locator('#presentExit').click();
 
   // Americano qualification and the new Gold/Silver competitions must not
   // contaminate each other's scores.
@@ -406,4 +455,10 @@ test('v2.2: clean navigation and live KOC, Toss, Americano and split Toss', asyn
   assert.equal(await mobile.locator('#liveKoc .live-koc-card').count(),4);
   assert.equal(await mobile.evaluate(()=>document.documentElement.scrollWidth>innerWidth+2),false);
   assert.equal(await mobile.locator('#presentExit').isVisible(),true);
+  await checkPresentationFits(mobile);
+  assert.equal(await mobile.locator('#livePageTools').isVisible(),true);
+  const firstKocCourts=await mobile.locator('#liveKoc .live-koc-card:visible h3').allTextContents();
+  await mobile.locator('#livePageNext').tap();
+  const nextKocCourts=await mobile.locator('#liveKoc .live-koc-card:visible h3').allTextContents();
+  assert.equal(new Set([...firstKocCourts,...nextKocCourts]).size,4);
 });
