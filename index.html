@@ -6071,7 +6071,9 @@
       document.body.classList.add('presentation-mode');
       renderLivePresentation();
       requestAnimationFrame(function(){
-        document.getElementById('liveTitle').focus({preventScroll:true});
+        if (!root.hidden && !root.contains(document.activeElement)){
+          document.getElementById('liveTitle').focus({preventScroll:true});
+        }
       });
       if (document.documentElement.requestFullscreen){
         var requested=document.documentElement.requestFullscreen();
