@@ -734,6 +734,7 @@
   }
   .board + .board{ margin-top:16px; }
   .qualification-archive{margin-top:18px;border:1px solid var(--line);border-radius:12px;background:var(--surface);overflow:hidden;}
+  .phase-marker{margin:18px 0 26px;padding:16px 20px;border-radius:12px;background:var(--teal-900);color:var(--ball);font-size:var(--fs-lg);font-weight:800;letter-spacing:.03em;}
   .qualification-archive summary{padding:14px 18px;cursor:pointer;font-weight:700;color:var(--teal-900);}
   .qualification-archive .board{border-radius:0;}
   .qualification-note{font-size:var(--fs-sm);color:var(--ink-soft);padding:0 18px;margin:0 0 12px;}
@@ -1452,6 +1453,7 @@
       liveNoResults: 'Er zijn nog geen uitslagen ingevoerd.',
       qualificationArchive: 'Kwalificatie · eindstand bekijken',
       qualificationTitle: 'Kwalificatie · fase 1',
+      finalPhaseHeading: 'FASE 2 · GOUD & ZILVER · NIEUW KLASSEMENT',
       qualificationLockedNote: 'De groepen Goud en Zilver zijn bij de splitsing definitief vastgezet. Latere scorecorrecties in de kwalificatie veranderen de groepsindeling niet.',
       boardSub: 'Bij gelijke stand beslist saldo, dan onderling resultaat',
       thRank: '#', thPlayer: 'Speler', thGroup: 'Grp', thDiff: '±', thPts: 'Pt', thAvg: 'Gem',
@@ -1667,6 +1669,7 @@
       liveNoResults: 'No results have been entered yet.',
       qualificationArchive: 'Qualification · view final standings',
       qualificationTitle: 'Qualification · phase 1',
+      finalPhaseHeading: 'PHASE 2 · GOLD & SILVER · NEW LEADERBOARD',
       qualificationLockedNote: 'Gold and Silver groups were locked when the split was confirmed. Later score corrections to qualification matches do not change the group memberships.',
       boardSub: 'Ties broken by point diff, then head-to-head',
       thRank: '#', thPlayer: 'Player', thGroup: 'Grp', thDiff: '±', thPts: 'Pts', thAvg: 'Avg',
@@ -3306,7 +3309,7 @@
       };
     });
     state.scores = {};
-    state.live = {mode:state.levelResults.every(Boolean)?'auto':'manual',round:1,autoFloor:1};
+    state.live = {mode:'auto',round:1,autoFloor:1};
 
     renderMeta();
     renderSchedule();
@@ -3509,6 +3512,11 @@
         }
       });
 
+      if (state.format === 'americano' && state.splitDone &&
+          r === state.splitRoundStored + 1){
+        var phaseMarker = liveElement('div','phase-marker',t('finalPhaseHeading'));
+        col.appendChild(phaseMarker);
+      }
       col.appendChild(block);
 
       if (state.regroupEnabled && !state.splitDone && r === state.splitRoundStored && state.splitRoundStored < state.totalRoundsPlanned){
