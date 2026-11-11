@@ -786,6 +786,13 @@
     padding:20px;
     color:#fff;
   }
+  .board-col{max-height:70vh; overflow:auto; overscroll-behavior-y:contain; scrollbar-gutter:stable; border-radius:14px;}
+  @media (min-width:960px){.board-col{max-height:calc(100dvh - 40px);}}
+  .board-col[tabindex]:focus-visible{outline-offset:-3px;}
+  .board-col .board-table th{position:sticky;top:0;background:var(--teal-900);z-index:1;padding-top:8px;}
+  .rank-explanation summary{cursor:pointer;color:#d7e9ff;}
+  .rank-explanation p{margin:4px 0;color:#b6cde9;font-size:var(--fs-xs);overflow-wrap:anywhere;}
+  .rank-explanation button{margin-top:4px;}
   .board + .board{ margin-top:16px; }
   .qualification-archive{margin-top:18px;border:1px solid var(--line);border-radius:12px;background:var(--surface);overflow:hidden;}
   .phase-marker{margin:18px 0 26px;padding:16px 20px;border-radius:12px;background:var(--teal-900);color:var(--ball);font-size:var(--fs-lg);font-weight:800;letter-spacing:.03em;}
@@ -1266,7 +1273,7 @@
         </div>
         <div id="roundsCol"></div>
       </div>
-      <div class="board-col" id="boardCol"></div>
+      <div class="board-col" id="boardCol" role="region" tabindex="0" data-i18n-aria-label="boardTitle"></div>
     </div>
 
     <div class="playcount-wrap">
@@ -1334,7 +1341,7 @@
   </section>
 
   <footer class="app-footer">
-    <span id="appVersion">v2.3.0</span>
+    <span id="appVersion">v2.4.0</span>
     <details><summary data-i18n="whatsNew">Wat is nieuw?</summary>
       <ul>
         <li data-i18n="changeIllustrations">Nieuwe baanillustraties, marineblauw/lime en een puntenscore van 26–6.</li>
@@ -1543,7 +1550,7 @@
       restingPoolSuffix: ' wachten: ',
       cpEyebrow: 'TUSSENSTAND',
       cpHeading: 'Bekijk het klassement en splits in Goud en Zilver',
-      cpBody: 'Vul alle scores hierboven in. Zodra je zover bent: rangschik iedereen en ga verder in twee aparte groepen \u2014 Goud tegen Goud, Zilver tegen Zilver, met jullie banen verdeeld ertussen.',
+      cpBody: 'Vul alle scores hierboven in om verder te gaan in Goud en Zilver. Bij een gedeelde plek op de grens beslist de volgorde van de spelerslijst.',
       cpButton: 'Splits in Goud & Zilver \u2192',
       cpError: 'Vul eerst alle scores in voor ronde 1–{n}.',
       boardTitle: 'Klassement',
@@ -1576,6 +1583,15 @@
       finalPhaseHeading: 'FASE 2 · GOUD & ZILVER · NIEUW KLASSEMENT',
       qualificationLockedNote: 'De groepen Goud en Zilver zijn bij de splitsing definitief vastgezet. Latere scorecorrecties in de kwalificatie veranderen de groepsindeling niet.',
       boardSub: 'Bij gelijke stand beslist saldo, dan onderling resultaat',
+      boardSubWeighted: 'Volgorde: punten, rangsaldo (gecorrigeerd voor partner en tegenstanders), dan onderling resultaat bij twee gelijke spelers. Klik op een naam voor de berekening.',
+      boardSubFallback: 'Volgorde: punten, saldo, dan onderling resultaat bij twee gelijke spelers. De schatting van spelerssterkte is nog onvoldoende betrouwbaar voor een correctie. Klik op een naam voor de berekening.',
+      thRankBalance: 'Rangsaldo',
+      rankBreakdown: 'Behaald: {points} punten, saldo {balance}. Voor het klassement: {rankPoints} punten, saldo {baseBalance} − lotingseffect ({effect}) = rangsaldo {rankBalance}.',
+      rankProjected: 'Geschat: {count} × {score} tegen een gemiddeld duo met een gemiddelde partner.',
+      rankProportional: 'Omrekening: {played} ingeplande potjes naar {ref}. Punten en saldo zijn evenredig omgerekend en afgerond.',
+      rankSimulate: 'Bekijk spreiding',
+      rankSimulated: 'In 80% van de gesimuleerde potjes: {low}–{high} punten voor. De schatting hierboven bepaalt de stand.',
+      rankMethod: 'Spelerssterkte telt mee als het model weggelaten rondes beter voorspelt dan het spelersgemiddelde én een gelijkspel. ▲ = aangevuld, * = teruggerekend naar {ref} potjes. De gewogen uitslag voor een ontbrekend potje telt mee zodra deze fase volledig gescoord is. Tot die tijd geldt de gewone omrekening.',
       thRank: '#', thPlayer: 'Speler', thGroup: 'Grp', thDiff: '±', thPts: 'Pt', thAvg: 'Gem',
       recalcNote: 'Punten worden teruggerekend naar {ref} potjes voor een eerlijke vergelijking. * = teruggerekend omdat iemand meer potjes speelde. ▲ = juist opgehoogd, voor wie er vanaf het begin bij was maar door de loting minder potjes kreeg. Spelers die gestopt zijn (UIT) of later zijn toegevoegd houden hun punten precies zoals behaald.',
       recalcTooltipDown: 'Teruggerekend van {raw} punten in {played} potjes',
@@ -1782,7 +1798,7 @@
       restingPoolSuffix: ' waiting: ',
       cpEyebrow: 'HALFTIME',
       cpHeading: 'Check the leaderboard, then split into Gold and Silver',
-      cpBody: 'Enter every score above. When you\'re ready, rank everyone and continue in two separate groups \u2014 Gold vs Gold, Silver vs Silver, sharing your courts between them.',
+      cpBody: 'Enter all scores above to continue in Gold and Silver. If a shared rank crosses the cutoff, the roster order decides.',
       cpButton: 'Split into Gold & Silver \u2192',
       cpError: 'Enter every score for rounds 1–{n} first.',
       boardTitle: 'Leaderboard',
@@ -1815,6 +1831,15 @@
       finalPhaseHeading: 'PHASE 2 · GOLD & SILVER · NEW LEADERBOARD',
       qualificationLockedNote: 'Gold and Silver groups were locked when the split was confirmed. Later score corrections to qualification matches do not change the group memberships.',
       boardSub: 'Ties broken by point diff, then head-to-head',
+      boardSubWeighted: 'Order: points, ranking margin (adjusted for partner and opponents), then head-to-head for a two-player tie. Select a name for the calculation.',
+      boardSubFallback: 'Order: points, margin, then head-to-head for a two-player tie. The strength estimate is not yet reliable enough for an adjustment. Select a name for the calculation.',
+      thRankBalance: 'Rank margin',
+      rankBreakdown: 'Earned: {points} points, margin {balance}. For ranking: {rankPoints} points, margin {baseBalance} − draw effect ({effect}) = ranking margin {rankBalance}.',
+      rankProjected: 'Estimated: {count} × {score} against an average pair with an average partner.',
+      rankProportional: 'Adjustment: {played} scheduled games scaled to {ref}. Points and margin are scaled proportionally and rounded.',
+      rankSimulate: 'Show score range',
+      rankSimulated: '80% of simulated games: {low}–{high} points scored. The estimate above determines the standings.',
+      rankMethod: 'Strength is applied when the model predicts held-out rounds better than both player averages and a draw. ▲ = added, * = scaled down to {ref} games. Weighted estimates for missing games count when all scores in this phase are complete. Until then, the regular adjustment applies.',
       thRank: '#', thPlayer: 'Player', thGroup: 'Grp', thDiff: '±', thPts: 'Pts', thAvg: 'Avg',
       recalcNote: 'Points are recalculated back to {ref} games for a fair comparison. * = scaled down because they played more games. ▲ = scaled up instead, for someone who was there from the start but drew fewer games by the luck of the rotation. Players who\'ve left (OUT) or joined later keep their points exactly as scored.',
       recalcTooltipDown: 'Recalculated from {raw} points in {played} games',
@@ -3875,11 +3900,89 @@
     if (playcountVisible) renderPlayCounts();
   });
 
+  // A game's normalized margin estimates the sum of two player effects minus
+  // the other two. Ridge shrinkage pulls poorly supported effects toward zero.
+  function fitAmericanoStrength(games, playerCount){
+    var matrix = Array.from({length:playerCount}, function(){return new Float64Array(playerCount);});
+    var rhs = new Float64Array(playerCount);
+    for (var i = 0; i < playerCount; i++) matrix[i][i] = 3;
+    games.forEach(function(game){
+      game.players.forEach(function(a, x){
+        var sign = x < 2 ? 1 : -1;
+        rhs[a] += sign * game.margin;
+        game.players.forEach(function(b, y){matrix[a][b] += y < 2 ? sign : -sign;});
+      });
+    });
+    // In-place Cholesky factorization and triangular solves. The positive
+    // ridge penalty keeps the system solvable even with fixed pairings.
+    for (var row = 0; row < playerCount; row++){
+      for (var col = 0; col <= row; col++){
+        var value = matrix[row][col];
+        for (var k = 0; k < col; k++) value -= matrix[row][k] * matrix[col][k];
+        matrix[row][col] = row === col ? Math.sqrt(value) : value / matrix[col][col];
+      }
+      for (var j = 0; j < row; j++) rhs[row] -= matrix[row][j] * rhs[j];
+      rhs[row] /= matrix[row][row];
+    }
+    for (var row = playerCount - 1; row >= 0; row--){
+      for (var j = row + 1; j < playerCount; j++) rhs[row] -= matrix[j][row] * rhs[j];
+      rhs[row] /= matrix[row][row];
+    }
+    return rhs;
+  }
+
+  function amerImpact(game, strength, side){
+    var p = game.players;
+    return (strength[p[0]] + strength[p[1]] - strength[p[2]] - strength[p[3]]) * side;
+  }
+
+  function assessAmericanoStrength(games, playerCount){
+    if (games.length < 12 || new Set(games.map(function(game){return game.round;})).size < 3) return null;
+    var baselineError = 0, neutralError = 0, modelError = 0, observations = 0, residuals = [];
+    for (var fold = 0; fold < 3; fold++){
+      var training = games.filter(function(game){return game.round % 3 !== fold;});
+      var count = new Uint16Array(playerCount), margin = new Float64Array(playerCount);
+      training.forEach(function(game){
+        game.players.forEach(function(player, side){count[player]++; margin[player] += side < 2 ? game.margin : -game.margin;});
+      });
+      var strength = fitAmericanoStrength(training, playerCount);
+      games.forEach(function(game){
+        if (game.round % 3 !== fold || game.players.some(function(p){return count[p] < 2;})) return;
+        var predicted = Math.max(-1, Math.min(1, amerImpact(game, strength, 1)));
+        residuals.push(game.margin - predicted, predicted - game.margin);
+        game.players.forEach(function(player, side){
+          var sign = side < 2 ? 1 : -1;
+          baselineError += Math.abs(game.margin * sign - margin[player] / count[player]);
+          neutralError += Math.abs(game.margin);
+          modelError += Math.abs(game.margin - predicted);
+          observations++;
+        });
+      });
+    }
+    if (observations < 48 || modelError >= Math.min(baselineError,neutralError) * .95) return null;
+    return {strength:fitAmericanoStrength(games, playerCount), residuals:residuals,
+      baselineError:baselineError / observations, modelError:modelError / observations};
+  }
+
+  function neutralScoreRange(score, length, residuals){
+    var seed = 82473, samples = [];
+    for (var i = 0; i < 512; i++){
+      seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
+      var error = residuals[Math.floor(seed / 4294967296 * residuals.length)];
+      samples.push(Math.max(0, Math.min(length, Math.round(score + error * length / 2))));
+    }
+    samples.sort(function(a,b){return a-b;});
+    return {low:samples[51], high:samples[460]};
+  }
+
+  var americanoStrengthCache = new Map();
   function computeTotals(poolFilter){
-    var totals = {};
-    var h2h = {};
+    var totals = Object.create(null);
+    var h2h = Object.create(null);
+    var americano = state.format === 'americano';
+    var games = [], scoreLengths = [], scheduled = 0, completed = 0, rosterOrder = 0;
     function bumpH2H(a, b, amount){
-      if (!h2h[a]) h2h[a] = {};
+      if (!h2h[a]) h2h[a] = Object.create(null);
       h2h[a][b] = (h2h[a][b] || 0) + amount;
     }
 
@@ -3887,13 +3990,14 @@
       if (!pool.resultsEnabled) return;
       if (poolFilter && pool.id !== poolFilter) return;
       pool.players.forEach(function(name){
-        if (!totals[name]) totals[name] = { name: name, points: 0, played: 0, forPts: 0, againstPts: 0, group: pool.id };
+        if (!totals[name]) totals[name] = { name: name, order: rosterOrder++, points: 0, played: 0, scored: 0, forPts: 0, againstPts: 0, group: pool.id };
         else totals[name].group = pool.id;
       });
       pool.rounds.forEach(function(rd){
         rd.courts.forEach(function(court){
           var key = scoreKey(pool.id, court.courtIndex, rd.round);
           var sc = state.scores[key];
+          scheduled++;
           court.team1.forEach(function(name){
             totals[name].played++;
             if (sc && typeof sc.t1 === 'number') totals[name].points += sc.t1;
@@ -3904,8 +4008,14 @@
           });
           if (sc && typeof sc.t1 === 'number' && typeof sc.t2 === 'number'){
             var diff = sc.t1 - sc.t2;
-            court.team1.forEach(function(name){ totals[name].forPts += sc.t1; totals[name].againstPts += sc.t2; });
-            court.team2.forEach(function(name){ totals[name].forPts += sc.t2; totals[name].againstPts += sc.t1; });
+            completed++;
+            var length = sc.t1 + sc.t2;
+            if (americano && sc.t1 >= 0 && sc.t2 >= 0 && length > 0){
+              games.push({round:rd.round,names:court.team1.concat(court.team2),margin:diff / length,length:length});
+              scoreLengths.push(length);
+            }
+            court.team1.forEach(function(name){ totals[name].scored++; totals[name].forPts += sc.t1; totals[name].againstPts += sc.t2; });
+            court.team2.forEach(function(name){ totals[name].scored++; totals[name].forPts += sc.t2; totals[name].againstPts += sc.t1; });
             court.team1.forEach(function(a){
               court.team2.forEach(function(b){
                 bumpH2H(a, b, diff);
@@ -3941,6 +4051,32 @@
     // THEIR points get scaled UP to the reference too, marked distinctly
     // from a scale-down so it's clear which direction the adjustment went.
     var rowsArr = Object.keys(totals).map(function(k){ return totals[k]; });
+    var model = null, nominalLength = 0;
+    if (americano && games.length){
+      var playerNames = Object.keys(totals);
+      var playerIndices = new Map(playerNames.map(function(name,i){return [name,i];}));
+      games.forEach(function(game){game.players = game.names.map(function(name){return playerIndices.get(name);});});
+      var signature = JSON.stringify([playerNames,games]);
+      var cacheKey = poolFilter || 'main';
+      var cached = americanoStrengthCache.get(cacheKey);
+      if (!cached || cached.signature !== signature){
+        cached = {signature:signature,model:assessAmericanoStrength(games,rowsArr.length)};
+        americanoStrengthCache.set(cacheKey,cached);
+      }
+      model = cached.model;
+      scoreLengths.sort(function(a,b){return a-b;});
+      nominalLength = scoreLengths[Math.floor((scoreLengths.length - 1) / 2)];
+      if (model){
+        games.forEach(function(game){
+          var margin = amerImpact(game, model.strength, 1);
+          game.names.forEach(function(name, i){
+            var row = totals[name], sign = i < 2 ? 1 : -1;
+            var effect = (margin * sign - model.strength[game.players[i]]) * game.length;
+            row.drawEffect = (row.drawEffect || 0) + effect;
+          });
+        });
+      }
+    }
     var activeRows = rowsArr.filter(function(r){ return r.group !== 'out'; });
     var refPool = activeRows.length ? activeRows : rowsArr;
     var freq = {};
@@ -3967,7 +4103,7 @@
         scale();
         row.recalcDir = 'down';
         recalculated = true;
-      } else if (!state.laterAdditions[row.name]){
+      } else if (!Object.prototype.hasOwnProperty.call(state.laterAdditions,row.name)){
         // Present the whole time, just drew fewer games by luck of the draw.
         scale();
         row.recalcDir = 'up';
@@ -3977,26 +4113,84 @@
         row.adjDiff = row.forPts - row.againstPts;
         row.recalcDir = 'none';
       }
+      var factor = row.recalcDir === 'none' ? 1 : referenceGames / row.played;
+      if (model && completed === scheduled && row.recalcDir === 'up' && row.scored >= 2){
+        var missing = referenceGames - row.played;
+        var rating = model.strength[playerIndices.get(row.name)];
+        var estimate = Math.max(0, Math.min(nominalLength, Math.round(nominalLength * (1 + rating) / 2)));
+        row.adjPoints = row.points + missing * estimate;
+        row.adjDiff = row.forPts - row.againstPts + missing * (2 * estimate - nominalLength);
+        row.projection = {count:missing,score:estimate,length:nominalLength,residuals:model.residuals};
+        factor = 1;
+      }
+      row.drawEffect = Math.round((row.drawEffect || 0) * factor);
+      row.rankDiff = row.adjDiff - row.drawEffect;
+      row.referenceGames = referenceGames;
     });
 
-    return { totals: totals, h2h: h2h, referenceGames: referenceGames, recalculated: recalculated };
+    return { totals: totals, h2h: h2h, referenceGames: referenceGames, recalculated: recalculated, weighted: !!model };
   }
 
-  // Ranked by recalculated points (see computeTotals), then recalculated
-  // point differential, then head-to-head result between the two players.
-  function compareRows(a, b, h2h){
+  function compareStanding(a, b){
     if (a.adjPoints !== b.adjPoints) return b.adjPoints - a.adjPoints;
-    if (a.adjDiff !== b.adjDiff) return b.adjDiff - a.adjDiff;
-    if (h2h[a.name] && typeof h2h[a.name][b.name] === 'number' && h2h[a.name][b.name] !== 0){
-      return -h2h[a.name][b.name];
-    }
-    return 0;
+    return b.rankDiff - a.rankDiff;
+  }
+  function compareHeadToHead(a,b,h2h){
+    return -((h2h[a.name] && h2h[a.name][b.name]) || 0);
   }
 
   function rankPlayers(totals, h2h){
-    return Object.keys(totals).map(function(k){ return totals[k]; }).sort(function(a, b){
-      return compareRows(a, b, h2h);
-    });
+    var rows = Object.values(totals);
+    if (state.format !== 'americano'){
+      function compare(a,b){return compareStanding(a,b) || compareHeadToHead(a,b,h2h);}
+      rows.sort(compare);
+      var rank = 1;
+      rows.forEach(function(row,i){
+        if (i && compare(rows[i-1],row)) rank = i + 1;
+        row.rank = rank;
+      });
+      return rows;
+    }
+    rows.sort(function(a,b){return compareStanding(a,b) || a.order - b.order;});
+    for (var start = 0; start < rows.length;){
+      var end = start + 1;
+      while (end < rows.length && !compareStanding(rows[start],rows[end])) end++;
+      // A pairwise comparator is not transitive for a three-way tie.
+      var direct = end - start === 2 ? compareHeadToHead(rows[start],rows[start+1],h2h) : 0;
+      if (direct > 0) [rows[start],rows[start+1]] = [rows[start+1],rows[start]];
+      for (var i = start; i < end; i++) rows[i].rank = direct ? i + 1 : start + 1;
+      start = end;
+    }
+    return rows;
+  }
+
+  function signedBalance(value){return (value > 0 ? '+' : '') + value;}
+  function rankBreakdown(row){
+    return tf('rankBreakdown',{points:row.points,balance:signedBalance(row.forPts-row.againstPts),
+      rankPoints:row.adjPoints,baseBalance:signedBalance(row.adjDiff),effect:signedBalance(row.drawEffect),
+      rankBalance:signedBalance(row.rankDiff)});
+  }
+  function appendRankExplanation(cell,row){
+    var details = liveElement('details','rank-explanation');
+    details.appendChild(liveElement('summary','',row.name));
+    details.appendChild(liveElement('p','',rankBreakdown(row)));
+    var projection = row.projection;
+    if (projection){
+      details.appendChild(liveElement('p','',tf('rankProjected',{count:projection.count,
+        score:projection.score + '–' + (projection.length-projection.score)})));
+      var simulate = liveElement('button','board-toggle-btn',t('rankSimulate'));
+      simulate.type = 'button';
+      var output = liveElement('p','');
+      output.setAttribute('role','status');
+      simulate.addEventListener('click',function(){
+        output.textContent = tf('rankSimulated',neutralScoreRange(projection.score,projection.length,projection.residuals));
+      });
+      details.appendChild(simulate);
+      details.appendChild(output);
+    } else if (row.recalcDir !== 'none'){
+      details.appendChild(liveElement('p','',tf('rankProportional',{played:row.played,ref:row.referenceGames})));
+    }
+    cell.appendChild(details);
   }
 
   function groupTagFor(group){
@@ -4035,7 +4229,8 @@
 
     var sub = document.createElement('div');
     sub.className = 'board-sub';
-    sub.textContent = t('boardSub');
+    var americano = state.format === 'americano';
+    sub.textContent = t(americano ? (opts.weighted ? 'boardSubWeighted' : 'boardSubFallback') : 'boardSub');
     wrap.appendChild(sub);
 
     var table = document.createElement('table');
@@ -4043,27 +4238,21 @@
     var thead = document.createElement('thead');
     var headHtml = '<tr><th>' + t('thRank') + '</th><th>' + t('thPlayer') + '</th>' +
       (opts.showGroupTag ? '<th>' + t('thGroup') + '</th>' : '') +
-      '<th style="text-align:right;">' + t('thDiff') + '</th>' +
+      '<th style="text-align:right;">' + t(americano && opts.weighted ? 'thRankBalance' : 'thDiff') + '</th>' +
       '<th style="text-align:right;">' + t('thPts') + '</th>' +
       '<th class="marker-col"></th></tr>';
     thead.innerHTML = headHtml;
     table.appendChild(thead);
 
     var tbody = document.createElement('tbody');
-    var rank = 1;
     opts.rows.forEach(function(row, i){
-      if (i > 0 && compareRows(opts.rows[i - 1], row, opts.h2h) !== 0) rank = i + 1;
       var tr = document.createElement('tr');
       var classes = [];
-      if (rank <= 3 && row.group !== 'out') classes.push('top3');
+      if (row.rank <= 3 && row.group !== 'out') classes.push('top3');
       if (i === opts.cutoffIdx) classes.push('cutoff-row');
       if (classes.length) tr.className = classes.join(' ');
 
-      var nameHtml = row.name;
-      if (!opts.showGroupTag && row.group === 'out'){
-        nameHtml += '<span class="out-tag">' + t('grpOut') + '</span>';
-      }
-      var diffText = (row.adjDiff > 0 ? '+' : '') + row.adjDiff;
+      var diffText = signedBalance(row.rankDiff);
       var starHtml = '';
       if (row.recalcDir === 'down'){
         starHtml = '<span class="recalc-star recalc-down" title="' + tf('recalcTooltipDown', { raw: row.points, played: row.played }) + '">*</span>';
@@ -4071,7 +4260,7 @@
         starHtml = '<span class="recalc-star recalc-up" title="' + tf('recalcTooltipUp', { raw: row.points, played: row.played }) + '">\u25B2</span>';
       }
 
-      var cells = '<td class="rank">' + rank + '</td><td>' + nameHtml + '</td>';
+      var cells = '<td class="rank">' + row.rank + '</td><td></td>';
       if (opts.showGroupTag){
         var tag = groupTagFor(row.group);
         cells += '<td class="grp-tag ' + tag.cls + '">' + tag.text + '</td>';
@@ -4080,15 +4269,18 @@
       cells += '<td class="pts">' + row.adjPoints + '</td>';
       cells += '<td class="marker-col">' + starHtml + '</td>';
       tr.innerHTML = cells;
+      if (americano) appendRankExplanation(tr.cells[1],row);
+      else tr.cells[1].textContent = row.name;
+      if (!opts.showGroupTag && row.group === 'out') tr.cells[1].appendChild(liveElement('span','out-tag',t('grpOut')));
       tbody.appendChild(tr);
     });
     table.appendChild(tbody);
     wrap.appendChild(table);
 
-    if (opts.recalculated){
+    if (opts.recalculated || americano){
       var note = document.createElement('div');
       note.className = 'board-note';
-      note.textContent = tf('recalcNote', { ref: opts.referenceGames });
+      note.textContent = tf(americano ? 'rankMethod' : 'recalcNote', { ref: opts.referenceGames });
       wrap.appendChild(note);
     }
 
@@ -4097,6 +4289,7 @@
 
   function renderLeaderboard(){
     var boardCol = document.getElementById('boardCol');
+    var previousScroll = boardCol.scrollTop;
     boardCol.innerHTML = '';
     var panels = [];
 
@@ -4108,7 +4301,7 @@
         panels.push({ key: g.id, title: g.label + ' – ' + t('boardTitle'),
           rows: rankPlayers(result.totals, result.h2h), h2h: result.h2h,
           showGroupTag: false, cutoffIdx: -1,
-          recalculated: result.recalculated, referenceGames: result.referenceGames });
+          recalculated: result.recalculated, referenceGames: result.referenceGames, weighted:result.weighted });
       });
     } else if (state.format === 'americano' && state.splitDone){
       // Phase 2 is a NEW competition. Gold and Silver both start at zero:
@@ -4121,7 +4314,7 @@
           title: t(poolId === 'top' ? 'poolLabelTop' : 'poolLabelBottom') + ' – ' + t('boardTitle'),
           rows: rankPlayers(result.totals, result.h2h), h2h: result.h2h,
           showGroupTag: false, cutoffIdx: -1,
-          recalculated: result.recalculated, referenceGames: result.referenceGames });
+          recalculated: result.recalculated, referenceGames: result.referenceGames, weighted:result.weighted });
       });
     } else {
       var anyResults = state.pools.some(function(p){ return p.resultsEnabled; });
@@ -4130,7 +4323,7 @@
         panels.push({ key: 'main', title: t('boardTitle'),
           rows: rankPlayers(result.totals, result.h2h), h2h: result.h2h,
           showGroupTag: true, cutoffIdx: -1,
-          recalculated: result.recalculated, referenceGames: result.referenceGames });
+          recalculated: result.recalculated, referenceGames: result.referenceGames, weighted:result.weighted });
       }
     }
 
@@ -4153,10 +4346,12 @@
         rows:rankPlayers(qualification.totals, qualification.h2h),
         h2h:qualification.h2h, showGroupTag:false, cutoffIdx:-1,
         recalculated:qualification.recalculated,
+        weighted:qualification.weighted,
         referenceGames:qualification.referenceGames
       }));
       boardCol.appendChild(archive);
     }
+    boardCol.scrollTop = previousScroll;
 
     if (playcountVisible) renderPlayCounts();
     if (document.body.classList.contains('presentation-mode') && state.step !== 4){
@@ -5646,17 +5841,25 @@
       var table=liveElement('table','');
       var thead=liveElement('thead','');
       var tr=liveElement('tr','');
-      [t('thRank'),t('thPlayer'),t('thPts')].forEach(function(label){
+      var columns = [t('thRank'),t('thPlayer')];
+      if (state.format === 'americano') columns.push(t(result.weighted ? 'thRankBalance' : 'thDiff'));
+      columns.push(t('thPts'));
+      columns.forEach(function(label){
         tr.appendChild(liveElement('th','',label));
       });
       thead.appendChild(tr);
       table.appendChild(thead);
       var tbody=liveElement('tbody','');
-      ranked.forEach(function(player,i){
+      ranked.forEach(function(player){
         var row=liveElement('tr','');
-        row.appendChild(liveElement('td','',String(i+1)));
+        row.appendChild(liveElement('td','',String(player.rank)));
         row.appendChild(liveElement('td','',player.name));
-        row.appendChild(liveElement('td','',String(player.adjPoints)));
+        if (state.format === 'americano'){
+          row.title = rankBreakdown(player);
+          row.appendChild(liveElement('td','',signedBalance(player.rankDiff)));
+        }
+        var points = String(player.adjPoints) + (player.recalcDir === 'up' ? ' ▲' : player.recalcDir === 'down' ? ' *' : '');
+        row.appendChild(liveElement('td','',points));
         tbody.appendChild(row);
       });
       table.appendChild(tbody);

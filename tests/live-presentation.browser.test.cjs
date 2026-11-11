@@ -493,6 +493,43 @@ test('v2.2: clean navigation and live KOC, Toss, Americano and split Toss', asyn
   assert.ok(Object.keys(testSaved.scores).some(key=>key.startsWith('top-')));
   assert.ok(Object.keys(testSaved.scores).some(key=>key.startsWith('bottom-')));
 
+  const large=await open('americano');
+  await large.locator('#courtsMoreSelect').selectOption('9');
+  await large.locator('#playerCountInput').fill('40');
+  await large.locator('#continueTo2').click();
+  await large.locator('#roundsInput').fill('12');
+  await large.locator('#generateBtn').click();
+  const imported=await saveState(large);
+  imported.live.mode='manual';
+  imported.live.round=1;
+  const ability=Object.fromEntries(imported.activeRoster.map((name,i)=>[name,(i/39-.5)*.45]));
+  for(const round of imported.pools[0].rounds){
+    for(const court of round.courts){
+      const [a,b,c,d]=court.team1.concat(court.team2).map(name=>ability[name]);
+      const t1=Math.round(16*(1+a+b-c-d));
+      imported.scores[`main-${court.courtIndex}-${round.round}`]={t1,t2:32-t1};
+    }
+  }
+  await large.locator('#loadFileInput').setInputFiles({name:'americano-40.json',mimeType:'application/json',
+    buffer:Buffer.from(JSON.stringify({format:'padel-scheduler',version:2,state:imported}))});
+  const board=large.locator('#boardCol');
+  await board.getByRole('columnheader',{name:'Rangsaldo'}).waitFor();
+  assert.equal(await board.locator('tbody tr').count(),40);
+  const boardGeometry=await board.evaluate(el=>({width:el.clientWidth,height:el.clientHeight,scrollHeight:el.scrollHeight}));
+  assert.ok(boardGeometry.scrollHeight>boardGeometry.height);
+  await board.hover({position:{x:boardGeometry.width/2,y:80}});
+  const pageY=await large.evaluate(()=>scrollY);
+  await large.mouse.wheel(0,450);
+  await large.waitForFunction(()=>document.querySelector('#boardCol').scrollTop>0);
+  assert.equal(await large.evaluate(()=>scrollY),pageY);
+  const projected=board.locator('.rank-explanation').filter({has:large.getByRole('button',{name:'Bekijk spreiding',includeHidden:true})}).first();
+  await projected.locator('summary').click();
+  assert.match(await projected.innerText(),/Behaald:.*rangsaldo/s);
+  assert.match(await projected.innerText(),/Geschat:.*\d+–\d+/s);
+  await projected.getByRole('button',{name:'Bekijk spreiding'}).click();
+  assert.match(await projected.getByRole('status').innerText(),/80%/);
+  if(screenshotDir)await large.screenshot({path:path.join(screenshotDir,'americano-2.4-rangsaldo.png')});
+
   // KOC also remains usable as a presentation on a small phone viewport.
   const mobile=await open('koc',true);
   await mobile.locator('#kocRoll').click();
