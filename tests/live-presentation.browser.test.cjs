@@ -45,24 +45,28 @@ test('v2.2: clean navigation and live KOC, Toss, Americano and split Toss', asyn
     const download=await event;
     return JSON.parse(fs.readFileSync(await download.path(),'utf8')).state;
   }
-  async function checkScorePlacement(card,teamSelector,nameSelector){
-    const placement=await card.evaluate((match,{teamSelector,nameSelector})=>
+  async function checkScorePlacement(card,teamSelector,nameSelector,inline=false){
+    const placement=await card.evaluate((match,{teamSelector,nameSelector,inline})=>
       [...match.querySelectorAll(teamSelector)].map((team,side)=>{
         const names=[...team.querySelectorAll(nameSelector)];
         const field=team.querySelector('input');
         const bounds=field.getBoundingClientRect();
         const lastName=names.at(-1).getBoundingClientRect();
         const edge=side===0?'left':'right';
+        const nameBlock=inline?team.querySelector('.team-names').getBoundingClientRect():lastName;
+        const beside=side===0?bounds.left>=nameBlock.right:bounds.right<=nameBlock.left;
         return {
-          below:bounds.top>=lastName.bottom,
-          aligned:Math.abs(bounds[edge]-lastName[edge])<1,
+          positioned:inline?beside&&bounds.top<nameBlock.bottom&&bounds.bottom>nameBlock.top:
+            bounds.top>=lastName.bottom&&Math.abs(bounds[edge]-lastName[edge])<1,
+          usable:bounds.width>=44&&bounds.height>=44,
           label:field.getAttribute('aria-label'),
           team:names.map(name=>name.textContent).join(' & ')
         };
-      }),{teamSelector,nameSelector});
+      }),{teamSelector,nameSelector,inline});
     assert.equal(placement.length,2);
     for(const score of placement){
-      assert.ok(score.below&&score.aligned,'each score box sits below its team on the same side');
+      assert.ok(score.positioned,inline?'each score box sits beside its team':'each score box sits below its team');
+      assert.ok(score.usable,'score fields keep a 44px touch target');
       assert.equal(score.label,'Score voor '+score.team);
     }
   }
@@ -153,9 +157,9 @@ test('v2.2: clean navigation and live KOC, Toss, Americano and split Toss', asyn
   await splitScores.locator('#beginnerResultsToggle').check();
   await splitScores.locator('#ervarenResultsToggle').check();
   await splitScores.locator('#generateBtn').click();
-  await checkScorePlacement(splitScores.locator('.match-card').first(),'.team','.players');
+  await checkScorePlacement(splitScores.locator('.match-card').first(),'.team','.players',true);
   await splitScores.setViewportSize({width:390,height:844});
-  await checkScorePlacement(splitScores.locator('.match-card').first(),'.team','.players');
+  await checkScorePlacement(splitScores.locator('.match-card').first(),'.team','.players',true);
   if(screenshotDir)await splitScores.locator('.match-card').first().screenshot({path:path.join(screenshotDir,'mobile-score-card.png')});
   await splitScores.locator('#presentBtn').click();
   await checkScorePlacement(splitScores.locator('#liveCurrent .live-match').first(),'.live-team','span');
@@ -168,6 +172,33 @@ test('v2.2: clean navigation and live KOC, Toss, Americano and split Toss', asyn
   await splitScores.locator('#liveCurrent .live-match').nth(1).locator('.team-score input').nth(1).press('Tab');
   assert.match(await splitScores.locator('#liveRoundLabel').innerText(),/2\s*\/\s*7/);
   assert.equal(await splitScores.locator('#liveStandings .live-board').count(),2);
+
+  const fourCourtAmericano=await open('americano');
+  await fourCourtAmericano.locator('#courtsSelect .court-btn[data-courts="4"]').click();
+  await fourCourtAmericano.locator('#continueTo2').click();
+  await fourCourtAmericano.locator('#generateBtn').click();
+  const firstRound=fourCourtAmericano.locator('.round-block').first();
+  const courtRows=firstRound.locator('.match-card');
+  assert.equal(await courtRows.count(),4);
+  assert.deepEqual(await courtRows.locator('.court-label').allTextContents(),
+    ['Baan 1','Baan 2','Baan 3','Baan 4']);
+  const rows=await courtRows.evaluateAll(cards=>cards.map(card=>{
+    const row=card.getBoundingClientRect();
+    const label=card.querySelector('.court-label').getBoundingClientRect();
+    const body=card.querySelector('.match-body').getBoundingClientRect();
+    return {top:row.top,bottom:row.bottom,left:row.left,labelBeside:label.right<=body.left};
+  }));
+  for(const [index,row] of rows.entries()){
+    assert.ok(row.labelBeside);
+    if(index>0)assert.ok(row.left===rows[0].left&&row.top>rows[index-1].bottom);
+  }
+  assert.ok(rows.at(-1).bottom-rows[0].top<=270,'four court rows occupy less than 270px');
+  await checkScorePlacement(courtRows.first(),'.team','.players',true);
+  if(screenshotDir)await firstRound.screenshot({path:path.join(screenshotDir,'schedule-four-courts.png')});
+  const firstScore=courtRows.first().locator('input[data-team="t1"]');
+  await firstScore.fill('26');
+  await firstScore.press('Tab');
+  assert.equal(await courtRows.first().locator('input[data-team="t2"]').evaluate(input=>input===document.activeElement),true);
 
   // Americano qualification and the new Gold/Silver competitions must not
   // contaminate each other's scores.

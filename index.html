@@ -639,37 +639,40 @@
 
   .courts-grid{
     display:grid;
-    grid-template-columns:repeat(auto-fit, minmax(260px, 1fr));
-    gap:14px;
+    grid-template-columns:minmax(0,1fr);
+    gap:8px;
+    container-type:inline-size;
   }
   .match-card{
+    display:grid;
+    grid-template-columns:90px minmax(0,1fr);
     background:var(--surface);
     border:1px solid var(--line);
-    border-radius:12px;
+    border-radius:9px;
     overflow:hidden;
   }
   .match-card .court-label{
+    display:grid;
+    align-items:center;
     font-family:var(--font-mono);
-    font-size:var(--fs-md);
-    letter-spacing:.04em;
+    font-size:var(--fs-sm);
     color:#fff;
     background:var(--teal-700);
-    padding:7px 12px;
+    padding:4px 10px;
     text-transform:uppercase;
   }
-  .match-body{ padding:14px 16px 12px; }
+  .match-body{ padding:6px 12px; }
   .teams-row{
     display:flex; align-items:center; gap:10px;
   }
-  .team{ flex:1; min-width:0; }
-  .team.team-right{ text-align:right; }
+  .team{ flex:1; min-width:0; display:flex; align-items:center; gap:10px; }
+  .team.team-right{ flex-direction:row-reverse; text-align:right; }
+  .team-names{ flex:1; min-width:0; }
   .team .players{ font-weight:700; font-size:var(--fs-base); line-height:1.3; overflow-wrap:anywhere; }
   .team .players + .players{ margin-top:2px; }
   .vs{ font-family:var(--font-mono); font-size:var(--fs-xs); color:var(--ink-soft); }
-  .teams-row.has-scores{ align-items:stretch; }
-  .teams-row.has-scores .team{ display:flex; flex-direction:column; }
-  .teams-row.has-scores .vs{ align-self:flex-start; margin-top:9px; }
   .team-score{ margin-top:auto; padding-top:8px; }
+  .team .team-score{ flex:none; margin:0; padding:0; }
   .team-score input{
     width:56px;
     max-width:100%;
@@ -685,6 +688,13 @@
     background:var(--mist);
   }
   .team-score input:focus{ background:#fff; }
+  .team .team-score input{ display:block; font-size:var(--fs-md); padding-inline:2px; }
+  @container (max-width:439px){
+    .match-card{ grid-template-columns:minmax(0,1fr); }
+    .match-body{ padding-inline:8px; }
+    .teams-row, .team{ gap:6px; }
+    .team .team-score input{ width:48px; }
+  }
   .live-team .team-score{ padding-top:3px; }
   .live-team .team-score input{ width:76px; font-size:22px; border-radius:8px; }
   .live-upcoming .team-score{ font-family:var(--font-mono); font-weight:700; color:var(--teal-900); }
@@ -3438,11 +3448,13 @@
     body.className = 'match-body';
 
     var teamsRow = document.createElement('div');
-    teamsRow.className = 'teams-row' + (pool.resultsEnabled ? ' has-scores' : '');
+    teamsRow.className = 'teams-row';
     var key = scoreKey(pool.id, court.courtIndex, round);
     function team(names, side){
       var block = liveElement('div', side === 't1' ? 'team' : 'team team-right');
-      names.forEach(function(name){ block.appendChild(liveElement('div', 'players', name)); });
+      var roster = liveElement('div', 'team-names');
+      names.forEach(function(name){ roster.appendChild(liveElement('div', 'players', name)); });
+      block.appendChild(roster);
       if (!pool.resultsEnabled) return block;
 
       var score = liveElement('div', 'team-score');
