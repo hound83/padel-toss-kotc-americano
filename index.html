@@ -220,11 +220,12 @@
   .live-head{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:22px;padding-bottom:16px;border-bottom:2px solid var(--teal-900);}
   .live-title{margin:0;font:800 clamp(23px,3vw,34px) var(--font-display);color:var(--teal-900);text-transform:uppercase;letter-spacing:.01em;}
   .live-subtitle{font-size:var(--fs-sm);color:var(--ink-soft);margin:5px 0 0;}
-  .live-round-tools{display:flex;align-items:center;gap:7px;flex-wrap:wrap;}
-  .live-round-tools button{border:1.5px solid var(--line);border-radius:9px;min-height:40px;background:var(--surface);padding:8px 12px;color:var(--teal-900);font:700 var(--fs-sm) var(--font-body);cursor:pointer;}
-  .live-round-tools button:disabled{cursor:default;opacity:.46;background:#E8EDF4;color:var(--ink-soft);}
-  .live-round-tools button.selected{border-color:var(--teal-900);background:var(--teal-900);color:var(--ball);}
-  .live-round-label{font-weight:800;color:var(--teal-900);min-width:92px;text-align:center;white-space:nowrap;}
+  .round-tools{display:flex;align-items:center;gap:7px;flex-wrap:wrap;}
+  .round-tools button{border:1.5px solid var(--line);border-radius:9px;min-height:44px;background:var(--surface);padding:8px 12px;color:var(--teal-900);font:700 var(--fs-sm) var(--font-body);cursor:pointer;}
+  .round-tools button:disabled{cursor:default;opacity:.46;background:#E8EDF4;color:var(--ink-soft);}
+  .round-tools button[aria-pressed="true"]:enabled{border-color:var(--teal-900);background:var(--teal-900);color:var(--ball);}
+  .round-tools button[data-round-action]{min-width:44px;}
+  .round-tools-label{font-weight:800;color:var(--teal-900);min-width:92px;text-align:center;white-space:nowrap;}
   .live-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(300px,.43fr);gap:18px;align-items:start;grid-template-areas:"current standings" "next standings";}
   .live-layout.no-board{grid-template-columns:minmax(0,3fr) minmax(300px,2fr);grid-template-areas:"current next";}
   .live-current,.live-upcoming{min-width:0;container-type:inline-size;}
@@ -257,8 +258,7 @@
   .live-waiting{font-size:var(--fs-sm);color:var(--ink-soft);margin:9px 0 12px;}
   .live-board{background:var(--teal-900);color:#fff;border-radius:13px;padding:18px;min-width:0;}
   .live-board{max-height:min(78vh,850px);overflow:auto;}
-  .live-round-tools[hidden],.live-koc-grid[hidden],.live-layout[hidden]{display:none!important;}
-  .live-round-tools button.selected:disabled{background:#E8EDF4;color:var(--ink-soft);border-color:var(--line);}
+  .round-tools[hidden],.live-koc-grid[hidden],.live-layout[hidden]{display:none!important;}
 
   .live-board h3{font:800 var(--fs-lg) var(--font-display);color:var(--ball);margin:0 0 12px;}
   .live-board table{border-collapse:collapse;width:100%;font-size:var(--fs-sm);}
@@ -601,6 +601,8 @@
 
   /* ---------- Step 3: schedule ---------- */
   .schedule-layout{ display:flex; flex-direction:column; gap:28px; }
+  .schedule-round-tools{ position:sticky; top:0; z-index:2; padding:8px 0; margin-bottom:10px; background:var(--mist); }
+  .round-block,.phase-marker{ scroll-margin-top:64px; }
   @media (min-width:960px){
     .schedule-layout{ flex-direction:row; align-items:flex-start; }
     .rounds-col{ flex:1 1 66%; min-width:0; }
@@ -940,7 +942,7 @@
   .modal-actions{ display:flex; gap:10px; justify-content:flex-end; }
 
   @media print{
-    .steps, .schedule-actions, .board, .checkpoint-card, .lang-switch{ display:none !important; }
+    .steps, .schedule-actions, .schedule-round-tools, .board, .checkpoint-card, .lang-switch{ display:none !important; }
     #loadBtn, #saveBtn{ display:none !important; }
     .koc-setup,.koc-roster-tools,.koc-actions,.app-footer,.present-exit{display:none!important;}
     body{ background:#fff; }
@@ -1228,7 +1230,15 @@
     </div>
 
     <div class="schedule-layout">
-      <div class="rounds-col" id="roundsCol"></div>
+      <div class="rounds-col">
+        <div class="round-tools schedule-round-tools" id="scheduleRoundTools" role="group" data-i18n-aria-label="roundNavigation" hidden>
+          <button type="button" id="schedulePrev" data-round-action="previous" data-i18n-aria-label="roundPrevious">&larr;</button>
+          <span class="round-tools-label" id="scheduleRoundLabel" role="status"></span>
+          <button type="button" id="scheduleNext" data-round-action="next" data-i18n-aria-label="roundNext">&rarr;</button>
+          <button type="button" id="scheduleAuto" data-round-action="auto" data-i18n="liveAuto"></button>
+        </div>
+        <div id="roundsCol"></div>
+      </div>
       <div class="board-col" id="boardCol"></div>
     </div>
 
@@ -1313,12 +1323,12 @@
         <h1 class="live-title" id="liveTitle" tabindex="-1"></h1>
         <p class="live-subtitle" id="liveSubtitle"></p>
       </div>
-      <div class="live-round-tools" id="liveRoundTools">
-        <button type="button" id="livePrev" aria-label="Previous round">←</button>
-        <span class="live-round-label" id="liveRoundLabel"></span>
-        <button type="button" id="liveNext" aria-label="Next round">→</button>
-        <button type="button" id="liveAuto"></button>
-        <button type="button" id="liveAllRounds"></button>
+      <div class="round-tools" id="liveRoundTools" role="group" data-i18n-aria-label="roundNavigation">
+        <button type="button" id="livePrev" data-round-action="previous" data-i18n-aria-label="roundPrevious">←</button>
+        <span class="round-tools-label" id="liveRoundLabel" role="status"></span>
+        <button type="button" id="liveNext" data-round-action="next" data-i18n-aria-label="roundNext">→</button>
+        <button type="button" id="liveAuto" data-round-action="auto" data-i18n="liveAuto"></button>
+        <button type="button" id="liveAllRounds" data-i18n="liveAllRounds"></button>
       </div>
     </header>
     <div id="liveKoc" class="live-koc-grid"></div>
@@ -1494,6 +1504,10 @@
       liveNoNext: 'Dit is de laatste geplande ronde.',
       liveNoSchedule: 'Er is nog geen indeling gemaakt.',
       liveAuto: 'Auto',
+      roundNavigation: 'Rondenavigatie',
+      roundPrevious: 'Vorige ronde',
+      roundNext: 'Volgende ronde',
+      roundManualTitle: 'Kies de ronde met de pijlen wanneer een groep geen uitslagen bijhoudt.',
       liveAutoTitle: 'Volg automatisch de eerste nog niet volledig gescoorde ronde',
       liveAutoDisabled: 'Auto wordt beschikbaar zodra er uitslagen zijn. Zonder scores kies je zelf de ronde.',
       liveAllRounds: 'Volledig schema',
@@ -1718,6 +1732,10 @@
       liveNoNext: 'This is the final scheduled round.',
       liveNoSchedule: 'No lineup has been generated yet.',
       liveAuto: 'Auto',
+      roundNavigation: 'Round navigation',
+      roundPrevious: 'Previous round',
+      roundNext: 'Next round',
+      roundManualTitle: 'Use the arrows to select a round when a group does not track scores.',
       liveAutoTitle: 'Automatically show the earliest round without complete scores',
       liveAutoDisabled: 'Auto becomes available when results are entered. Without scores, choose the round manually.',
       liveAllRounds: 'Full schedule',
@@ -2656,6 +2674,10 @@
     requestAnimationFrame(function(){
       var heading = document.getElementById('appTitle');
       if (heading) heading.focus({preventScroll:true});
+      if (n === 3 && state.step === 3){
+        var current = liveCurrentRound();
+        if (current > 1) showScheduleRound(current);
+      }
     });
   }
 
@@ -3483,7 +3505,10 @@
         if (!state.scores[key]) state.scores[key] = { t1: null, t2: null };
         state.scores[key][side] = isNaN(value) ? null : value;
         renderLeaderboard();
+        var tools = document.getElementById('scheduleRoundTools');
+        updateRoundControls(tools, Number(tools.dataset.round));
       });
+      input.addEventListener('change', function(){ commitScheduleScore(round); });
       score.appendChild(input);
       block.appendChild(score);
       return block;
@@ -3524,12 +3549,12 @@
     var col = document.getElementById('roundsCol');
     col.innerHTML = '';
 
-    var maxRound = 0;
-    state.pools.forEach(function(p){ maxRound = Math.max(maxRound, p.endRound); });
+    var maxRound = liveMaxRound();
 
     for (var r = 1; r <= maxRound; r++){
       var block = document.createElement('div');
       block.className = 'round-block';
+      block.id = 'scheduleRound' + r;
 
       var head = document.createElement('div');
       head.className = 'round-head';
@@ -3607,6 +3632,7 @@
     var boardCol = document.getElementById('boardCol');
     var anyResults = state.pools.some(function(p){ return p.resultsEnabled; });
     boardCol.style.display = anyResults ? '' : 'none';
+    updateRoundControls(document.getElementById('scheduleRoundTools'), liveCurrentRound());
   }
 
   function activeRosterForPool(poolId){
@@ -4126,6 +4152,7 @@
 
     renderSchedule();
     renderLeaderboard();
+    showScheduleRound(live.round);
     return true;
   }
 
@@ -5284,9 +5311,8 @@
     doStartOver();
   });
 
-  // ---------- Live match presentation ----------
-  // Keep presentation separate from setup and historical rounds. These
-  // settings are stored with the schedule, while fullscreen UI is transient.
+  // ---------- Round navigation shared by the schedule and presentation ----------
+  // The round selection is stored with the schedule. Fullscreen is transient.
   function ensureLiveState(){
     if (!state.live || typeof state.live !== 'object'){
       state.live = {mode:'auto', round:1, autoFloor:1};
@@ -5349,6 +5375,62 @@
     if (liveAutoEligible() && live.mode === 'auto') return liveAutomaticRound();
     return Math.min(max,live.round);
   }
+  function updateRoundControls(tools, current){
+    var max = liveMaxRound();
+    tools.hidden = state.format === 'koc' || !max;
+    if (tools.hidden) return;
+    var label = tools.querySelector('.round-tools-label');
+    var text = tf('liveRoundLabel',{n:current,max:max});
+    if (label.textContent !== text) label.textContent = text;
+    tools.dataset.round = String(current);
+    tools.querySelector('[data-round-action="previous"]').disabled = current <= 1;
+    tools.querySelector('[data-round-action="next"]').disabled = current >= max;
+    var auto = tools.querySelector('[data-round-action="auto"]');
+    var eligible = liveAutoEligible();
+    auto.disabled = !eligible || !liveHasScore();
+    auto.setAttribute('aria-pressed', String(eligible && ensureLiveState().mode === 'auto'));
+    auto.title = t(!eligible ? 'roundManualTitle' : auto.disabled ? 'liveAutoDisabled' : 'liveAutoTitle');
+  }
+  function showScheduleRound(round){
+    var block = document.getElementById('scheduleRound' + round);
+    if (!block) return;
+    var marker = block.previousElementSibling;
+    var target = marker && marker.classList.contains('phase-marker') ? marker : block;
+    target.scrollIntoView({block:'start', behavior:'auto'});
+  }
+  function commitScheduleScore(round){
+    var tools = document.getElementById('scheduleRoundTools');
+    var previous = Number(tools.dataset.round), current = liveCurrentRound();
+    updateRoundControls(tools, current);
+    if (round !== previous || current <= previous) return;
+    requestAnimationFrame(function(){
+      if (state.step !== 3 || document.body.classList.contains('presentation-mode') ||
+          ensureLiveState().mode !== 'auto' || Number(tools.dataset.round) !== current) return;
+      var focusedRound = document.activeElement.closest('.round-block');
+      if (!focusedRound || focusedRound.id === 'scheduleRound' + current) showScheduleRound(current);
+    });
+  }
+  function navigateRound(action, displayedRound){
+    var live = ensureLiveState();
+    if (action === 'auto'){
+      if (!liveAutoEligible() || !liveHasScore()) return;
+      live.mode = 'auto';
+    } else {
+      var delta = action === 'previous' ? -1 : 1;
+      live.round = Math.max(1, Math.min(liveMaxRound(), displayedRound + delta));
+      live.mode = 'manual';
+    }
+    if (document.body.classList.contains('presentation-mode')){
+      renderLivePresentation();
+    } else {
+      var current = liveCurrentRound();
+      updateRoundControls(document.getElementById('scheduleRoundTools'), current);
+      showScheduleRound(current);
+    }
+    scheduleAutosave();
+  }
+
+  // ---------- Live match presentation ----------
   function liveElement(tag,cls,text){
     var el = document.createElement(tag);
     if (cls) el.className = cls;
@@ -5370,7 +5452,8 @@
       if (!state.scores[key]) state.scores[key] = {t1:null,t2:null};
       state.scores[key][side] = Number.isFinite(value) && value >= 0 ? value : null;
       renderLeaderboard();
-      updateLiveControls();
+      var tools = document.getElementById('liveRoundTools');
+      updateRoundControls(tools, Number(tools.dataset.round));
       scheduleAutosave();
     });
     input.addEventListener('change',function(){
@@ -5481,35 +5564,16 @@
       root.appendChild(card);
     });
   }
-  function updateLiveControls(){
-    var tools=document.getElementById('liveRoundTools');
-    tools.hidden=state.format==='koc';
-    if (state.format==='koc')return;
-    var max=Math.max(1,liveMaxRound()),live=ensureLiveState();
-    var current=Number(document.getElementById('livePresentation').dataset.round)||
-      liveCurrentRound();
-    document.getElementById('liveRoundLabel').textContent=
-      tf('liveRoundLabel',{n:current,max:max});
-    document.getElementById('livePrev').disabled=current<=1;
-    document.getElementById('liveNext').disabled=current>=max;
-    var auto=document.getElementById('liveAuto');
-    var eligible=liveAutoEligible();
-    auto.textContent=t('liveAuto');
-    auto.classList.toggle('selected',eligible && live.mode==='auto');
-    auto.disabled=!eligible || !liveHasScore();
-    auto.title=t(auto.disabled?'liveAutoDisabled':'liveAutoTitle');
-    document.getElementById('liveAllRounds').textContent=t('liveAllRounds');
-  }
   function renderLivePresentation(){
     if (!document.body.classList.contains('presentation-mode'))return;
     var root=document.getElementById('livePresentation'), koc=state.format==='koc';
+    var current=koc?0:liveCurrentRound();
     document.getElementById('liveTitle').textContent=
       (koc?'👑 ':state.format==='splitToss'?'🗂️ ':state.format==='americano'?'🏆 ':'🎾 ')+
       t(koc?'formatKoc':state.format==='splitToss'?'formatSplitToss':
         state.format==='americano'?'formatAmericano':'formatToss');
     document.getElementById('liveSubtitle').textContent=
-      koc?t('liveKocSubtitle'):tf('livePlaying',
-        {n:liveCurrentRound(),max:liveMaxRound()});
+      koc?t('liveKocSubtitle'):tf('livePlaying',{n:current,max:liveMaxRound()});
     document.getElementById('liveKoc').hidden=!koc;
     document.getElementById('liveLayout').hidden=koc;
     if (koc){
@@ -5534,33 +5598,24 @@
         }
       }
     } else {
-      var current=liveCurrentRound();
       root.dataset.round=String(current);
-      document.getElementById('liveSubtitle').textContent=
-        tf('livePlaying',{n:current,max:liveMaxRound()});
       renderLiveRoundSection(document.getElementById('liveCurrent'),current,true);
       renderLiveRoundSection(document.getElementById('liveUpcoming'),current+1,false);
       renderLiveStandings();
       document.getElementById('liveLayout').classList.toggle('no-board',
         !document.getElementById('liveStandings').children.length);
     }
-    updateLiveControls();
+    updateRoundControls(document.getElementById('liveRoundTools'),current);
     root.scrollTop=0;
   }
-  document.getElementById('livePrev').addEventListener('click',function(){
-    var live=ensureLiveState();
-    live.round=Math.max(1,liveCurrentRound()-1);
-    live.mode='manual';renderLivePresentation();scheduleAutosave();
-  });
-  document.getElementById('liveNext').addEventListener('click',function(){
-    var live=ensureLiveState();
-    live.round=Math.min(liveMaxRound(),liveCurrentRound()+1);
-    live.mode='manual';renderLivePresentation();scheduleAutosave();
-  });
-  document.getElementById('liveAuto').addEventListener('click',function(){
-    if(!liveAutoEligible()||!liveHasScore())return;
-    ensureLiveState().mode='auto';
-    renderLivePresentation();scheduleAutosave();
+  document.querySelectorAll('.round-tools [data-round-action]').forEach(function(button){
+    var tools = button.closest('.round-tools'), pointerRound;
+    button.addEventListener('pointerdown',function(){pointerRound = Number(tools.dataset.round);});
+    button.addEventListener('click',function(event){
+      // A score can advance Auto on blur, between pressing and releasing a round button.
+      var displayed = event.detail && pointerRound ? pointerRound : Number(tools.dataset.round);
+      navigateRound(button.dataset.roundAction, displayed);
+    });
   });
   document.getElementById('liveAllRounds').addEventListener('click',function(){
     setPresentation(false);
@@ -5587,10 +5642,10 @@
         renderSchedule();
         renderLeaderboard();
       }
-      if(document.fullscreenElement && document.exitFullscreen){
-        var closing=document.exitFullscreen();
-        if(closing && closing.catch)closing.catch(function(){});
-      }
+      var closing=document.fullscreenElement && document.exitFullscreen ? document.exitFullscreen() : null;
+      Promise.resolve(closing).catch(function(){}).then(function(){
+        if(state.step===3 && !document.body.classList.contains('presentation-mode')) showScheduleRound(liveCurrentRound());
+      });
     }
   }
   document.getElementById('presentBtn').addEventListener('click',function(){setPresentation(true);});
