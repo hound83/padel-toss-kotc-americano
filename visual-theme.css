@@ -7,7 +7,7 @@
 .mode-home .format-btn:hover{border-color:var(--teal-900);box-shadow:0 3px 12px #193b5710;transform:translateY(-2px);}
 .mode-home .format-btn.active{background:var(--surface);border-color:var(--teal-900);}
 .mode-copy{display:flex;flex-direction:column;justify-content:center;align-items:flex-start;gap:12px;padding:24px 0 24px 24px;min-width:0;}
-.mode-home .format-btn .fb-name{font-size:clamp(20px,2.2vw,27px);font-weight:800;letter-spacing:-.025em;text-transform:none;color:var(--teal-900);margin:0;line-height:1.13;}
+.mode-home .format-btn .fb-name{font-size:clamp(20px,2.1vw,26px);font-weight:800;letter-spacing:-.025em;text-transform:none;color:var(--teal-900);margin:0;line-height:1.13;}
 .mode-home .format-btn .fb-desc{font-size:var(--fs-sm);line-height:1.5;color:var(--ink);max-width:24ch;}
 .mode-link{display:flex;align-items:center;gap:9px;margin-top:auto;padding-top:12px;font-size:var(--fs-base);font-weight:750;color:var(--teal-900);}
 .mode-link .arrow{font-size:24px;line-height:1;}

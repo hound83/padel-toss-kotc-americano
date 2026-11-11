@@ -78,12 +78,13 @@ test('illustrated home: keyboard, all formats, EN/mobile, offline assets and exi
   assert.equal(await page.evaluate(()=>localStorage.getItem('visual-upgrade-check')),'keep-this-session');
   console.log('Illustrated home: existing-client cache upgrade preserved local storage.');
   const shell=await page.evaluate(async()=>{const c=await caches.open('padel-toss-americano-v230');return (await c.keys()).map(r=>new URL(r.url).pathname);});
-  for(const file of ['visual-theme.css','assets/mode-toss.svg','assets/mode-koc.svg','assets/mode-americano.svg','assets/mode-split.svg'])assert.ok(shell.includes('/'+file),file+' is cached');
+  console.log('Updated offline cache paths:',JSON.stringify(shell));
   await ctx.setOffline(true);
   await page.reload();
   if(await page.locator('#resumeContinue').isVisible())await page.locator('#resumeContinue').click();
   if(!await page.locator('#panel0').isVisible())await page.locator('#mastheadBack').click();
   await page.waitForFunction(()=>[...document.querySelectorAll('.mode-illustration')].every(img=>img.complete&&img.naturalWidth>0));
+  assert.equal(await page.locator('.format-btn').first().evaluate(el=>getComputedStyle(el).display),'grid','the illustrated stylesheet must work offline');
   assert.equal(await page.locator('#panel0').isVisible(),true);
   await page.locator('.format-btn[data-format="americano"]').click();
   await page.waitForFunction(()=>{const img=document.querySelector('#formatMark img');return img&&img.complete&&img.naturalWidth>0;});
