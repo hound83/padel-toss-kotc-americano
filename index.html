@@ -1298,7 +1298,8 @@
       </div>
     </div>
     <section class="test-score-tools" id="testScoreTools" aria-labelledby="testScoreHeading" hidden>
-      <h3 id="testScoreHeading" data-i18n="testScoreHeading">Testscores (tijdelijk)</h3>
+      <h3 id="testScoreHeading" data-i18n="testScoreHeading">Testscores voor de oefenmodus</h3>
+      <p data-i18n="testScoreSession">Dit oefenschema wordt apart bewaard in deze browser.</p>
       <div class="test-score-actions">
         <button type="button" class="btn btn-ghost" id="testScoreNext" data-i18n="testScoreNext">Vul volgende open ronde</button>
         <button type="button" class="btn btn-ghost" id="testScoreAll" data-i18n="testScoreAll">Vul alle open scores</button>
@@ -1356,7 +1357,7 @@
   </section>
 
   <footer class="app-footer">
-    <span id="appVersion">v2.4.2</span>
+    <span id="appVersion">v2.4.3</span>
     <details><summary data-i18n="whatsNew">Wat is nieuw?</summary>
       <ul>
         <li data-i18n="changeIllustrations">Nieuwe baanillustraties, marineblauw/lime en een puntenscore van 26–6.</li>
@@ -1571,7 +1572,8 @@
       courtLabel: 'Baan',
       vsLabel: 'vs',
       scoreForTeam: 'Score voor {team}',
-      testScoreHeading: 'Testscores (tijdelijk)',
+      testScoreHeading: 'Testscores voor de oefenmodus',
+    testScoreSession: 'Dit oefenschema wordt apart bewaard in deze browser.',
       testScoreNext: 'Vul volgende open ronde',
       testScoreAll: 'Vul alle open scores',
       testScoreRoundDone: 'Open scores in ronde {round} ingevuld.',
@@ -1836,7 +1838,8 @@
       courtLabel: 'Court',
       vsLabel: 'vs',
       scoreForTeam: 'Score for {team}',
-      testScoreHeading: 'Test scores (temporary)',
+      testScoreHeading: 'Rehearsal scores',
+    testScoreSession: 'This rehearsal is saved separately in this browser.',
       testScoreNext: 'Fill next incomplete round',
       testScoreAll: 'Fill all empty scores',
       testScoreRoundDone: 'Filled empty scores in round {round}.',
@@ -2069,6 +2072,7 @@
     eyebrow.hidden = false;
   }
 
+  var rehearsalMode = new URLSearchParams(window.location.search).get('rehearsal') === '1';
   var state = {
     step: 1,
     lang: 'nl',
@@ -3799,7 +3803,7 @@
     var boardCol = document.getElementById('boardCol');
     var anyResults = state.pools.some(function(p){ return p.resultsEnabled; });
     boardCol.style.display = anyResults ? '' : 'none';
-    document.getElementById('testScoreTools').hidden = !anyResults;
+    document.getElementById('testScoreTools').hidden = !rehearsalMode || !anyResults;
     document.getElementById('testScoreStatus').textContent = '';
     updateRoundControls(document.getElementById('scheduleRoundTools'), liveCurrentRound());
   }
@@ -5665,7 +5669,7 @@
   // ---------- Local-first recovery ----------
   // No account or remote database: the organiser's own browser holds the
   // working copy, and the JSON export above remains a portable backup.
-  var AUTOSAVE_KEY = 'padel-toss-americano-session-v2';
+  var AUTOSAVE_KEY = rehearsalMode ? 'padel-toss-americano-rehearsal-v2' : 'padel-toss-americano-session-v2';
   var autosaveTimer = null;
   var autosaveSuspended = false;
   function formSnapshot(){
@@ -5789,8 +5793,8 @@
     });
     return groups;
   }
-  // Temporary test controls share the same score state as the real inputs.
   function fillTestScores(nextOnly){
+    if (!rehearsalMode) return;
     var firstFilled = 0;
     var max = liveMaxRound();
     for (var round = 1; round <= max; round++){

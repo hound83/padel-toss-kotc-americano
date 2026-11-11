@@ -25,12 +25,12 @@ test('v2.2: clean navigation and live KOC, Toss, Americano and split Toss', asyn
     ...(process.env.CHROMIUM_EXECUTABLE_PATH?
       {executablePath:process.env.CHROMIUM_EXECUTABLE_PATH}:{})});
   t.after(()=>browser.close());
-  async function open(format,mobile=false){
+  async function open(format,mobile=false,rehearsal=false){
     const ctx=await browser.newContext(mobile?
       {viewport:{width:390,height:844},isMobile:true,hasTouch:true}:{viewport:{width:1280,height:900}});
     t.after(()=>ctx.close());
     const page=await ctx.newPage();
-    await page.goto(url);
+    await page.goto(rehearsal ? url+'/?rehearsal=1' : url);
     assert.equal(await page.locator('#panel0').isVisible(),true);
     await page.locator('.format-btn[data-format="'+format+'"]').click();
     assert.equal(await page.locator('#panel0').isVisible(),false,
@@ -228,7 +228,7 @@ test('v2.2: clean navigation and live KOC, Toss, Americano and split Toss', asyn
   await split.locator('#liveNext').click();
   assert.match(await split.locator('#liveRoundLabel').innerText(),/3\s*\/\s*7/);
 
-  const splitMixed=await open('splitToss');
+  const splitMixed=await open('splitToss',false,true);
   await splitMixed.locator('#continueTo2').click();
   await splitMixed.locator('#beginnerResultsToggle').check();
   await splitMixed.locator('#generateBtn').click();
@@ -387,6 +387,9 @@ test('v2.2: clean navigation and live KOC, Toss, Americano and split Toss', asyn
   await americano.locator('#splitRoundInput').press('Tab');
   await americano.locator('#generateBtn').click();
   assert.equal(await americano.locator('#panel3').isVisible(),true);
+  assert.equal(await americano.locator('#testScoreTools').isVisible(),false);
+  await americano.locator('#testScoreAll').evaluate(button=>button.click());
+  assert.ok(await americano.locator('#scheduleRound1 input[data-key]').evaluateAll(inputs=>inputs.every(input=>input.value==='')));
   assert.equal(await americano.locator('#metaStrip').textContent(),'8 spelers · 2 banen · 4 rondes · Splits na ronde 2');
   await americano.locator('.checkpoint-card button').click();
   assert.equal(await americano.locator('#splitPreview').isVisible(),false);
@@ -481,13 +484,24 @@ test('v2.2: clean navigation and live KOC, Toss, Americano and split Toss', asyn
   await americano.locator('#liveAllRounds').click();
   assert.equal(await americano.locator('#panel3').isVisible(),true);
 
-  const testScores=await open('americano',true);
+  const testScores=await open('americano',true,true);
+  const regularSession=await testScores.context().newPage();
+  await regularSession.goto(url);
+  await regularSession.locator('.format-btn[data-format="americano"]').tap();
+  await regularSession.locator('#continueTo2').tap();
+  await regularSession.locator('#generateBtn').tap();
+  const regularField=regularSession.locator('#scheduleRound1 input[data-key]').first();
+  await regularField.fill('17');
+  await regularField.press('Tab');
+  await regularSession.waitForFunction(()=>JSON.parse(localStorage.getItem('padel-toss-americano-session-v2'))?.state?.scores['main-1-1']?.t1===17);
   await testScores.locator('#continueTo2').tap();
   await testScores.locator('#roundsInput').fill('4');
   await testScores.locator('#regroupToggle').check();
   await testScores.locator('#splitRoundInput').fill('2');
   await testScores.locator('#generateBtn').tap();
   const fields=round=>testScores.locator('#scheduleRound'+round+' input[data-key]');
+  assert.equal(await fields(1).first().inputValue(),'');
+  assert.equal(await testScores.locator('#testScoreTools').isVisible(),true);
   await fields(1).first().fill('0');
   await testScores.locator('#testScoreNext').tap();
   assert.equal(await testScores.locator('#testScoreStatus').innerText(),'Open scores in ronde 1 ingevuld.');
@@ -520,6 +534,19 @@ test('v2.2: clean navigation and live KOC, Toss, Americano and split Toss', asyn
   assert.deepEqual(testSaved.scores['main-1-1'],{t1:0,t2:32});
   assert.ok(Object.keys(testSaved.scores).some(key=>key.startsWith('top-')));
   assert.ok(Object.keys(testSaved.scores).some(key=>key.startsWith('bottom-')));
+  await testScores.waitForFunction(()=>!!navigator.serviceWorker.controller);
+  await testScores.context().setOffline(true);
+  await testScores.reload();
+  await testScores.locator('#resumeContinue').tap();
+  await testScores.locator('#testScoreTools').waitFor({state:'visible'});
+  assert.equal(await fields(1).first().inputValue(),'0');
+  assert.equal(await fields(1).nth(1).inputValue(),'32');
+  await testScores.goto(url);
+  await testScores.locator('#resumeContinue').tap();
+  await fields(1).first().waitFor({state:'visible'});
+  assert.equal(await fields(1).first().inputValue(),'17');
+  assert.equal(await fields(1).nth(1).inputValue(),'');
+  assert.equal(await testScores.locator('#testScoreTools').isVisible(),false);
 
   const large=await open('americano');
   await large.locator('#courtsMoreSelect').selectOption('9');
