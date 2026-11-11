@@ -45,6 +45,27 @@ test('v2.2: clean navigation and live KOC, Toss, Americano and split Toss', asyn
     const download=await event;
     return JSON.parse(fs.readFileSync(await download.path(),'utf8')).state;
   }
+  async function checkScorePlacement(card,teamSelector,nameSelector){
+    const placement=await card.evaluate((match,{teamSelector,nameSelector})=>
+      [...match.querySelectorAll(teamSelector)].map((team,side)=>{
+        const names=[...team.querySelectorAll(nameSelector)];
+        const field=team.querySelector('input');
+        const bounds=field.getBoundingClientRect();
+        const lastName=names.at(-1).getBoundingClientRect();
+        const edge=side===0?'left':'right';
+        return {
+          below:bounds.top>=lastName.bottom,
+          aligned:Math.abs(bounds[edge]-lastName[edge])<1,
+          label:field.getAttribute('aria-label'),
+          team:names.map(name=>name.textContent).join(' & ')
+        };
+      }),{teamSelector,nameSelector});
+    assert.equal(placement.length,2);
+    for(const score of placement){
+      assert.ok(score.below&&score.aligned,'each score box sits below its team on the same side');
+      assert.equal(score.label,'Score voor '+score.team);
+    }
+  }
 
   const koc=await open('koc');
   assert.match(await koc.locator('#appTitle').innerText(),/KING OF THE COURT/);
@@ -62,6 +83,7 @@ test('v2.2: clean navigation and live KOC, Toss, Americano and split Toss', asyn
 
   const toss=await open('toss');
   assert.equal((await toss.locator('#appTitle').innerText()).toUpperCase(),'TOSS');
+  await toss.locator('#courtsSelect .court-btn[data-courts="4"]').click();
   const namesStep=toss.getByRole('button',{name:'Namen',exact:true});
   const scheduleStep=toss.getByRole('button',{name:'Schema',exact:true});
   assert.equal(await scheduleStep.isEnabled(),false);
@@ -75,14 +97,31 @@ test('v2.2: clean navigation and live KOC, Toss, Americano and split Toss', asyn
   assert.equal(await toss.locator('#panel2').isVisible(),true);
   assert.equal(await namesStep.getAttribute('aria-current'),'step');
   await toss.locator('#generateBtn').click();
-  assert.equal(await toss.locator('.brand-copy #metaStrip').textContent(),'16 spelers · 2 banen · 7 rondes');
+  assert.equal(await toss.locator('.brand-copy #metaStrip').textContent(),'32 spelers · 4 banen · 7 rondes');
   assert.equal(await scheduleStep.getAttribute('aria-current'),'step');
   await namesStep.click();
   await scheduleStep.press('Enter');
   assert.equal(await toss.locator('#panel3').isVisible(),true);
   await toss.locator('#presentBtn').click();
-  assert.equal(await toss.locator('#liveCurrent .live-match').count(),2);
-  assert.equal(await toss.locator('#liveUpcoming .live-match').count(),2);
+  assert.equal(await toss.locator('#liveCurrent .live-match').count(),4);
+  assert.equal(await toss.locator('#liveUpcoming .live-match').count(),4);
+  const roundLayout=await toss.locator('#liveLayout').evaluate(layout=>{
+    const now=layout.querySelector('#liveCurrent');
+    const next=layout.querySelector('#liveUpcoming');
+    const first=now.querySelector('.live-match').getBoundingClientRect();
+    const [a,b,c]=[...next.querySelectorAll('.live-match')].map(card=>card.getBoundingClientRect());
+    return {
+      currentWider:now.offsetWidth>next.offsetWidth,
+      upcomingCompact:a.width<first.width&&a.height<first.height,
+      upcomingTwoAcross:a.top===b.top&&a.left<b.left&&a.top<c.top
+    };
+  });
+  assert.deepEqual(roundLayout,{currentWider:true,upcomingCompact:true,upcomingTwoAcross:true});
+  const screenshotDir=process.env.PADEL_SCREENSHOT_DIR;
+  if(screenshotDir){
+    fs.mkdirSync(screenshotDir,{recursive:true});
+    await toss.screenshot({path:path.join(screenshotDir,'presentation-four-courts.png')});
+  }
   assert.equal(await toss.locator('#liveStandings .live-board').count(),0);
   assert.equal(await toss.locator('#liveAuto').isEnabled(),false);
   assert.match(await toss.locator('#liveRoundLabel').innerText(),/1\s*\/\s*7/);
@@ -99,6 +138,7 @@ test('v2.2: clean navigation and live KOC, Toss, Americano and split Toss', asyn
   await split.locator('#presentBtn').click();
   assert.equal(await split.locator('#liveCurrent .live-match').count(),2);
   assert.equal(await split.locator('#liveStandings .live-board').count(),0);
+  assert.equal(await split.locator('#liveCurrent .team-score input').count(),0);
   assert.equal(await split.locator('#liveAuto').isEnabled(),false,
     'without scores, split Toss uses manual progress');
   assert.match(await split.locator('#liveCurrent').innerText(),/Zilver/);
@@ -113,14 +153,19 @@ test('v2.2: clean navigation and live KOC, Toss, Americano and split Toss', asyn
   await splitScores.locator('#beginnerResultsToggle').check();
   await splitScores.locator('#ervarenResultsToggle').check();
   await splitScores.locator('#generateBtn').click();
+  await checkScorePlacement(splitScores.locator('.match-card').first(),'.team','.players');
+  await splitScores.setViewportSize({width:390,height:844});
+  await checkScorePlacement(splitScores.locator('.match-card').first(),'.team','.players');
+  if(screenshotDir)await splitScores.locator('.match-card').first().screenshot({path:path.join(screenshotDir,'mobile-score-card.png')});
   await splitScores.locator('#presentBtn').click();
+  await checkScorePlacement(splitScores.locator('#liveCurrent .live-match').first(),'.live-team','span');
   assert.equal(await splitScores.locator('#liveAuto').isEnabled(),false,
     'automatic tracking is the default but grey until first score entry');
-  await splitScores.locator('#liveCurrent .live-match').nth(0).locator('.live-score input').nth(0).fill('11');
-  await splitScores.locator('#liveCurrent .live-match').nth(0).locator('.live-score input').nth(1).fill('5');
-  await splitScores.locator('#liveCurrent .live-match').nth(1).locator('.live-score input').nth(0).fill('8');
-  await splitScores.locator('#liveCurrent .live-match').nth(1).locator('.live-score input').nth(1).fill('7');
-  await splitScores.locator('#liveCurrent .live-match').nth(1).locator('.live-score input').nth(1).press('Tab');
+  await splitScores.locator('#liveCurrent .live-match').nth(0).locator('.team-score input').nth(0).fill('11');
+  await splitScores.locator('#liveCurrent .live-match').nth(0).locator('.team-score input').nth(1).fill('5');
+  await splitScores.locator('#liveCurrent .live-match').nth(1).locator('.team-score input').nth(0).fill('8');
+  await splitScores.locator('#liveCurrent .live-match').nth(1).locator('.team-score input').nth(1).fill('7');
+  await splitScores.locator('#liveCurrent .live-match').nth(1).locator('.team-score input').nth(1).press('Tab');
   assert.match(await splitScores.locator('#liveRoundLabel').innerText(),/2\s*\/\s*7/);
   assert.equal(await splitScores.locator('#liveStandings .live-board').count(),2);
 
@@ -173,11 +218,11 @@ test('v2.2: clean navigation and live KOC, Toss, Americano and split Toss', asyn
   assert.equal(await americano.locator('#liveStandings .live-board').count(),2);
   assert.match(await americano.locator('#liveRoundLabel').innerText(),/3\s*\/\s*4/);
   assert.equal(await americano.locator('#liveUpcoming .live-match').count(),2);
-  await americano.locator('#liveCurrent .live-match').nth(0).locator('.live-score input').nth(0).fill('10');
-  await americano.locator('#liveCurrent .live-match').nth(0).locator('.live-score input').nth(1).fill('8');
-  await americano.locator('#liveCurrent .live-match').nth(1).locator('.live-score input').nth(0).fill('11');
-  await americano.locator('#liveCurrent .live-match').nth(1).locator('.live-score input').nth(1).fill('7');
-  await americano.locator('#liveCurrent .live-match').nth(1).locator('.live-score input').nth(1).press('Tab');
+  await americano.locator('#liveCurrent .live-match').nth(0).locator('.team-score input').nth(0).fill('10');
+  await americano.locator('#liveCurrent .live-match').nth(0).locator('.team-score input').nth(1).fill('8');
+  await americano.locator('#liveCurrent .live-match').nth(1).locator('.team-score input').nth(0).fill('11');
+  await americano.locator('#liveCurrent .live-match').nth(1).locator('.team-score input').nth(1).fill('7');
+  await americano.locator('#liveCurrent .live-match').nth(1).locator('.team-score input').nth(1).press('Tab');
   assert.match(await americano.locator('#liveRoundLabel').innerText(),/4\s*\/\s*4/,
     'completing every court moves the current round forward');
   await americano.locator('#livePrev').click();
@@ -185,9 +230,9 @@ test('v2.2: clean navigation and live KOC, Toss, Americano and split Toss', asyn
   // A later correction must change points, not the already-achieved round
   // progression. The override stays on round 3 until Auto is resumed.
   await americano.locator('#liveCurrent .live-match').nth(0)
-    .locator('.live-score input').nth(0).fill('');
+    .locator('.team-score input').nth(0).fill('');
   await americano.locator('#liveCurrent .live-match').nth(0)
-    .locator('.live-score input').nth(0).press('Tab');
+    .locator('.team-score input').nth(0).press('Tab');
   assert.match(await americano.locator('#liveRoundLabel').innerText(),/3\s*\/\s*4/);
   await americano.locator('#liveAllRounds').click();
   const afterManual=await saveState(americano);
