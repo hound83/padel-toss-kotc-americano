@@ -192,16 +192,20 @@
   .koc-player input[type=text]{min-width:0;flex:1 1 80px;width:50%;border:0;border-bottom:1px solid var(--line);background:transparent;padding:7px 2px;font:inherit;color:var(--ink);}
   .koc-waiting-slot{width:100%;font-size:var(--fs-sm);font-weight:700;color:var(--teal-900);}
   .koc-entry-marker{display:flex;align-items:center;gap:8px;width:100%;font-size:var(--fs-sm);font-weight:700;color:var(--teal-900);cursor:pointer;}
-  .koc-result{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin:20px 0;}
+  .koc-result,.live-koc-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:12px;}
+  .koc-result{margin:20px 0;}
+  .koc-courts{
+    display:grid;gap:inherit;
+    grid-template-columns:repeat(auto-fit,minmax(min(100%,max(var(--koc-card-min,190px),calc((100% - 36px)/4))),1fr));
+  }
+  .koc-courts:not(:has(> :not([hidden]))){display:none;}
   .koc-court{border:1px solid var(--line);border-radius:12px;background:white;overflow:hidden;}
   .koc-court h3{background:var(--mist);margin:0;padding:13px 14px;color:var(--teal-900);font-size:var(--fs-md);}
   .koc-court.crown h3{background:var(--teal-900);color:var(--ball);}
   .koc-court ul{list-style:none;margin:0;padding:8px 14px;}
-  .koc-court li{padding:9px 0;border-bottom:1px solid var(--line);}
+  .koc-court li{padding:9px 0;border-bottom:1px solid var(--line);overflow-wrap:anywhere;}
   .koc-court li:last-child{border:0;}
   .koc-court .empty{color:var(--ink-soft);}
-  .koc-result .koc-waiting-card{grid-column:1/-1;}
-  .koc-waiting-card h3{background:#F0F5DB;}
   .koc-waiting-note{margin:0;padding:0 14px 13px;line-height:1.4;overflow-wrap:anywhere;}
   .koc-help{font-size:var(--fs-sm);color:var(--ink-soft);line-height:1.5;margin-top:8px;}
   .koc-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px;}
@@ -212,8 +216,6 @@
   body.presentation-mode .masthead,body.presentation-mode .steps,body.presentation-mode .schedule-actions,body.presentation-mode .app-footer,body.presentation-mode .koc-setup,body.presentation-mode .koc-roster-tools,body.presentation-mode .koc-actions,body.presentation-mode .playcount-wrap{display:none!important;}
   body.presentation-mode .wrap{max-width:1600px;padding:28px;}
   body.presentation-mode .rounds-col{font-size:1.15em;}
-  body.presentation-mode .koc-result{grid-template-columns:repeat(auto-fit,minmax(230px,1fr));}
-  body.presentation-mode .koc-result li{font-size:1.3em;}
   /* Dedicated live experience: the ordinary app remains untouched behind it.
      This also prevents the home tiles, old rounds and edit controls from ever
      leaking into presentation mode. */
@@ -281,7 +283,7 @@
   .live-upcoming .live-match-head{font-size:var(--fs-xs);padding:6px 10px;}
   .live-upcoming .live-team{gap:3px;}
   .live-upcoming .live-team span{font-size:var(--fs-sm);font-weight:650;}
-  .live-koc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;}
+  .live-koc-grid{--koc-card-min:220px;}
   .live-koc-card{background:#fff;border:1px solid var(--line);border-radius:13px;overflow:hidden;}
   .live-koc-card h3{margin:0;background:#DFE8F5;color:var(--teal-900);padding:12px 14px;font-size:var(--fs-lg);}
   .live-koc-card.crown h3{background:var(--teal-900);color:var(--ball);}
@@ -289,6 +291,11 @@
   .live-koc-card li{padding:12px 2px;border-bottom:1px solid var(--line);font-size:clamp(17px,1.8vw,23px);font-weight:650;overflow-wrap:anywhere;}
   .live-koc-card li:last-child{border:0;}
   .live-koc-card .empty{color:var(--ink-soft);}
+  .koc-waiting-card h3{background:#F0F5DB;}
+  .koc-waiting-card ul{
+    display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,180px),1fr));gap:0 14px;
+  }
+  .koc-waiting-card li{border-bottom:0;}
   @media(max-width:880px){
     .live-presentation{padding:18px 16px 68px;}
     .live-layout,.live-layout.no-board{grid-template-columns:minmax(0,1fr);}
@@ -2223,6 +2230,8 @@
         k.displayOrder.some(function(i, j){ return indices.indexOf(i) === -1 || k.displayOrder.indexOf(i) !== j; })){
       k.displayOrder = shuffle(indices);
     }
+    var courtGrid = liveElement('div', 'koc-courts');
+    root.appendChild(courtGrid);
     for (var b = k.courts; b >= 1; b--){
       var court = document.createElement('article');
       court.className = 'koc-court' + (b === k.courts ? ' crown' : '');
@@ -2243,7 +2252,7 @@
         list.appendChild(placeholder);
       }
       court.appendChild(list);
-      root.appendChild(court);
+      courtGrid.appendChild(court);
     }
     appendKocWaitingCard(root, k, 'koc-court');
   }
@@ -6284,6 +6293,8 @@
       if (!schedule.assignment){
         list.appendChild(liveElement('p','live-empty',t('kocNoSchedule')));
       } else {
+        var courtGrid=liveElement('div','koc-courts');
+        list.appendChild(courtGrid);
         for (var court=schedule.courts;court>=1;court--){
           var card=liveElement('article','live-koc-card'+
             (court===schedule.courts?' crown':''));
@@ -6295,7 +6306,7 @@
           players.forEach(function(i){ul.appendChild(liveElement('li','',kocPlayerName(i)));});
           for(var x=players.length;x<4;x++) ul.appendChild(liveElement('li','empty','—'));
           card.appendChild(ul);
-          list.appendChild(card);
+          courtGrid.appendChild(card);
         }
         appendKocWaitingCard(list, schedule, 'live-koc-card');
       }
