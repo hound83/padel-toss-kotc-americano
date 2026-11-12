@@ -112,6 +112,8 @@ test('round planner, clock, rules and scoring options work in the browser',async
   assert.match(await gameScores.first().getAttribute('aria-label'),/^Games voor /);
   assert.match(await americano.locator('#boardCol thead').textContent(),/Games/);
   await americano.locator('#backToSettingsBtn').click();
+  await americano.locator('#stepsNav [data-step="1"]').click();
+  assert.equal(await americano.locator('#roundSettingsScore').isVisible(),true);
   assert.equal(await americano.locator('#roundSettingsScore').isEnabled(),false);
 
   const split=await open('splitToss');
