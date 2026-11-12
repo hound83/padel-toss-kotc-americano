@@ -98,7 +98,7 @@ test('real browser: KOC setup, entrants, absence, language, reload and mobile la
   assert.equal(await page.locator('#kocRoster .koc-player.absent').count(),1);
   assert.equal(await page.locator('#kocLowestHeading').innerText(),'Voorkeur voor baan 1');
 
-  for(const marker of await page.locator('.koc-entry-marker[aria-pressed=true]').all()) await marker.click();
+  for(const marker of await page.locator('.koc-entry-marker').all()) await marker.click();
   assert.equal(await page.locator('.koc-entry-marker[aria-pressed=true]').count(),0);
   await page.locator('#kocRoll').click();
   cards = await courtNames();
@@ -148,7 +148,9 @@ test('real browser: KOC setup, entrants, absence, language, reload and mobile la
   await mobilePage.locator('#bulkDrawerText').fill(names.join('\n'));
   await mobilePage.locator('#bulkDrawerApply').tap();
   assert.equal(await mobilePage.locator('#bulkDrawerLayer').isVisible(),false);
-  for(const marker of await lowestRows.locator('.koc-entry-marker[aria-pressed=false]').all())await marker.tap();
+  for(const marker of await lowestRows.locator('.koc-entry-marker').all()){
+    if(await marker.getAttribute('aria-pressed')==='false') await marker.tap();
+  }
   const attendees=mobilePage.locator('#kocRoster .koc-player > input[type=checkbox]');
   await attendees.nth(17).uncheck();
   assert.equal(await mobilePage.locator('#kocWaitingError').isVisible(),true);
@@ -222,7 +224,9 @@ test('real browser: KOC setup, entrants, absence, language, reload and mobile la
   assert.equal(await mobilePage.locator('#kocRoster .koc-player').count(),14);
   assert.deepEqual(await lowestRows.locator('input[type=text]').evaluateAll(inputs=>inputs.map(input=>input.getAttribute('aria-label'))),
     ['Speler 9','Speler 10','Speler 11','Speler 12']);
-  for(const marker of await lowestRows.locator('.koc-entry-marker[aria-pressed=false]').all())await marker.tap();
+  for(const marker of await lowestRows.locator('.koc-entry-marker').all()){
+    if(await marker.getAttribute('aria-pressed')==='false') await marker.tap();
+  }
   await mobilePage.locator('#kocRoll').tap();
   assert.deepEqual(await waitingCard.locator('li').allTextContents(),['Deelnemer 13','Deelnemer 14']);
   assert.deepEqual((await courts.last().locator('li').allTextContents()).sort(),names.slice(8,12).sort());
