@@ -148,16 +148,19 @@ test('round planner, clock, rules and scoring options work in the browser',async
   assert.equal(await clock.locator('[data-clock-action=start]').isVisible(),true);
 
   const savedTeams=await readTeams();
-  await koc.evaluate(()=>{
-    const key='padel-toss-americano-session-v2';
-    const save=JSON.parse(localStorage.getItem(key));
-    delete save.state.koc.crossed;
-    localStorage.setItem(key,JSON.stringify(save));
-  });
-  await koc.reload();
-  await koc.locator('#resumeContinue').tap();
-  assert.equal(await pairing.inputValue(),'balanced');
-  assert.deepEqual(await readTeams(),savedTeams);
+  const legacySave=await koc.evaluate(()=>JSON.parse(localStorage.getItem('padel-toss-americano-session-v2')));
+  delete legacySave.state.koc.crossed;
+  const legacyContext=await browser.newContext();
+  t.after(()=>legacyContext.close());
+  await legacyContext.addInitScript(save=>{
+    localStorage.setItem('padel-toss-americano-session-v2',JSON.stringify(save));
+  },legacySave);
+  const legacy=await legacyContext.newPage();
+  await legacy.goto(origin);
+  await legacy.locator('#resumeContinue').click();
+  assert.equal(await legacy.locator('#kocRoundSettingsPairing').inputValue(),'balanced');
+  const legacyTeams=await legacy.locator('#kocRoundCards .koc-round-team ul').all();
+  assert.deepEqual(await Promise.all(legacyTeams.map(team=>team.locator('li').allTextContents())),savedTeams);
 
   const desktop=await open('koc');
   await desktop.locator('#kocRoundSettingsEnabled').check();
