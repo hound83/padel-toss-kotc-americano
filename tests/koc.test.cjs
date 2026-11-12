@@ -7,6 +7,10 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
+const helperStart = html.indexOf('function kocCapacity(k){');
+const helperEnd = html.indexOf('\n  function ensureKocRoster(){',helperStart);
+assert.ok(helperStart>=0&&helperEnd>helperStart);
+const capacityHelpers = html.slice(helperStart,helperEnd);
 const begin = html.indexOf('function makeKocAssignment(attendees, k){');
 const end = html.indexOf('\n  function rollKoc(){', begin);
 assert.ok(begin !== -1 && end > begin, 'KOC assignment function was found');
@@ -18,7 +22,7 @@ const shuffle = values => {
   }
   return output;
 };
-const makeAssignment = new Function('shuffle', html.slice(begin, end) + '\nreturn makeKocAssignment;')(shuffle);
+const makeAssignment = new Function('shuffle', capacityHelpers + '\n' + html.slice(begin, end) + '\nreturn makeKocAssignment;')(shuffle);
 
 function checkAssignment(courts, attendees, incoming = [], incomingEnabled = false) {
   const roster = Array.from({length: courts * 4}, (_, i) => ({incoming: incoming.includes(i)}));
@@ -202,6 +206,38 @@ test('all court sizes and random absences remain valid with 0-4 incoming players
 });
 
 
+
+test('waiting rotation draws two distinct players and fills every court',()=>{
+  for(let courts=1;courts<=12;courts++){
+    const attendees=Array.from({length:courts*4+2},(_,i)=>i);
+    const roster=attendees.map(i=>({incoming:i>=attendees.length-4}));
+    for(let roll=0;roll<20;roll++){
+      const assignment=makeAssignment(attendees,{courts,roster,incomingEnabled:true,waitingEnabled:true});
+      assert.deepEqual(Object.keys(assignment).map(Number),attendees);
+      assert.equal(assignment[0],courts);
+      assert.equal(assignment[1],Math.max(1,courts-1));
+      const placements=Object.values(assignment);
+      assert.equal(placements.filter(court=>court===0).length,2);
+      for(let court=1;court<=courts;court++){
+        assert.equal(placements.filter(value=>value===court).length,4);
+      }
+      if(courts>=2)assert.ok(attendees.slice(-4).every(i=>assignment[i]>0));
+    }
+  }
+});
+
+test('one extra player needs a partner and absences can restore a standard start',()=>{
+  const roster=Array.from({length:18},()=>({incoming:false}));
+  const koc={courts:4,roster,waitingEnabled:true};
+  const attendees=Array.from({length:18},(_,i)=>i);
+  assert.equal(makeAssignment(attendees.slice(0,17),koc),null);
+  assert.equal(makeAssignment(attendees,{...koc,waitingEnabled:false}),null);
+  const remaining=attendees.filter(i=>i!==0&&i!==8);
+  const assignment=makeAssignment(remaining,koc);
+  assert.deepEqual(Object.keys(assignment).map(Number),remaining);
+  assert.ok(Object.values(assignment).every(court=>court>0));
+});
+
 const duplicateStart = html.indexOf('function kocDuplicateIndices(){');
 const duplicateEnd = html.indexOf('\n  function renderKocResult(){', duplicateStart);
 assert.ok(duplicateStart !== -1 && duplicateEnd > duplicateStart, 'KOC duplicate-name validator was found');
@@ -237,7 +273,7 @@ test('KOC validation disables sharing and generating until a duplicate is fixed'
 
   const people = ['Anna', 'ANNA', 'Kees', 'Piet'];
   const controls = {};
-  for (const id of ['kocCount', 'kocRoll', 'kocCopy', 'kocSave', 'kocPresent', 'kocDupError']) {
+  for (const id of ['kocCount', 'kocRoll', 'kocCopy', 'kocSave', 'kocPresent', 'kocDupError', 'kocWaitingError']) {
     controls[id] = {disabled: false, hidden: true, textContent: ''};
   }
   const rows = people.map(() => {
@@ -257,7 +293,7 @@ test('KOC validation disables sharing and generating until a duplicate is fixed'
     querySelectorAll: () => rows
   };
   const check = new Function('ensureKocRoster', 'kocAttendees', 'kocDuplicateIndices',
-    'document', 't', 'tf', html.slice(validationStart, validationEnd) +
+    'document', 't', 'tf', capacityHelpers + '\n' + html.slice(validationStart, validationEnd) +
     '\nreturn renderKocCount;')(
       () => ({courts: 2, assignment: {0:1, 1:1, 2:2, 3:2}}),
       () => [0,1,2,3],

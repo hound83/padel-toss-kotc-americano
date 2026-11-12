@@ -25,8 +25,8 @@
 | Speelvorm | Wat doet de app? |
 | :--- | :--- |
 | 🎾 **Toss** | Genereert een speelschema voor de hele groep. Geen uitslagen bijhouden nodig. |
-| ⚖️ **Gesplitste Toss** | Deelt spelers in binnen niveaugroepen (**Zilver**, **Goud** en **Platina**), zodat je per groep passende wedstrijden kunt organiseren. |
-| 🏆 **Americano** | Maakt een speelschema en houdt scores en een klassement bij. |
+| ⚖️ **Gesplitste Toss** | Deelt spelers in binnen niveaugroepen (**Zilver**, **Goud** en **Platina**), met optionele scores en een klassement per groep. |
+| 🏆 **Americano / Competitieve Toss** | Eén groep met een speelschema, scores en een klassement. |
 | 👑 **King of the Court (KOC)** | Genereert **alleen de startindeling** per baan. Daarna spelen en schuiven de spelers zelf door volgens de KOC-regels. |
 
 > **Toss en King of the Court zijn verschillende speelvormen.** De KOC-functie is bedoeld als hulpmiddel om te starten, niet als complete wedstrijdadministratie.
@@ -93,6 +93,7 @@ Als de baanindeling groter is dan het scherm, verdeelt de presentatie de kaarten
 - Vink afwezige spelers uit of pas namen aan; starten met minder spelers kan ook.
 - De eerste speler start op de hoogste baan, de tweede op de baan eronder.
 - Zet desgewenst **Instroomspelers indelen** aan. De laatste vier spelers krijgen dan een eigen vinkje; gemarkeerde spelers starten zo laag mogelijk, bij voorkeur op baan 1.
+- Schakel **Met twee wachtspelers** in om twee extra spelers toe te voegen. De loting wijst aan welk duo de eerste ronde wacht. Na elke ronde wisselt het verliezende duo van baan 1 met het wachtende duo. De startindeling, presentatie en WhatsApp-tekst tonen het wachtduo en de wisselregel.
 - Bij minder deelnemers blijven vrije plekken op de laagste banen. Daardoor kunnen niet altijd alle gemarkeerde instroomspelers op baan 1 starten.
 - Gebruik **🎲 Genereer startindeling** opnieuw om een andere willekeurige indeling te maken.
 - Kopieer de indeling eenvoudig voor **WhatsApp**.
