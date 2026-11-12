@@ -714,8 +714,8 @@
   /* The name-list action never changes the normal, horizontal player layout. */
   .bulk-entry{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 14px;}
   .bulk-entry[hidden]{display:none!important;}
-  .bulk-entry-trigger{display:inline-flex;align-items:center;gap:7px;border:1.5px solid var(--line);border-radius:8px;padding:8px 12px;background:var(--surface);color:var(--teal-900);font:700 var(--fs-sm) var(--font-body);cursor:pointer;}
-  .bulk-entry-trigger:hover{border-color:var(--teal-700);background:#F7FAFC;}
+  .bulk-entry-trigger,.koc-waiting-action{display:inline-flex;align-items:center;gap:7px;border:1.5px solid var(--line);border-radius:8px;padding:8px 12px;background:var(--surface);color:var(--teal-900);font:700 var(--fs-sm) var(--font-body);cursor:pointer;}
+  .bulk-entry-trigger:hover,.koc-waiting-action:hover{border-color:var(--teal-700);background:#F7FAFC;}
   .bulk-entry-status{font-size:var(--fs-xs);color:var(--teal-900);}
   .bulk-undo{border:0;background:none;color:var(--teal-900);text-decoration:underline;font:700 var(--fs-sm) var(--font-body);cursor:pointer;}
   .bulk-drawer-layer[hidden]{display:none!important;}
@@ -1318,7 +1318,7 @@
       <div class="koc-roster-tools">
         <p class="sub-heading" data-i18n="kocNames">Wie spelen er mee?</p>
         <p class="koc-help" data-i18n="kocNamesHint">Pas namen aan of vink een afwezige speler uit. Je kunt met minder spelers beginnen.</p>
-        <button class="bulk-entry-trigger" type="button" id="kocWaitingToggle" aria-controls="kocWaitingFields"></button>
+        <button class="koc-waiting-action" type="button" id="kocWaitingToggle" aria-controls="kocWaitingFields"></button>
         <div class="koc-roster" id="kocRoster">
           <div class="koc-roster-group" id="kocLowestFields" role="group" aria-labelledby="kocLowestHeading" hidden>
             <h3 id="kocLowestHeading" data-i18n="kocEntryMode">Voorkeur voor baan 1</h3>
