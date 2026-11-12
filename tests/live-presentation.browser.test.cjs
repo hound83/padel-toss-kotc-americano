@@ -313,6 +313,18 @@ test('v2.2: clean navigation and live KOC, Toss, Americano and split Toss', asyn
     await checkNamesFit(courtRows.locator('.players'));
     await checkScorePlacement(courtRows.first(),'.team','.players',inline);
   }
+
+  const aligned=await courtRows.first().evaluate(card=>{
+    const names=[...card.querySelectorAll('.team .players')];
+    const originals=names.map(name=>name.textContent);
+    ['Annemarieke-Maria-Josefien-Johanna','Maximiliaan','Jan','Pim'].forEach((name,i)=>{names[i].textContent=name;});
+    const heights=[...card.querySelectorAll('.team-names')].map(node=>node.getBoundingClientRect().height);
+    const positions=[...card.querySelectorAll('.team-score input')].map(input=>input.getBoundingClientRect().top);
+    names.forEach((name,i)=>{name.textContent=originals[i];});
+    return {heights,positions};
+  });
+  assert.ok(aligned.heights[0]>aligned.heights[1],'one team wraps more than the other');
+  assert.ok(Math.abs(aligned.positions[0]-aligned.positions[1])<=1,'mobile score boxes stay on the same line');
   if(screenshotDir)await firstRound.screenshot({path:path.join(screenshotDir,'schedule-four-courts-narrow.png')});
   await fourCourtAmericano.setViewportSize({width:1600,height:1000});
   for(const field of await courtRows.locator('input').all())await field.fill('12');

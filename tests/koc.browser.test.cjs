@@ -247,6 +247,62 @@ test('real browser: KOC setup, entrants, absence, language, reload and mobile la
   assert.equal(await mobilePage.locator('#kocWaitingToggle').isVisible(),false);
   assert.equal(await lowestRows.count(),0);
 
+
+  const longNames=['Annemarieke','Maximiliaan','Christiaan','Sebastiaan','Alexander','Frederique',
+    'Valentijn','Marjolein','Charlotte','Marianne','Willemijn','Benjamin','Jonathan','Isabelle',
+    'Anne-Marieke-Josefien','Maria-Alexandra','Johanna-Christina','Maximiliaan-Alexander'];
+  const names50=Array.from({length:50},(_,i)=>longNames[i]||'Deelnemer '+(i+1));
+  await page.locator('#kocMoreSelect').selectOption('12');
+  await page.locator('#kocWaitingToggle').check();
+  await page.locator('#bulkKoc .bulk-entry-trigger').click();
+  await page.locator('#bulkDrawerText').fill(names50.join('\n'));
+  await page.locator('#bulkDrawerApply').click();
+  assert.equal(await page.locator('#bulkDrawerLayer').isVisible(),false);
+
+  async function checkAlignedCourts(section,count,columns,namesSideBySide){
+    const box=await section.evaluate(root=>{
+      const grid=root.querySelector('.koc-courts');
+      const waiting=root.querySelector('.koc-waiting-card');
+      const bounds=element=>{
+        const r=element.getBoundingClientRect();
+        return {left:r.left,right:r.right,top:r.top,bottom:r.bottom,width:r.width};
+      };
+      return {
+        grid:bounds(grid),waiting:bounds(waiting),
+        cards:[...grid.children].filter(card=>!card.hidden).map(bounds),
+        waitingNames:[...waiting.querySelectorAll('li')].map(bounds),
+        namesFit:[...root.querySelectorAll('li')].every(li=>li.scrollWidth<=li.clientWidth+1)
+      };
+    });
+    const close=(a,b)=>Math.abs(a-b)<=1;
+    const firstRow=box.cards.filter(card=>close(card.top,box.cards[0].top));
+    assert.equal(box.cards.length,count);
+    assert.equal(firstRow.length,columns);
+    assert.ok(close(firstRow[0].left,box.waiting.left)&&close(firstRow.at(-1).right,box.waiting.right));
+    assert.ok(close(box.grid.left,box.waiting.left)&&close(box.grid.right,box.waiting.right));
+    assert.ok(box.grid.bottom<box.waiting.top);
+    assert.ok(box.cards.every(card=>close(card.width,box.cards[0].width)));
+    assert.ok(box.namesFit,'long names fit inside their cards');
+    assert.equal(close(box.waitingNames[0].top,box.waitingNames[1].top),namesSideBySide);
+  }
+  const screenshotDir=process.env.PADEL_SCREENSHOT_DIR;
+  if(screenshotDir)fs.mkdirSync(screenshotDir,{recursive:true});
+  for(const [width,count,columns] of [[1280,2,2],[1280,3,3],[1280,4,4],[1280,5,4],[1280,8,4],[1280,12,4],[768,4,3],[390,4,1]]){
+    await page.setViewportSize({width,height:900});
+    if(count<=4)await page.locator('#kocCourtButtons [data-courts="'+count+'"]').click();
+    else await page.locator('#kocMoreSelect').selectOption(String(count));
+    await page.locator('#kocRoll').click();
+    await checkAlignedCourts(page.locator('#kocResult'),count,columns,width>=768);
+    if(screenshotDir&&count===4&&width!==768){
+      await page.locator('#kocResult').screenshot({path:path.join(screenshotDir,'koc-waiting-'+width+'.png')});
+    }
+  }
+  await page.setViewportSize({width:1280,height:900});
+  await page.locator('#kocPresent').click();
+  await checkAlignedCourts(page.locator('#liveKoc'),4,4,true);
+  if(screenshotDir)await page.locator('#liveKoc').screenshot({path:path.join(screenshotDir,'koc-waiting-presentation.png')});
+  await page.locator('#presentExit').click();
+
   // Production auto-registers the service worker on HTTPS only. On this local
   // HTTP test origin we register it explicitly and verify its upgrade cleanup.
   await page.evaluate(async () => {
@@ -257,7 +313,7 @@ test('real browser: KOC setup, entrants, absence, language, reload and mobile la
     if(!('serviceWorker' in navigator))return false;
     await navigator.serviceWorker.ready;
     const keys = await caches.keys();
-    return keys.includes('padel-toss-americano-v251') &&
+    return keys.includes('padel-toss-americano-v251-layout') &&
       !keys.includes('padel-toss-americano-v202');
   });
 });
