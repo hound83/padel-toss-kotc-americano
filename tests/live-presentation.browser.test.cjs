@@ -318,7 +318,7 @@ test('v2.2: clean navigation and live KOC, Toss, Americano and split Toss', asyn
     const names=[...card.querySelectorAll('.team .players')];
     const originals=names.map(name=>name.textContent);
     ['Annemarieke-Maria-Josefien-Johanna','Maximiliaan','Jan','Pim'].forEach((name,i)=>{names[i].textContent=name;});
-    const heights=[...card.querySelectorAll('.team-names')].map(node=>node.getBoundingClientRect().height);
+    const heights=[names[0],names[2]].map(node=>node.getBoundingClientRect().height);
     const positions=[...card.querySelectorAll('.team-score input')].map(input=>input.getBoundingClientRect().top);
     names.forEach((name,i)=>{name.textContent=originals[i];});
     return {heights,positions};
