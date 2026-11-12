@@ -31,7 +31,7 @@ These are standing instructions for `hound83/padel-toss-kotc-americano`. The use
 ## Product and data invariants
 
 - Preserve existing scheduling rules, player participation, score/ranking behavior, local session recovery, JSON import/export, presentation mode, and Dutch/English operation unless an explicit change requires otherwise.
-- For KOC, the app creates only the **starting courts**; subsequent movement is performed by players. Support 1–12 courts, absences, re-roll, the established organizer placement and lowest-court vacancy rules. Read `tests/koc.test.cjs` before changing these algorithms; do not replace product rules with generic "random" behavior.
+- For KOC, the app creates only the **starting courts**; subsequent movement is performed by players. Use 2–12 courts for new setups and keep one-court saves readable. Preserve absences, re-roll, the established organizer placement and lowest-court vacancy rules. Read `tests/koc.test.cjs` before changing these algorithms; do not replace product rules with generic "random" behavior.
 - Player names and sessions remain local to the browser; no new server-side collection or tracking without explicit product authorization.
 - When changing app assets or offline behavior, verify service-worker/cache updating, fresh installs, upgrades, and reload behavior. A visually correct online page can still be stale offline.
 

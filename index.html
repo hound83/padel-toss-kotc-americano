@@ -178,6 +178,7 @@
   .app-notice button{background:var(--ball);border:0;border-radius:8px;padding:9px 12px;font-weight:800;cursor:pointer;}
   .koc-setup{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px 20px;margin:16px 0;}
   .koc-entry-option{display:flex;align-items:center;gap:9px;margin:5px 0 10px;font-weight:700;cursor:pointer;}
+  .koc-entry-option[hidden]{display:none;}
   .koc-entry-option input{width:19px;height:19px;accent-color:var(--teal-900);}
   .koc-entry-hint{margin:0 0 16px;}
   .koc-roster{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;}
@@ -189,6 +190,7 @@
   .koc-dup-warning{color:#A82D24;font-weight:700;font-size:var(--fs-sm);margin:8px 0 0;}
   .koc-player input[type=checkbox]{width:18px;height:18px;accent-color:var(--teal-900);flex-shrink:0;}
   .koc-player input[type=text]{min-width:0;flex:1 1 80px;width:50%;border:0;border-bottom:1px solid var(--line);background:transparent;padding:7px 2px;font:inherit;color:var(--ink);}
+  .koc-waiting-slot{width:100%;font-size:var(--fs-sm);font-weight:700;color:var(--teal-900);}
   .koc-entry-marker{display:flex;align-items:center;gap:8px;width:100%;font-size:var(--fs-sm);font-weight:700;color:var(--teal-900);cursor:pointer;}
   .koc-result{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin:20px 0;}
   .koc-court{border:1px solid var(--line);border-radius:12px;background:white;overflow:hidden;}
@@ -1075,7 +1077,6 @@
 
     <p class="sub-heading" data-i18n="p1CourtsHeading">Hoeveel banen heb je?</p>
     <div class="courts-select" id="courtsSelect">
-      <button class="court-btn" type="button" data-courts="1"><div class="cb-num">1</div><div class="cb-label" data-i18n="courtUnitSingular">baan</div></button>
       <button class="court-btn" type="button" data-courts="2"><div class="cb-num">2</div><div class="cb-label" data-i18n="courtUnitPlural">banen</div></button>
       <button class="court-btn" type="button" data-courts="3"><div class="cb-num">3</div><div class="cb-label" data-i18n="courtUnitPlural">banen</div></button>
       <button class="court-btn" type="button" data-courts="4"><div class="cb-num">4</div><div class="cb-label" data-i18n="courtUnitPlural">banen</div></button>
@@ -1174,15 +1175,15 @@
         <p class="koc-help" data-i18n="kocNamesHint">Pas namen aan of vink een afwezige speler uit. Je kunt met minder spelers beginnen.</p>
         <label class="koc-entry-option" for="kocEntryToggle">
           <input type="checkbox" id="kocEntryToggle">
-          <span data-i18n="kocEntryMode">Instroomspelers indelen</span>
+          <span data-i18n="kocEntryMode">Indelen op laagste baan</span>
         </label>
-        <p class="koc-help koc-entry-hint" id="kocEntryHint" data-i18n="kocEntryHelp" hidden>Markeer bij de laatste vier spelers wie op de laagste baan begint.</p>
+        <p class="koc-help koc-entry-hint" id="kocEntryHint" data-i18n="kocEntryHelp" hidden>Vink bij de laatste vier baanplekken aan wie zo laag mogelijk begint.</p>
         <label class="koc-entry-option" for="kocWaitingToggle">
           <input type="checkbox" id="kocWaitingToggle" aria-describedby="kocWaitingHint">
           <span data-i18n="kocWaitingOption">Met twee wachtspelers</span>
         </label>
         <p class="koc-help koc-entry-hint" id="kocWaitingHint" hidden>
-          <span data-i18n="kocWaitingIntro">De loting bepaalt wie begint aan de kant.</span>
+          <span data-i18n="kocWaitingIntro">De laatste twee spelers wachten de eerste ronde als alle banen vol zijn.</span>
           <span data-i18n="kocWaitingRule">Na elke ronde wisselt het verliezende duo op baan 1 met het wachtende duo.</span>
         </p>
         <div class="koc-roster" id="kocRoster"></div>
@@ -1369,12 +1370,12 @@
   </section>
 
   <footer class="app-footer">
-    <span id="appVersion">v2.5.0</span>
+    <span id="appVersion">v2.5.1</span>
     <details><summary data-i18n="whatsNew">Wat is nieuw?</summary>
       <ul>
         <li data-i18n="changeIllustrations">Nieuwe baanillustraties, marineblauw/lime en een puntenscore van 26–6.</li>
         <li data-i18n="changeBulkNames">Slim namenplakpaneel met controle, spelersaantal aanpassen en ongedaan maken.</li>
-        <li data-i18n="changeKocEntry">KOC: vaste startbanen voor spelers 1 en 2 en optionele instroomspelers.</li>
+        <li data-i18n="changeKocEntry">KOC: vaste startbanen voor spelers 1 en 2 en optionele plaatsing op de laagste baan.</li>
         <li data-i18n="changeKocNames">KOC: dubbele namen worden direct gemarkeerd en geblokkeerd.</li>
         <li data-i18n="changeKocRandom">KOC: meer variatie op de onderste banen en in de spelersvolgorde.</li>
         <li data-i18n="changeKoc">King of the Court als vierde speelvorm.</li>
@@ -1697,18 +1698,19 @@
       formatKocDesc: 'Eén startindeling, daarna zelf doorschuiven',
       kocSub: 'Vul spelers in en maak een startindeling. Daarna bepalen de resultaten het doorschuiven.',
       kocCourts: 'Aantal banen',
-    kocWaitingOption: 'Met twee wachtspelers',
-    kocWaitingIntro: 'De loting bepaalt wie begint aan de kant.',
-    kocWaitingTitle: 'Wachtduo bij de start',
-    kocWaitingRule: 'Na elke ronde wisselt het verliezende duo op baan 1 met het wachtende duo.',
-    kocWaitingPairNeeded: 'Er is één speler extra. Vink één speler uit of laat nog één speler meedoen voor een wachtduo.',
+      kocWaitingOption: 'Met twee wachtspelers',
+      kocWaitingIntro: 'De laatste twee spelers wachten de eerste ronde als alle banen vol zijn.',
+      kocWaitingSlot: 'Wachtplek',
+      kocWaitingTitle: 'Wachtduo bij de start',
+      kocWaitingRule: 'Na elke ronde wisselt het verliezende duo op baan 1 met het wachtende duo.',
+      kocWaitingPairNeeded: 'Er is één speler extra. Vink één speler uit of laat nog één speler meedoen voor een wachtduo.',
       kocNames: 'Wie spelen er mee?',
       kocNamesHint: 'Pas namen aan of vink afwezige spelers uit. Je kunt met minder spelers beginnen.',
-      kocEntryMode: 'Instroomspelers indelen',
-      kocEntryHelp: 'Vink bij de laatste vier spelers aan wie op de laagste baan begint.',
-      kocEntryPlayer: 'Instroom',
+      kocEntryMode: 'Indelen op laagste baan',
+      kocEntryHelp: 'Vink bij de laatste vier baanplekken aan wie zo laag mogelijk begint.',
+      kocEntryPlayer: 'Laagste baan',
       kocAttendanceLabel: 'Aanwezig: speler {n}',
-      kocEntryAria: 'Instroomspeler: speler {n}',
+      kocEntryAria: 'Indelen op laagste baan: speler {n}',
       kocCount: '{active} van {total} spelers aanwezig',
       kocRoll: '🎲 Genereer startindeling',
       kocReroll: '🎲 Opnieuw gooien',
@@ -1726,7 +1728,7 @@
       resumeNew: 'Nieuwe sessie', resumeContinue: 'Doorgaan',
       whatsNew: 'Wat is nieuw?', changeKoc: 'King of the Court als vierde speelvorm.',
       changeBulkNames: 'Slim namenplakpaneel met controle, spelersaantal aanpassen en ongedaan maken.',
-      changeKocEntry: 'KOC: vaste startbanen voor spelers 1 en 2 en optionele instroomspelers.',
+      changeKocEntry: 'KOC: vaste startbanen voor spelers 1 en 2 en optionele plaatsing op de laagste baan.',
       changeKocNames: 'KOC: dubbele namen direct herkennen en blokkeren.',
       changeKocRandom: 'KOC: meer variatie op de onderste banen en in de spelersvolgorde.',
       changeAutosave: 'Automatisch bewaren en hervatten.', changePwa: 'Installeerbaar, offline en presentatiemodus.',
@@ -1969,17 +1971,18 @@
       kocSub: 'Enter players and generate a starting lineup. Results decide movement after that.',
       kocCourts: 'Number of courts',
       kocWaitingOption: 'With two waiting players',
-      kocWaitingIntro: 'The draw decides who sits out first.',
+      kocWaitingIntro: 'The last two players sit out the first round when all courts are full.',
+      kocWaitingSlot: 'Waiting slot',
       kocWaitingTitle: 'Pair waiting at the start',
       kocWaitingRule: 'After each round, the losing pair on court 1 swaps with the waiting pair.',
       kocWaitingPairNeeded: 'There is one extra player. Mark one player absent or add one more player to make a waiting pair.',
       kocNames: 'Who is playing?',
       kocNamesHint: 'Edit names or untick absent players. You can start with fewer players.',
-      kocEntryMode: 'Place incoming players',
-      kocEntryHelp: 'Tick the last four player slots to place incoming players on the lowest court.',
-      kocEntryPlayer: 'Incoming',
+      kocEntryMode: 'Start on lowest court',
+      kocEntryHelp: 'Use the last four court slots to mark who starts as low as possible.',
+      kocEntryPlayer: 'Lowest court',
       kocAttendanceLabel: 'Attending: player {n}',
-      kocEntryAria: 'Incoming player: player {n}',
+      kocEntryAria: 'Start on lowest court: player {n}',
       kocCount: '{active} of {total} players attending',
       kocRoll: '🎲 Generate starting lineup',
       kocReroll: '🎲 Reroll',
@@ -1997,7 +2000,7 @@
       resumeNew: 'New session', resumeContinue: 'Continue',
       whatsNew: 'What is new?', changeKoc: 'King of the Court is the fourth format.',
       changeBulkNames: 'Name-list drawer with validation, count adjustment and undo.',
-      changeKocEntry: 'KOC: fixed start courts for players 1 and 2, with optional incoming players.',
+      changeKocEntry: 'KOC: fixed start courts for players 1 and 2, with optional placement on the lowest court.',
       changeKocNames: 'KOC: spot and block duplicate player names immediately.',
       changeKocRandom: 'KOC: more variation across lower courts and player display order.',
       changeAutosave: 'Automatic saving and session recovery.', changePwa: 'Installable, offline, and presentation mode.',
@@ -2145,10 +2148,9 @@
     return k.waitingEnabled === true && attendees === k.courts * 4 + 1;
   }
 
-  function kocIsIncoming(k, index){
-    var capacity = kocCapacity(k);
-    return k.incomingEnabled && index >= capacity - 4 && index < capacity &&
-      k.roster && k.roster[index] && k.roster[index].incoming === true;
+  function kocLowestCourtSlot(k, index){
+    var courtSlots = k.courts * 4;
+    return index >= courtSlots - 4 && index < courtSlots;
   }
 
   function ensureKocRoster(){
@@ -2194,7 +2196,7 @@
   }
 
   function kocWaitingNames(k){
-    return (k.displayOrder || Object.keys(k.assignment).map(Number))
+    return Object.keys(k.assignment).map(Number)
       .filter(function(index){ return k.assignment[index] === 0; }).map(kocPlayerName);
   }
 
@@ -2248,12 +2250,16 @@
 
   function renderKoc(){
     var k = ensureKocRoster();
-    document.getElementById('kocEntryToggle').checked = k.incomingEnabled;
-    document.getElementById('kocEntryHint').hidden = !k.incomingEnabled;
-    document.getElementById('kocWaitingToggle').checked = k.waitingEnabled;
-    document.getElementById('kocWaitingHint').hidden = !k.waitingEnabled;
-    // KOC shares the exact selector styling and 1–4 + 5–12 control model
-    // used by Toss, Split Toss and Americano.
+    // Older saves can still have one court. New setups start at two.
+    var multiCourt = k.courts >= 2;
+    var entryToggle = document.getElementById('kocEntryToggle');
+    var waitingToggle = document.getElementById('kocWaitingToggle');
+    entryToggle.checked = k.incomingEnabled;
+    waitingToggle.checked = k.waitingEnabled;
+    entryToggle.parentElement.hidden = !multiCourt;
+    waitingToggle.parentElement.hidden = !multiCourt;
+    document.getElementById('kocEntryHint').hidden = !multiCourt || !k.incomingEnabled;
+    document.getElementById('kocWaitingHint').hidden = !multiCourt || !k.waitingEnabled;
     var buttons = document.getElementById('kocCourtButtons');
     buttons.innerHTML = '';
     function changeKocCourts(next){
@@ -2266,7 +2272,7 @@
       document.getElementById('kocStatus').textContent = t('kocChanged');
       scheduleAutosave();
     }
-    for (var count = 1; count <= 4; count++){
+    for (var count = 2; count <= 4; count++){
       (function(value){
         var btn = document.createElement('button');
         btn.type = 'button';
@@ -2279,7 +2285,7 @@
         num.textContent = String(value);
         var label = document.createElement('div');
         label.className = 'cb-label';
-        label.textContent = t(value === 1 ? 'courtUnitSingular' : 'courtUnitPlural');
+        label.textContent = t('courtUnitPlural');
         btn.appendChild(num);
         btn.appendChild(label);
         btn.addEventListener('click', function(){ changeKocCourts(value); });
@@ -2348,9 +2354,9 @@
       });
       row.appendChild(checkbox);
       row.appendChild(input);
-      // The last four roster slots are the only ones eligible for incoming
-      // placement (players 13–16 when playing on four courts).
-      if (k.incomingEnabled && i >= kocCapacity(k) - 4){
+      if (i >= k.courts * 4){
+        row.appendChild(liveElement('span', 'koc-waiting-slot', t('kocWaitingSlot')));
+      } else if (multiCourt && k.incomingEnabled && kocLowestCourtSlot(k, i)){
         var marker = document.createElement('label');
         marker.className = 'koc-entry-marker';
         var markerCheckbox = document.createElement('input');
@@ -2448,12 +2454,12 @@
     var courtSlots = k.courts * 4;
     if (attendees.length > courtSlots){
       if (!k.waitingEnabled || attendees.length !== kocCapacity(k)) return null;
-      var candidates = shuffle(attendees.filter(function(index){ return index >= 2; }));
-      // Preserve reserved starting places and prioritise marked entrants for a court.
-      var waiting = candidates.filter(function(index){ return !kocIsIncoming(k, index); })
-        .concat(candidates.filter(function(index){ return kocIsIncoming(k, index); })).slice(0, 2);
-      waiting.forEach(function(index){ result[index] = 0; });
-      attendees = attendees.filter(function(index){ return result[index] === undefined; });
+      // Zero is the waiting place in the saved starting assignment.
+      attendees = attendees.filter(function(index){
+        if (index < courtSlots) return true;
+        result[index] = 0;
+        return false;
+      });
     }
     // Full courts take priority, starting at the highest court. An underfilled
     // court is therefore always below every fully occupied court.
@@ -2482,14 +2488,15 @@
         if (fallback !== null) put(i, fallback);
       }
     });
-    // Incoming players are only selected from the last four roster slots.
+    // Lowest-court placement applies to the last four court slots.
     // A partial lowest court keeps its vacancies: overflow is distributed
     // randomly among the marked players to avoid always penalizing one name.
     if (k.incomingEnabled && Array.isArray(k.roster)){
       var incoming = shuffle(attendees.filter(function(i){
         // With one court, the first two reserved players also fall inside
         // the last-four incoming slots. Never assign them a second time.
-        return result[i] === undefined && kocIsIncoming(k, i);
+        return result[i] === undefined && kocLowestCourtSlot(k, i) &&
+          k.roster[i] && k.roster[i].incoming === true;
       }));
       incoming.forEach(function(i){
         var lowest = lowerWithCapacity(1);
@@ -3269,7 +3276,7 @@
     });
   });
 
-  // The four buttons (1-4) and the "5 or more" dropdown are two halves of one
+  // The 2–4 buttons and the "5 or more" dropdown are two halves of one
   // control: picking either clears the other, so exactly one court count is
   // ever selected regardless of which half the user reached for.
   var courtsMoreSelect = document.getElementById('courtsMoreSelect');
@@ -5009,7 +5016,7 @@
   }
   function kocCourtsForCount(count){
     var withWaitingPair = state.koc.waitingEnabled && count % 4 === 2;
-    return Math.min(12, Math.max(1, Math.ceil(count / 4) - (withWaitingPair ? 1 : 0)));
+    return Math.min(12, Math.max(2, Math.ceil(count / 4) - (withWaitingPair ? 1 : 0)));
   }
 
   function renderBulkDrawerPreview(){

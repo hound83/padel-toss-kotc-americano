@@ -54,14 +54,14 @@ test('real browser: KOC setup, entrants, absence, language, reload and mobile la
   assert.ok(cards[0].includes('Speler 1'));
   assert.ok(cards[1].includes('Speler 2'));
   for (let i=13;i<=16;i++) assert.ok(cards[3].includes('Speler '+i));
-  assert.ok(cards.every(court=>!court.includes('Instroom')), 'incoming markers are private setup-only labels');
+  assert.ok(cards.every(court=>!court.includes('Laagste baan')), 'incoming markers are private setup-only labels');
 
   await context.grantPermissions(['clipboard-read','clipboard-write'],{origin});
   await page.locator('#kocCopy').click();
   const copied = await page.evaluate(() => navigator.clipboard.readText());
   assert.match(copied,/King of the Court/);
   assert.match(copied,/Baan 4/);
-  assert.ok(!copied.includes('Instroom'),'copying for WhatsApp never reveals incoming markers');
+  assert.ok(!copied.includes('Laagste baan'),'copying for WhatsApp never reveals incoming markers');
 
   const downloadEvent = page.waitForEvent('download');
   await page.locator('#kocSave').click();
@@ -99,7 +99,7 @@ test('real browser: KOC setup, entrants, absence, language, reload and mobile la
   assert.equal(await page.locator('#kocEntryToggle').isChecked(),true);
   assert.equal(await page.locator('.koc-entry-marker input:checked').count(),4);
   assert.equal(await page.locator('#kocRoster .koc-player.absent').count(),1);
-  assert.match(await page.locator('label[for="kocEntryToggle"]').innerText(),/Instroomspelers indelen/);
+  assert.match(await page.locator('label[for="kocEntryToggle"]').innerText(),/Indelen op laagste baan/);
 
   await page.locator('#kocEntryToggle').uncheck();
   assert.equal(await page.locator('.koc-entry-marker').count(),0);
@@ -122,7 +122,7 @@ test('real browser: KOC setup, entrants, absence, language, reload and mobile la
   await englishPage.locator('#langSwitch .lang-btn[data-lang="en"]').click();
   await englishPage.locator('.format-btn[data-format="koc"]').click();
   await englishPage.locator('#kocEntryToggle').check();
-  assert.match(await englishPage.locator('label[for="kocEntryToggle"]').innerText(),/Place incoming players/);
+  assert.match(await englishPage.locator('label[for="kocEntryToggle"]').innerText(),/Start on lowest court/);
   assert.equal(await englishPage.locator('.koc-entry-marker').count(),4);
 
   // Responsive mobile field: four markers remain usable without sideways scroll.
@@ -142,11 +142,17 @@ test('real browser: KOC setup, entrants, absence, language, reload and mobile la
   await mobilePage.locator('#kocEntryToggle').uncheck();
   await mobilePage.locator('#kocWaitingToggle').tap();
   assert.equal(await mobilePage.locator('#kocRoster .koc-player').count(),18);
+  await mobilePage.locator('#kocEntryToggle').check();
+  const waitingRows=mobilePage.locator('#kocRoster .koc-player:has(.koc-waiting-slot)');
+  const lowestRows=mobilePage.locator('#kocRoster .koc-player:has(.koc-entry-marker)');
+  assert.deepEqual(await waitingRows.locator('input[type=text]').evaluateAll(inputs=>inputs.map(input=>input.getAttribute('aria-label'))),['Speler 17','Speler 18']);
+  assert.deepEqual(await lowestRows.locator('input[type=text]').evaluateAll(inputs=>inputs.map(input=>input.getAttribute('aria-label'))),['Speler 13','Speler 14','Speler 15','Speler 16']);
   const names=Array.from({length:18},(_,i)=>'Deelnemer '+(i+1));
   await mobilePage.locator('#bulkKoc .bulk-entry-trigger').tap();
   await mobilePage.locator('#bulkDrawerText').fill(names.join('\n'));
   await mobilePage.locator('#bulkDrawerApply').tap();
   assert.equal(await mobilePage.locator('#bulkDrawerLayer').isVisible(),false);
+  for(const marker of await lowestRows.locator('.koc-entry-marker input').all())await marker.check();
   const attendees=mobilePage.locator('#kocRoster .koc-player > input[type=checkbox]');
   await attendees.nth(17).uncheck();
   assert.equal(await mobilePage.locator('#kocWaitingError').isVisible(),true);
@@ -166,7 +172,8 @@ test('real browser: KOC setup, entrants, absence, language, reload and mobile la
   assert.notDeepEqual(courtPlayers,firstDraw,'a reroll draws another starting assignment');
   assert.equal(await courts.count(),4);
   assert.equal(courtPlayers.length,16);
-  assert.equal(waitingPlayers.length,2);
+  assert.deepEqual(waitingPlayers,['Deelnemer 17','Deelnemer 18']);
+  assert.deepEqual((await courts.last().locator('li').allTextContents()).sort(),names.slice(12,16));
   assert.deepEqual([...courtPlayers,...waitingPlayers].sort(),names.slice().sort());
   assert.match(await waitingCard.innerText(),/verliezende duo op baan 1/);
 
@@ -200,6 +207,46 @@ test('real browser: KOC setup, entrants, absence, language, reload and mobile la
   assert.equal(await mobilePage.locator('#kocWaitingToggle').isChecked(),true);
   assert.deepEqual(await waitingCard.locator('li').allTextContents(),waitingPlayers);
 
+
+  // A saved v2.5.0 starting assignment may use two different waiting slots.
+  const legacy=JSON.parse(fs.readFileSync(waitingPath,'utf8'));
+  const assignment=legacy.state.koc.assignment;
+  [assignment[2],assignment[16]]=[assignment[16],assignment[2]];
+  await mobilePage.locator('#loadFileInput').setInputFiles({
+    name:'koc-v250.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(legacy))
+  });
+  await waitingCard.getByText('Deelnemer 3',{exact:true}).waitFor({state:'visible'});
+  await mobilePage.locator('#kocRoll').tap();
+  assert.deepEqual(await waitingCard.locator('li').allTextContents(),['Deelnemer 17','Deelnemer 18']);
+
+
+  await mobilePage.locator('#kocCourtButtons [data-courts="3"]').tap();
+  assert.equal(await mobilePage.locator('#kocEntryToggle').isVisible(),true);
+  assert.equal(await mobilePage.locator('#kocWaitingToggle').isVisible(),true);
+  assert.equal(await mobilePage.locator('#kocRoster .koc-player').count(),14);
+  assert.deepEqual(await lowestRows.locator('input[type=text]').evaluateAll(inputs=>inputs.map(input=>input.getAttribute('aria-label'))),
+    ['Speler 9','Speler 10','Speler 11','Speler 12']);
+  for(const marker of await lowestRows.locator('.koc-entry-marker input').all())await marker.check();
+  await mobilePage.locator('#kocRoll').tap();
+  assert.deepEqual(await waitingCard.locator('li').allTextContents(),['Deelnemer 13','Deelnemer 14']);
+  assert.deepEqual((await courts.last().locator('li').allTextContents()).sort(),names.slice(8,12).sort());
+
+  const oneCourt=JSON.parse(fs.readFileSync(waitingPath,'utf8'));
+  const savedKoc=oneCourt.state.koc;
+  savedKoc.courts=1;
+  savedKoc.roster=savedKoc.roster.slice(0,6);
+  savedKoc.assignment={0:1,1:1,2:1,3:1,4:0,5:0};
+  savedKoc.displayOrder=[0,1,2,3,4,5];
+  await mobilePage.locator('#loadFileInput').setInputFiles({
+    name:'koc-one-court.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(oneCourt))
+  });
+  await waitingCard.getByText('Deelnemer 5',{exact:true}).waitFor({state:'visible'});
+  assert.deepEqual(await waitingCard.locator('li').allTextContents(),['Deelnemer 5','Deelnemer 6']);
+  assert.equal(await courts.count(),1);
+  assert.equal(await mobilePage.locator('#kocEntryToggle').isVisible(),false);
+  assert.equal(await mobilePage.locator('#kocWaitingToggle').isVisible(),false);
+  assert.equal(await lowestRows.count(),0);
+
   // Production auto-registers the service worker on HTTPS only. On this local
   // HTTP test origin we register it explicitly and verify its upgrade cleanup.
   await page.evaluate(async () => {
@@ -210,7 +257,7 @@ test('real browser: KOC setup, entrants, absence, language, reload and mobile la
     if(!('serviceWorker' in navigator))return false;
     await navigator.serviceWorker.ready;
     const keys = await caches.keys();
-    return keys.includes('padel-toss-americano-v250') &&
+    return keys.includes('padel-toss-americano-v251') &&
       !keys.includes('padel-toss-americano-v202');
   });
 });
