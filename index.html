@@ -209,14 +209,11 @@
   .round-option-checkbox{display:flex;gap:8px;align-items:center;min-height:40px;}
   .round-option-checkbox input{width:18px;height:18px;accent-color:var(--teal-900);}
   .koc-round-settings{
-    display:grid;grid-template-columns:minmax(0,1fr) minmax(260px,.48fr);gap:16px;
-    align-items:start;margin:0 0 20px;
+    display:grid;gap:12px 16px;margin:0 0 20px;
   }
-  .koc-round-choices,.koc-clock-settings{min-width:0;}
-  .koc-choice-group{margin:0;padding:0;border:0;min-width:0;}
-  .koc-choice-group + .koc-choice-group{margin-top:12px;}
-  .koc-choice-group legend,.koc-clock-settings h3{
-    padding:0;margin:0 0 8px;font-size:var(--fs-md);font-weight:800;color:var(--teal-900);
+  .koc-choice-group,.koc-clock-settings{display:grid;gap:8px;min-width:0;}
+  .koc-choice-group h3,.koc-clock-settings h3{
+    margin:0;font-size:var(--fs-md);font-weight:800;color:var(--teal-900);
   }
   .koc-choice-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;}
   .koc-choice-card{
@@ -227,10 +224,9 @@
   .koc-choice-card:has(input:focus-visible){outline:2px solid var(--teal-700);outline-offset:2px;}
   .koc-choice-card input{margin:3px 0 0;accent-color:var(--teal-900);}
   .koc-choice-card small{grid-column:2;font-size:var(--fs-sm);line-height:1.4;color:var(--ink-soft);}
-  .koc-clock-settings{padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--mist);}
-  .koc-clock-settings header{display:flex;align-items:center;justify-content:space-between;gap:8px;}
-  .koc-clock-settings h3{margin:0;}
-  .koc-clock-settings .round-option-checkbox{position:relative;min-height:44px;}
+  .koc-clock-card{padding:10px 12px;border:1.5px solid var(--line);border-radius:10px;background:var(--mist);}
+  .koc-clock-card header{display:flex;justify-content:flex-end;}
+  .koc-clock-settings .round-option-checkbox{position:relative;min-height:36px;}
   .koc-clock-settings input[role="switch"]{
     appearance:none;position:relative;margin:0;inline-size:40px;block-size:24px;border-radius:20px;
     border:1px solid var(--teal-700);background:var(--surface);cursor:pointer;
@@ -241,10 +237,18 @@
   .koc-clock-settings input[role="switch"]:checked{background:var(--teal-900);}
   .koc-clock-settings input[role="switch"]:checked::before{inset-inline-start:19px;background:var(--ball);}
   .koc-clock-settings .round-option-checkbox label{min-width:2em;cursor:pointer;}
-  .koc-clock-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:start;gap:8px;margin-top:8px;}
-  .koc-clock-fields[hidden]{display:none;}
+  .koc-clock-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 8px;margin-top:8px;}
+  .koc-clock-fields .round-option-field{grid-row:span 3;grid-template-rows:subgrid;}
+  .koc-clock-fields label{align-self:end;}
+  .koc-clock-fields[inert]{visibility:hidden;}
   .koc-clock-fields input[type=number]{width:100%;}
-  @media(max-width:780px){.koc-round-settings{grid-template-columns:1fr;}}
+  @media(min-width:781px){
+    .koc-round-settings{grid-template-columns:minmax(0,1fr) minmax(260px,.48fr);row-gap:8px;}
+    .koc-choice-group,.koc-clock-settings{grid-row:span 2;grid-template-rows:subgrid;}
+    .koc-choice-group{grid-column:1;}
+    .koc-choice-group + .koc-choice-group{margin-top:4px;}
+    .koc-clock-settings{grid-column:2;grid-row:1/span 2;}
+  }
   @media(max-width:540px){.koc-choice-list{grid-template-columns:1fr;}}
   .round-rules{margin:12px 0 16px;padding:10px 14px;border:1px solid var(--line);border-radius:10px;background:var(--surface);}
   .round-rules summary,.koc-round-history summary{cursor:pointer;font-weight:750;color:var(--teal-900);}
@@ -295,20 +299,15 @@
     }
     .round-clock-actions{justify-content:center;}
   }
-  #panelKoc .round-clock,#livePresentation .koc-live-head .round-clock{
+  #panelKoc .round-clock,#livePresentation[data-format="koc"] .round-clock{
     --clock-diameter:clamp(154px,14vw,186px);
     --clock-digits:clamp(34px,4.4vw,56px);
     grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"heading face" "actions face";
     gap:6px 14px;padding:12px;margin-inline-start:auto;
   }
-  #panelKoc .round-clock{inline-size:min(100%,31rem);}
-  .live-head.koc-live-head{gap:10px;margin-bottom:10px;padding-bottom:8px;}
-  .koc-live-head .round-clock{inline-size:min(49%,31rem);margin-block-end:0;}
-  @media (max-width:800px){
-    .koc-live-head .round-clock{inline-size:100%;}
-  }
+  #panelKoc .round-clock,#livePresentation[data-format="koc"] .round-clock{inline-size:min(100%,31rem);}
   @media (max-width:540px){
-    #panelKoc .round-clock,#livePresentation .koc-live-head .round-clock{
+    #panelKoc .round-clock,#livePresentation[data-format="koc"] .round-clock{
       grid-template-columns:minmax(0,1fr);grid-template-areas:"heading" "face" "actions";
     }
   }
@@ -1525,7 +1524,7 @@
   </section>
 
   <footer class="app-footer">
-    <span id="appVersion">v2.6.3</span>
+    <span id="appVersion">v2.6.4</span>
     <details><summary data-i18n="whatsNew">Wat is nieuw?</summary>
       <ul>
         <li data-i18n="changeIllustrations">Nieuwe baanillustraties, marineblauw/lime en een puntenscore van 26–6.</li>
@@ -6604,11 +6603,7 @@
   function renderLivePresentation(){
     if (!document.body.classList.contains('presentation-mode'))return;
     var root=document.getElementById('livePresentation'), koc=state.format==='koc';
-    var head = root.querySelector('.live-head');
-    var clock = document.getElementById('liveRoundClock');
-    head.classList.toggle('koc-live-head',koc);
-    if (koc && clock.parentNode !== head) head.appendChild(clock);
-    else if (!koc && clock.parentNode === head) document.getElementById('liveScoreUnit').after(clock);
+    root.dataset.format = state.format;
     var current=koc?0:liveCurrentRound();
     document.getElementById('liveTitle').textContent=
       (koc?'👑 ':state.format==='splitToss'?'🗂️ ':state.format==='americano'?'🏆 ':'🎾 ')+
@@ -6799,9 +6794,13 @@
   }
 
   function addKocChoice(root, name, heading, options, selected, onChange){
-    var group = liveElement('fieldset','koc-choice-group');
+    var group = liveElement('div','koc-choice-group');
+    var title = liveElement('h3','',t(heading));
+    title.id = name+'Heading';
+    group.setAttribute('role','radiogroup');
+    group.setAttribute('aria-labelledby',title.id);
     var list = liveElement('div','koc-choice-list');
-    group.append(liveElement('legend','',t(heading)),list);
+    group.append(title,list);
     options.forEach(function(option){
       var value = option[0], title = option[1], description = option[2];
       var label = liveElement('label','koc-choice-card');
@@ -6837,9 +6836,7 @@
     var clockHeader = root, clockFields = root;
     if (koc){
       var k = ensureKocRoster();
-      var choices = liveElement('div','koc-round-choices');
-      root.appendChild(choices);
-      addKocChoice(choices,'kocVariant','kocVariant',[
+      addKocChoice(root,'kocVariant','kocVariant',[
         ['start','kocStartOnly','kocStartDescription'],
         ['planner','kocPlanner','kocPlannerDescription']
       ],k.guided ? 'planner' : 'start',function(value){
@@ -6851,7 +6848,7 @@
           renderRoundRules();
         });
       if (k.guided){
-        addKocChoice(choices,'kocPairing','kocPairing',[
+        addKocChoice(root,'kocPairing','kocPairing',[
           ['balanced','kocPairingBalanced','kocPairingBalancedDescription'],
           ['crossed','kocPairingCrossed','kocPairingCrossedDescription']
         ],k.crossed === true ? 'crossed' : 'balanced',function(value){
@@ -6860,10 +6857,11 @@
         });
       }
       var clockBox = liveElement('section','koc-clock-settings');
+      var clockCard = liveElement('div','koc-clock-card');
       clockHeader = liveElement('header','');
       clockFields = liveElement('div','koc-clock-fields');
-      clockHeader.appendChild(liveElement('h3','',t('timerSettingsTitle')));
-      clockBox.append(clockHeader,clockFields);
+      clockCard.append(clockHeader,clockFields);
+      clockBox.append(liveElement('h3','',t('timerSettingsTitle')),clockCard);
       root.appendChild(clockBox);
     } else {
       var scoring = addRoundOption(root,'Score','scoringChoice','select',
@@ -6886,9 +6884,9 @@
     if (koc){
       clockSwitch.setAttribute('role','switch');
       clockSwitch.setAttribute('aria-label',t('timerSettingsTitle'));
-      clockFields.hidden = !timer.enabled;
+      clockFields.inert = !timer.enabled;
     }
-    if (timer.enabled){
+    if (koc || timer.enabled){
       ['play','change'].forEach(function(phase){
         var key = phase === 'play' ? (koc ? 'timerKocPlay' : 'timerPlay') : (koc ? 'timerKocBreak' : 'timerBreak');
         var field = addRoundOption(root,phase === 'play' ? 'Play' : 'Break',key,
