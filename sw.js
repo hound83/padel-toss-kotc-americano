@@ -2,7 +2,7 @@
 const CACHE_NAME = 'padel-toss-americano-v260';
 const SHELL = ['./', './index.html', './round-planner.js', './manifest.webmanifest', './icon.svg', './icon-192.png', './icon-512.png', './visual-theme.css', './assets/mode-toss.svg', './assets/mode-koc.svg', './assets/mode-americano.svg', './assets/mode-split.svg', './assets/mode-split-en.svg'];
 const SHELL_URLS = SHELL.map(file => new URL(file, self.registration.scope).href);
-const INDEX_URL = new URL('./index.html', './round-planner.js', self.registration.scope).href;
+const INDEX_URL = new URL('./index.html', self.registration.scope).href;
 
 async function ensureShell(){
   const cache = await caches.open(CACHE_NAME);
