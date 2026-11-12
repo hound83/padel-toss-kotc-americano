@@ -89,7 +89,7 @@ Als de baanindeling groter is dan het scherm, verdeelt de presentatie de kaarten
 
 - Kies bij Toss, Gesplitste Toss en Americano tussen elk punt tellen en padeltelling in games. Gewone Toss gebruikt die keuze in **Hoe speel je dit?**. Scorevelden bij Americano en bij groepen met uitslagen tonen de gekozen eenheid.
 - Open **Speelverdeling bekijken** boven het schema voor het aantal wedstrijden per speler, opeenvolgende rustbeurten en terugkerende duo’s.
-- Zet **Rondeklok gebruiken** aan en kies de standaard speeltijd en optioneel de wisseltijd. Start elke klok handmatig. Tijdens het lopen kun je één minuut aftrekken of bijtellen. Reset zet de tijd terug op de begintijd van die ronde. De volgende ronde begint met de standaardduur en een stilstaande klok.
+- Zet **Rondeklok gebruiken** aan en kies de standaard speeltijd en optioneel de wisseltijd. Start elke klok handmatig. De ring loopt terug met de resterende tijd. Op nul kleurt het klokpaneel rood en verschijnt **Tijd om**. Tijdens het lopen kun je één minuut aftrekken of bijtellen. Reset zet de tijd terug op de begintijd van die ronde. De volgende ronde begint met de standaardduur en een stilstaande klok.
 
 ## Speciaal voor KOC
 

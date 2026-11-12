@@ -59,6 +59,30 @@ test('round planner, clock, rules and scoring options work in the browser',async
   assert.equal(await duration.inputValue(),'08:20');
   assert.equal(await clock.locator('[data-clock-action=start]').isVisible(),true);
   assert.equal(await clock.locator('[data-clock-action=pause]').isVisible(),false);
+  const face=clock.locator('.round-clock-face');
+  assert.ok((await face.boundingBox()).width>=145);
+  await duration.fill('00:03');
+  await clock.locator('[data-clock-action=start]').tap();
+  await koc.waitForFunction(()=>{
+    const clock=document.querySelector('#panelKoc [data-round-clock]');
+    const progress=parseFloat(clock.style.getPropertyValue('--clock-remaining'));
+    return progress>0&&progress<100;
+  });
+  await clock.locator('text=Tijd om').waitFor();
+  assert.equal(await reading.textContent(),'00:00');
+  assert.equal(await clock.evaluate(el=>el.style.getPropertyValue('--clock-remaining')),'0.000%');
+  assert.equal(await clock.evaluate(el=>getComputedStyle(el).backgroundColor),'rgb(163, 46, 61)');
+  assert.equal(await clock.locator('[data-clock-action=start]').isVisible(),false);
+  if(process.env.PADEL_SCREENSHOT_DIR){
+    fs.mkdirSync(process.env.PADEL_SCREENSHOT_DIR,{recursive:true});
+    await clock.screenshot({path:path.join(process.env.PADEL_SCREENSHOT_DIR,'round-clock-expired-mobile.png')});
+  }
+  await clock.locator('[data-clock-action=plus]').tap();
+  assert.equal(await reading.textContent(),'01:00');
+  assert.equal(await clock.locator('text=Tijd om').isVisible(),false);
+  assert.equal(await clock.locator('[data-clock-action=pause]').isVisible(),false);
+  await clock.locator('[data-clock-action=reset]').tap();
+  assert.equal(await duration.inputValue(),'00:03');
   await clock.locator('[data-clock-action=phase]').tap();
   assert.equal(await duration.inputValue(),'02:00');
   await clock.locator('[data-clock-action=phase]').tap();
@@ -81,6 +105,13 @@ test('round planner, clock, rules and scoring options work in the browser',async
   await koc.locator('#kocPresent').tap();
   assert.equal(await koc.locator('#liveSubtitle').textContent(),'Ronde 2');
   assert.equal(await koc.locator('#livePresentation [data-round-clock] input').inputValue(),'10:00');
+  const liveClock=koc.locator('#livePresentation [data-round-clock]');
+  assert.ok((await liveClock.locator('.round-clock-face').boundingBox()).width>=150);
+  await liveClock.locator('input').fill('00:01');
+  await liveClock.locator('[data-clock-action=start]').tap();
+  await liveClock.locator('text=Tijd om').waitFor();
+  assert.equal(await liveClock.locator('output').textContent(),'00:00');
+  await liveClock.locator('[data-clock-action=reset]').tap();
   await koc.locator('#presentExit').tap();
   await koc.evaluate(()=>navigator.serviceWorker.register('./sw.js'));
   await koc.waitForFunction(()=>!!navigator.serviceWorker.controller);
@@ -89,6 +120,9 @@ test('round planner, clock, rules and scoring options work in the browser',async
   await koc.locator('#resumeContinue').tap();
   assert.equal(await koc.locator('#kocRoundHeading').textContent(),'Ronde 2');
   assert.deepEqual(await cards.locator('.koc-waiting-card li').allTextContents(),expectedWaiting);
+
+  assert.equal(await duration.inputValue(),'00:01');
+  assert.equal(await clock.locator('[data-clock-action=start]').isVisible(),true);
 
   const toss=await open('toss');
   await toss.locator('#roundSettingsScore').selectOption('games');

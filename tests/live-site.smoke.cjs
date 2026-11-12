@@ -34,7 +34,7 @@ const assert=require('node:assert/strict');
     }
     assert.ok(published,'GitHub Pages must serve the current page, worker and mode artwork');
     await page.goto(url,{waitUntil:'networkidle'});
-    assert.equal(await page.locator('#appVersion').textContent(),'v2.6.0');
+    assert.equal(await page.locator('#appVersion').textContent(),'v2.6.1');
     await page.waitForFunction(()=>document.querySelectorAll('.mode-illustration').length===4&&[...document.querySelectorAll('.mode-illustration')].every(img=>img.complete&&img.naturalWidth>0));
     assert.equal(await page.evaluate(()=>getComputedStyle(document.documentElement).getPropertyValue('--teal-900').trim()),'#193B57');
     await page.evaluate(()=>navigator.serviceWorker.ready);
@@ -61,6 +61,6 @@ const assert=require('node:assert/strict');
     assert.equal(await page.locator('.format-btn').first().evaluate(el=>getComputedStyle(el).display),'grid');
     assert.equal(await page.evaluate(()=>typeof PadelRounds.nextKocRound),'function');
     assert.deepEqual(errors,[]);
-    console.log(JSON.stringify({url,version:'v2.6.0',modes:4,desktop:true,mobile:true,score:'26-6',freshInstall:true,offline:true}));
+    console.log(JSON.stringify({url,version:'v2.6.1',modes:4,desktop:true,mobile:true,score:'26-6',freshInstall:true,offline:true}));
   }finally{await browser.close();}
 })().catch(error=>{console.error(error);process.exitCode=1;});
