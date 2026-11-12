@@ -198,6 +198,9 @@
   .koc-court li{padding:9px 0;border-bottom:1px solid var(--line);}
   .koc-court li:last-child{border:0;}
   .koc-court .empty{color:var(--ink-soft);}
+  .koc-result .koc-waiting-card{grid-column:1/-1;}
+  .koc-waiting-card h3{background:#F0F5DB;}
+  .koc-waiting-note{margin:0;padding:0 14px 13px;line-height:1.4;overflow-wrap:anywhere;}
   .koc-help{font-size:var(--fs-sm);color:var(--ink-soft);line-height:1.5;margin-top:8px;}
   .koc-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px;}
   .resume-modal .modal-box{max-width:430px;}
@@ -1048,8 +1051,8 @@
       </button>
       <button class="format-btn" type="button" data-format="americano">
         <span class="mode-copy">
-          <span class="fb-name" data-i18n="homeAmericanoName">Americano</span>
-          <span class="fb-desc" data-i18n="homeAmericanoDesc">Elk punt telt voor jouw klassement.</span>
+          <span class="fb-name" data-i18n="homeAmericanoName">Americano / Competitieve Toss</span>
+          <span class="fb-desc" data-i18n="homeAmericanoDesc">Eén groep met scores en een klassement.</span>
           <span class="mode-link"><span data-i18n="homeAmericanoAction">Kies Americano</span><span class="arrow" aria-hidden="true">→</span></span>
         </span>
         <img class="mode-illustration" src="./assets/mode-americano.svg" width="420" height="355" alt="" aria-hidden="true" decoding="async">
@@ -1057,7 +1060,7 @@
       <button class="format-btn" type="button" data-format="splitToss">
         <span class="mode-copy">
           <span class="fb-name" data-i18n="homeSplitTossName">Gesplitste Toss</span>
-          <span class="fb-desc" data-i18n="homeSplitTossDesc">Samen spelen op je eigen niveau.</span>
+          <span class="fb-desc" data-i18n="homeSplitTossDesc">Twee of drie niveaugroepen, met of zonder scores per groep.</span>
           <span class="mode-link"><span data-i18n="homeSplitTossAction">Kies Gesplitste Toss</span><span class="arrow" aria-hidden="true">→</span></span>
         </span>
         <img class="mode-illustration" id="splitTossIllustration" src="./assets/mode-split.svg" width="420" height="355" alt="" aria-hidden="true" decoding="async">
@@ -1174,9 +1177,18 @@
           <span data-i18n="kocEntryMode">Instroomspelers indelen</span>
         </label>
         <p class="koc-help koc-entry-hint" id="kocEntryHint" data-i18n="kocEntryHelp" hidden>Markeer bij de laatste vier spelers wie op de laagste baan begint.</p>
+        <label class="koc-entry-option" for="kocWaitingToggle">
+          <input type="checkbox" id="kocWaitingToggle" aria-describedby="kocWaitingHint">
+          <span data-i18n="kocWaitingOption">Met twee wachtspelers</span>
+        </label>
+        <p class="koc-help koc-entry-hint" id="kocWaitingHint" hidden>
+          <span data-i18n="kocWaitingIntro">De loting bepaalt wie begint aan de kant.</span>
+          <span data-i18n="kocWaitingRule">Na elke ronde wisselt het verliezende duo op baan 1 met het wachtende duo.</span>
+        </p>
         <div class="koc-roster" id="kocRoster"></div>
         <p class="koc-help" id="kocCount" aria-live="polite"></p>
         <p class="koc-dup-warning" id="kocDupError" role="alert" hidden></p>
+        <p class="koc-dup-warning" id="kocWaitingError" role="alert" hidden></p>
       </div>
     </div>
     <div class="koc-actions">
@@ -1357,7 +1369,7 @@
   </section>
 
   <footer class="app-footer">
-    <span id="appVersion">v2.4.3</span>
+    <span id="appVersion">v2.5.0</span>
     <details><summary data-i18n="whatsNew">Wat is nieuw?</summary>
       <ul>
         <li data-i18n="changeIllustrations">Nieuwe baanillustraties, marineblauw/lime en een puntenscore van 26–6.</li>
@@ -1489,10 +1501,10 @@
       backToModes: '← Speelvormen',
       chosenFormat: 'Gekozen speelvorm',
       homeTossDesc: 'Steeds een andere partner.', homeTossAction: 'Kies Toss',
-      homeAmericanoName: 'Americano', homeSplitTossName: 'Gesplitste Toss',
+      homeAmericanoName: 'Americano / Competitieve Toss', homeSplitTossName: 'Gesplitste Toss',
       homeKocDesc: 'Win je potje. Klim een baan omhoog.', homeKocAction: 'Kies KOC',
-      homeAmericanoDesc: 'Elk punt telt voor jouw klassement.', homeAmericanoAction: 'Kies Americano',
-      homeSplitTossDesc: 'Samen spelen op je eigen niveau.', homeSplitTossAction: 'Kies Gesplitste Toss',
+      homeAmericanoDesc: 'Eén groep met scores en een klassement.', homeAmericanoAction: 'Kies Americano',
+      homeSplitTossDesc: 'Twee of drie niveaugroepen, met of zonder scores per groep.', homeSplitTossAction: 'Kies Gesplitste Toss',
       changeIllustrations: 'Nieuwe baanillustraties, marineblauw/lime en een puntenscore van 26–6.',
       p1Title: 'Instellingen',
       p1Sub: 'Geef aan hoeveel banen je hebt en hoeveel spelers er komen. Er spelen maar 4 tegelijk per baan — wie niet speelt, wacht tot de volgende ronde.',
@@ -1685,6 +1697,11 @@
       formatKocDesc: 'Eén startindeling, daarna zelf doorschuiven',
       kocSub: 'Vul spelers in en maak een startindeling. Daarna bepalen de resultaten het doorschuiven.',
       kocCourts: 'Aantal banen',
+    kocWaitingOption: 'Met twee wachtspelers',
+    kocWaitingIntro: 'De loting bepaalt wie begint aan de kant.',
+    kocWaitingTitle: 'Wachtduo bij de start',
+    kocWaitingRule: 'Na elke ronde wisselt het verliezende duo op baan 1 met het wachtende duo.',
+    kocWaitingPairNeeded: 'Er is één speler extra. Vink één speler uit of laat nog één speler meedoen voor een wachtduo.',
       kocNames: 'Wie spelen er mee?',
       kocNamesHint: 'Pas namen aan of vink afwezige spelers uit. Je kunt met minder spelers beginnen.',
       kocEntryMode: 'Instroomspelers indelen',
@@ -1755,10 +1772,10 @@
       backToModes: '← Formats',
       chosenFormat: 'Selected format',
       homeTossDesc: 'A different partner each round.', homeTossAction: 'Choose Toss',
-      homeAmericanoName: 'Americano', homeSplitTossName: 'Split Toss',
+      homeAmericanoName: 'Americano / Competitive Toss', homeSplitTossName: 'Split Toss',
       homeKocDesc: 'Win your match. Move up a court.', homeKocAction: 'Choose KOC',
-      homeAmericanoDesc: 'Every point counts towards your ranking.', homeAmericanoAction: 'Choose Americano',
-      homeSplitTossDesc: 'Play together at your own level.', homeSplitTossAction: 'Choose Split Toss',
+      homeAmericanoDesc: 'One group with scores and a leaderboard.', homeAmericanoAction: 'Choose Americano',
+      homeSplitTossDesc: 'Two or three level groups, with optional scores for each group.', homeSplitTossAction: 'Choose Split Toss',
       changeIllustrations: 'New court illustrations, navy/lime and a 26–6 point score.',
       p1Title: 'Settings',
       p1Sub: 'Set how many courts and players you have. Only 4 play on a court at once — whoever isn\'t playing waits for the next round.',
@@ -1951,6 +1968,11 @@
       formatKocDesc: 'One starting lineup, then move courts based on results',
       kocSub: 'Enter players and generate a starting lineup. Results decide movement after that.',
       kocCourts: 'Number of courts',
+      kocWaitingOption: 'With two waiting players',
+      kocWaitingIntro: 'The draw decides who sits out first.',
+      kocWaitingTitle: 'Pair waiting at the start',
+      kocWaitingRule: 'After each round, the losing pair on court 1 swaps with the waiting pair.',
+      kocWaitingPairNeeded: 'There is one extra player. Mark one player absent or add one more player to make a waiting pair.',
       kocNames: 'Who is playing?',
       kocNamesHint: 'Edit names or untick absent players. You can start with fewer players.',
       kocEntryMode: 'Place incoming players',
@@ -2101,7 +2123,7 @@
     boardHidden: { main: false, beginner: false, ervaren: false, gevorderd: false },
     laterAdditions: {}, // name -> true, for players added via Edit Players after initial creation
     live: {mode:'auto',round:1,autoFloor:1},
-    koc: { courts: 4, roster: [], incomingEnabled: false, assignment: null, displayOrder: null, lastSignature: '' }
+    koc: { courts: 4, roster: [], incomingEnabled: false, waitingEnabled: false, assignment: null, displayOrder: null, lastSignature: '' }
   };
 
   // ---------- helpers ----------
@@ -2115,15 +2137,30 @@
   }
 
   // ---------- King of the Court: start assignment only ----------
+  function kocCapacity(k){
+    return k.courts * 4 + (k.waitingEnabled === true ? 2 : 0);
+  }
+
+  function kocIncompleteWaitingPair(k, attendees){
+    return k.waitingEnabled === true && attendees === k.courts * 4 + 1;
+  }
+
+  function kocIsIncoming(k, index){
+    var capacity = kocCapacity(k);
+    return k.incomingEnabled && index >= capacity - 4 && index < capacity &&
+      k.roster && k.roster[index] && k.roster[index].incoming === true;
+  }
+
   function ensureKocRoster(){
     if (!state.koc || typeof state.koc !== 'object'){
-      state.koc = { courts: 4, roster: [], incomingEnabled: false, assignment: null, lastSignature: '' };
+      state.koc = { courts: 4, roster: [], incomingEnabled: false, waitingEnabled: false, assignment: null, lastSignature: '' };
     }
     var k = state.koc;
     k.courts = Math.max(1, Math.min(12, Number(k.courts) || 4));
     k.incomingEnabled = k.incomingEnabled === true;
+    k.waitingEnabled = k.waitingEnabled === true;
     if (!Array.isArray(k.roster)) k.roster = [];
-    for (var i = k.roster.length; i < k.courts * 4; i++){
+    for (var i = k.roster.length; i < kocCapacity(k); i++){
       k.roster.push({ name: '', active: true, incoming: false });
     }
     if (!k.lastSignature) k.lastSignature = '';
@@ -2138,7 +2175,7 @@
 
   function kocAttendees(){
     var k = ensureKocRoster();
-    return k.roster.slice(0, k.courts * 4).map(function(person, i){
+    return k.roster.slice(0, kocCapacity(k)).map(function(person, i){
       return person && person.active !== false ? i : null;
     }).filter(function(i){ return i !== null; });
   }
@@ -2154,6 +2191,23 @@
       } else seen[key] = i;
     });
     return duplicates;
+  }
+
+  function kocWaitingNames(k){
+    return (k.displayOrder || Object.keys(k.assignment).map(Number))
+      .filter(function(index){ return k.assignment[index] === 0; }).map(kocPlayerName);
+  }
+
+  function appendKocWaitingCard(root, k, cardClass){
+    var names = kocWaitingNames(k);
+    if (!names.length) return;
+    var card = liveElement('article', cardClass + ' koc-waiting-card');
+    card.appendChild(liveElement('h3', '', t('kocWaitingTitle')));
+    var list = liveElement('ul', '');
+    names.forEach(function(name){ list.appendChild(liveElement('li', '', name)); });
+    card.appendChild(list);
+    card.appendChild(liveElement('p', 'koc-waiting-note', t('kocWaitingRule')));
+    root.appendChild(card);
   }
 
   function renderKocResult(){
@@ -2189,12 +2243,15 @@
       court.appendChild(list);
       root.appendChild(court);
     }
+    appendKocWaitingCard(root, k, 'koc-court');
   }
 
   function renderKoc(){
     var k = ensureKocRoster();
     document.getElementById('kocEntryToggle').checked = k.incomingEnabled;
     document.getElementById('kocEntryHint').hidden = !k.incomingEnabled;
+    document.getElementById('kocWaitingToggle').checked = k.waitingEnabled;
+    document.getElementById('kocWaitingHint').hidden = !k.waitingEnabled;
     // KOC shares the exact selector styling and 1–4 + 5–12 control model
     // used by Toss, Split Toss and Americano.
     var buttons = document.getElementById('kocCourtButtons');
@@ -2258,7 +2315,7 @@
     buttons.appendChild(more);
     var roster = document.getElementById('kocRoster');
     roster.innerHTML = '';
-    k.roster.slice(0, k.courts * 4).forEach(function(person, i){
+    k.roster.slice(0, kocCapacity(k)).forEach(function(person, i){
       var row = document.createElement('div');
       row.className = 'koc-player' + (person.active === false ? ' absent' : '');
       var checkbox = document.createElement('input');
@@ -2293,7 +2350,7 @@
       row.appendChild(input);
       // The last four roster slots are the only ones eligible for incoming
       // placement (players 13–16 when playing on four courts).
-      if (k.incomingEnabled && i >= k.courts * 4 - 4){
+      if (k.incomingEnabled && i >= kocCapacity(k) - 4){
         var marker = document.createElement('label');
         marker.className = 'koc-entry-marker';
         var markerCheckbox = document.createElement('input');
@@ -2336,13 +2393,21 @@
     document.getElementById('kocStatus').textContent = t('kocChanged');
   });
 
+  document.getElementById('kocWaitingToggle').addEventListener('change', function(e){
+    var k = ensureKocRoster();
+    k.waitingEnabled = e.target.checked;
+    k.assignment = null;
+    k.displayOrder = null;
+    renderKoc();
+  });
+
   function renderKocCount(){
     var k = ensureKocRoster();
     var attendees = kocAttendees();
     var duplicates = kocDuplicateIndices();
     var hasDuplicates = duplicates.length > 0;
     document.getElementById('kocCount').textContent = tf('kocCount', {
-      active: attendees.length, total: k.courts * 4
+      active: attendees.length, total: kocCapacity(k)
     });
     document.querySelectorAll('#kocRoster .koc-player').forEach(function(row, i){
       var invalid = duplicates.indexOf(i) !== -1;
@@ -2359,7 +2424,11 @@
     var warning = document.getElementById('kocDupError');
     warning.hidden = !hasDuplicates;
     warning.textContent = hasDuplicates ? t('kocDup') : '';
-    document.getElementById('kocRoll').disabled = attendees.length < 4 || hasDuplicates;
+    var incompletePair = kocIncompleteWaitingPair(k, attendees.length);
+    var waitingError = document.getElementById('kocWaitingError');
+    waitingError.hidden = !incompletePair;
+    waitingError.textContent = incompletePair ? t('kocWaitingPairNeeded') : '';
+    document.getElementById('kocRoll').disabled = attendees.length < 4 || incompletePair || hasDuplicates;
     document.getElementById('kocCopy').disabled = !k.assignment || hasDuplicates;
     document.getElementById('kocSave').disabled = hasDuplicates;
     document.getElementById('kocPresent').disabled = hasDuplicates;
@@ -2375,6 +2444,17 @@
   }
 
   function makeKocAssignment(attendees, k){
+    var result = {};
+    var courtSlots = k.courts * 4;
+    if (attendees.length > courtSlots){
+      if (!k.waitingEnabled || attendees.length !== kocCapacity(k)) return null;
+      var candidates = shuffle(attendees.filter(function(index){ return index >= 2; }));
+      // Preserve reserved starting places and prioritise marked entrants for a court.
+      var waiting = candidates.filter(function(index){ return !kocIsIncoming(k, index); })
+        .concat(candidates.filter(function(index){ return kocIsIncoming(k, index); })).slice(0, 2);
+      waiting.forEach(function(index){ result[index] = 0; });
+      attendees = attendees.filter(function(index){ return result[index] === undefined; });
+    }
     // Full courts take priority, starting at the highest court. An underfilled
     // court is therefore always below every fully occupied court.
     var slots = {};
@@ -2383,7 +2463,6 @@
       slots[court] = Math.min(4, remainder);
       remainder -= slots[court];
     }
-    var result = {};
     function put(idx, court){
       if (slots[court] > 0){ result[idx] = court; slots[court]--; return true; }
       return false;
@@ -2407,12 +2486,10 @@
     // A partial lowest court keeps its vacancies: overflow is distributed
     // randomly among the marked players to avoid always penalizing one name.
     if (k.incomingEnabled && Array.isArray(k.roster)){
-      var start = k.courts * 4 - 4;
       var incoming = shuffle(attendees.filter(function(i){
         // With one court, the first two reserved players also fall inside
         // the last-four incoming slots. Never assign them a second time.
-        return result[i] === undefined && i >= start && i < k.courts * 4 &&
-          k.roster[i] && k.roster[i].incoming === true;
+        return result[i] === undefined && kocIsIncoming(k, i);
       }));
       incoming.forEach(function(i){
         var lowest = lowerWithCapacity(1);
@@ -2434,6 +2511,7 @@
     var attendees = kocAttendees();
     var status = document.getElementById('kocStatus');
     if (attendees.length < 4){ status.textContent = t('kocMin'); return; }
+    if (kocIncompleteWaitingPair(k, attendees.length)) return;
     if (kocDuplicateIndices().length){
       renderKocCount();
       status.textContent = t('kocDup');
@@ -2470,6 +2548,8 @@
         .filter(function(i){return k.assignment[i] === c;}).map(kocPlayerName);
       lines.push(t('courtLabel') + ' ' + c + (c === k.courts ? ' 👑' : '') + ': ' + (names.join(', ') || '—'));
     }
+    var waiting = kocWaitingNames(k);
+    if (waiting.length) lines.push('', t('kocWaitingTitle') + ': ' + waiting.join(', '), t('kocWaitingRule'));
     var output = lines.join('\n');
     function copied(ok){ document.getElementById('kocStatus').textContent = t(ok ? 'kocCopied' : 'kocCopyFail'); }
     if (navigator.clipboard && navigator.clipboard.writeText){
@@ -4838,7 +4918,7 @@
   }
 
   function applyBulkKocNames(names){
-    var k = ensureKocRoster(), capacity = k.courts * 4;
+    var k = ensureKocRoster(), capacity = kocCapacity(k);
     if (names.length > capacity) return tf('bulkTooMany', {n:names.length,max:capacity});
     if (names.some(function(name){return name.length > 50;})) return t('bulkNameTooLong');
     k.roster.slice(0, capacity).forEach(function(person, i){
@@ -4885,7 +4965,7 @@
   function bulkTargetInfo(tool){
     if (tool.kind === 'koc'){
       var k = ensureKocRoster();
-      return {count:k.courts * 4, max:48, other:[]};
+      return {count:kocCapacity(k), max:kocCapacity({courts:12, waitingEnabled:k.waitingEnabled}), other:[]};
     }
     if (tool.kind === 'setup') return {count:namesGrid.querySelectorAll('.name-field input').length,max:96,other:[]};
     if (tool.kind === 'level'){
@@ -4927,6 +5007,11 @@
     bulkDrawerError.textContent = message || '';
     bulkDrawerError.hidden = !message;
   }
+  function kocCourtsForCount(count){
+    var withWaitingPair = state.koc.waitingEnabled && count % 4 === 2;
+    return Math.min(12, Math.max(1, Math.ceil(count / 4) - (withWaitingPair ? 1 : 0)));
+  }
+
   function renderBulkDrawerPreview(){
     if (!activeBulkTool) return;
     var entries = bulkEntries(bulkDrawerText.value);
@@ -4938,9 +5023,9 @@
       : tf('bulkCountDifference', {n:count,current:info.count});
     var canAdjust = false;
     var label = '';
-    if (tool.kind === 'koc' && count > info.count && count <= 48){
+    if (tool.kind === 'koc' && count > info.count && count <= info.max){
       canAdjust = true;
-      label = tf('bulkAdjustCourts', {n:Math.max(1,Math.ceil(count/4)),players:count,current:state.koc.courts});
+      label = tf('bulkAdjustCourts', {n:kocCourtsForCount(count),players:count,current:state.koc.courts});
     } else if ((tool.kind === 'setup' || tool.kind === 'level') && count >= 4 && count <= 96 && count !== info.count){
       canAdjust = true;
       label = tf('bulkAdjustCount', {n:count,current:info.count});
@@ -4979,7 +5064,7 @@
     if (!bulkDrawerAdjustCount.checked) return;
     presetCountsAutomatic = false;
     if (tool.kind === 'koc'){
-      state.koc.courts = Math.max(1, Math.ceil(count/4));
+      state.koc.courts = kocCourtsForCount(count);
       ensureKocRoster();
     } else if (tool.kind === 'setup'){
       state.playerCount = count;
@@ -5464,6 +5549,23 @@
 
   // Only accept files this app wrote, and sanity-check the parts we rely on --
   // a half-valid file restored into the UI would fail in confusing ways later.
+  function validKocAssignment(k){
+    if (typeof k.assignment !== 'object') return false;
+    var capacity = kocCapacity(k);
+    var occupants = new Array(k.courts + 1).fill(0);
+    var indices = Object.keys(k.assignment);
+    if (indices.some(function(key){
+      var court = k.assignment[key];
+      if (!/^\d+$/.test(key) || Number(key) >= capacity || !Number.isInteger(court) ||
+          court < 0 || court > k.courts) return true;
+      occupants[court]++;
+      return false;
+    })) return false;
+    if (!occupants[0]) return indices.length <= k.courts * 4;
+    return k.waitingEnabled === true && occupants[0] === 2 &&
+      occupants.slice(1).every(function(count){ return count === 4; });
+  }
+
   function validateSaveData(data){
     if (!data || typeof data !== 'object') return 'loadErrNotJson';
     if (data.format !== SAVE_FORMAT) return 'loadErrWrongFile';
@@ -5476,11 +5578,7 @@
     if (st.format === 'koc'){
       if (!st.koc || !Array.isArray(st.koc.roster) || !Number.isInteger(st.koc.courts) ||
           st.koc.courts < 1 || st.koc.courts > 12) return 'loadErrCorrupt';
-      if (st.koc.assignment && (typeof st.koc.assignment !== 'object' ||
-          Object.keys(st.koc.assignment).some(function(key){
-            return !/^\d+$/.test(key) || Number(key) >= st.koc.courts * 4 ||
-              st.koc.assignment[key] < 1 || st.koc.assignment[key] > st.koc.courts;
-          }))) return 'loadErrCorrupt';
+      if (st.koc.assignment && !validKocAssignment(st.koc)) return 'loadErrCorrupt';
       return null;
     }
     for (var i = 0; i < st.pools.length; i++){
@@ -5611,7 +5709,7 @@
       boardHidden: { main: false, beginner: false, ervaren: false, gevorderd: false },
       laterAdditions: {},
       live: {mode:'auto',round:1,autoFloor:1},
-      koc: { courts: 4, roster: [], incomingEnabled: false, assignment: null, displayOrder: null, lastSignature: '' }
+      koc: { courts: 4, roster: [], incomingEnabled: false, waitingEnabled: false, assignment: null, displayOrder: null, lastSignature: '' }
     };
     playcountSort = {};
     presetCountsAutomatic = true;
@@ -6192,6 +6290,7 @@
           card.appendChild(ul);
           list.appendChild(card);
         }
+        appendKocWaitingCard(list, schedule, 'live-koc-card');
       }
     } else {
       root.dataset.round=String(current);
