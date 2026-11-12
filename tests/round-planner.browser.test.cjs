@@ -42,7 +42,7 @@ test('round planner, clock, rules and scoring options work in the browser',async
   const marks=koc.locator('#kocRoster .koc-entry-marker');
   await marks.nth(2).tap();
   await marks.nth(3).tap();
-  assert.equal(await koc.locator('#kocRoundSettingsPlay').count(),0);
+  assert.equal(await koc.locator('#kocRoundSettingsPlay').isVisible(),false);
   await koc.getByRole('switch',{name:'Rondeklok'}).check();
   assert.equal(await koc.locator('#kocRoundSettingsPlay').inputValue(),'20');
   assert.equal(await koc.locator('#kocRoundSettingsBreak').inputValue(),'0');
@@ -128,8 +128,8 @@ test('round planner, clock, rules and scoring options work in the browser',async
   assert.equal(await koc.locator('#liveSubtitle').textContent(),'Ronde 2');
   assert.equal(await koc.locator('#livePresentation [data-round-clock] input').inputValue(),'10:00');
   const liveClock=koc.locator('#livePresentation [data-round-clock]');
-  assert.equal(await koc.locator('.live-head #liveRoundClock').count(),1);
-  assert.ok((await liveClock.boundingBox()).y>(await koc.locator('#liveSubtitle').boundingBox()).y);
+  const mobileHead=await koc.locator('.live-head').boundingBox();
+  assert.ok((await liveClock.boundingBox()).y>=mobileHead.y+mobileHead.height);
   assert.ok((await liveClock.locator('.round-clock-face').boundingBox()).width>=150);
   await liveClock.locator('input').fill('00:01');
   await liveClock.locator('[data-clock-action=start]').tap();
@@ -174,11 +174,22 @@ test('round planner, clock, rules and scoring options work in the browser',async
   assert.equal(await desktop.getByRole('radio',{name:'Rondeplanner'}).isChecked(),true);
   await desktop.getByRole('radio',{name:'Rondeplanner'}).press('ArrowLeft');
   assert.equal(await choice.isChecked(),true);
-  await desktop.getByRole('switch',{name:'Rondeklok'}).press('Space');
-  const choiceBox=await desktop.locator('.koc-round-choices').boundingBox();
-  const clockSettings=await desktop.locator('.koc-clock-settings').boundingBox();
-  assert.ok(clockSettings.x>=choiceBox.x+choiceBox.width);
+  const clockToggle=desktop.getByRole('switch',{name:'Rondeklok'});
+  const rosterHeading=desktop.locator('.koc-roster-tools .sub-heading');
+  const clockCard=desktop.locator('.koc-clock-card');
+  await clockToggle.scrollIntoViewIfNeeded();
+  const off=await Promise.all([clockToggle.boundingBox(),rosterHeading.boundingBox(),clockCard.boundingBox()]);
+  const choiceCard=await desktop.locator('.koc-choice-card').last().boundingBox();
+  assert.ok(off[2].x>=choiceCard.x+choiceCard.width);
+  assert.equal(off[2].y,choiceCard.y);
+  assert.equal(off[2].height,choiceCard.height);
+  await clockToggle.press('Space');
+  assert.deepEqual(await Promise.all([clockToggle.boundingBox(),rosterHeading.boundingBox(),clockCard.boundingBox()]),off);
   assert.equal(await desktop.locator('#kocRoundSettingsPlay').inputValue(),'20');
+  const play=await desktop.locator('#kocRoundSettingsPlay').boundingBox();
+  const change=await desktop.locator('#kocRoundSettingsBreak').boundingBox();
+  assert.equal(play.y,change.y);
+  assert.ok(change.x>play.x);
   if(process.env.PADEL_SCREENSHOT_DIR){
     await desktop.locator('#kocSetup').screenshot({path:path.join(process.env.PADEL_SCREENSHOT_DIR,'koc-setup-desktop.png')});
   }
@@ -191,17 +202,26 @@ test('round planner, clock, rules and scoring options work in the browser',async
   assert.ok(Math.abs(regularBox.x+regularBox.width-resultBox.x-resultBox.width)<2);
   await desktop.locator('#kocPresent').click();
   const head=desktop.locator('.live-head');
-  const presentationClock=head.locator('#liveRoundClock');
+  const presentationClock=desktop.locator('#liveRoundClock');
   const title=await head.locator('#liveTitle').boundingBox();
+  const header=await head.boundingBox();
   const clockBox=await presentationClock.boundingBox();
-  assert.ok(clockBox.x>title.x+title.width);
-  assert.ok((await desktop.locator('#liveKoc').boundingBox()).y<260);
+  const courtsBox=await desktop.locator('#liveKoc').boundingBox();
+  assert.ok(clockBox.y>=header.y+header.height);
+  assert.ok(courtsBox.y>=clockBox.y+clockBox.height);
+  assert.ok(Math.abs(clockBox.x+clockBox.width-header.x-header.width)<1);
   assert.ok(await presentationClock.locator('input').evaluate(el=>parseFloat(getComputedStyle(el).fontSize)>=50));
   if(process.env.PADEL_SCREENSHOT_DIR){
     await desktop.locator('#livePresentation').screenshot({
       path:path.join(process.env.PADEL_SCREENSHOT_DIR,'koc-presentation-clock.png')
     });
   }
+  await desktop.locator('#presentExit').click();
+  await clockToggle.press('Space');
+  await desktop.locator('#kocPresent').click();
+  assert.equal(await presentationClock.isVisible(),false);
+  assert.deepEqual(await head.boundingBox(),header);
+  assert.deepEqual(await head.locator('#liveTitle').boundingBox(),title);
 
   const toss=await open('toss');
   await toss.locator('#roundSettingsEnabled').check();
