@@ -207,15 +207,54 @@
   .round-rules{margin:12px 0 16px;padding:10px 14px;border:1px solid var(--line);border-radius:10px;background:var(--surface);}
   .round-rules summary,.koc-round-history summary{cursor:pointer;font-weight:750;color:var(--teal-900);}
   .round-rules p,.round-rules ol{margin:8px 0;font-size:var(--fs-sm);line-height:1.5;}
-  .round-clock{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin:0 0 12px;padding:9px 12px;
-    border:1px solid var(--line);border-radius:10px;background:var(--surface);}
+  .round-clock{
+    --clock-panel:#203850;
+    --clock-face:#172a3f;
+    --clock-accent:#dff080;
+    --clock-track:#50657a;
+    --clock-diameter:clamp(148px,18vw,184px);
+    --clock-digits:clamp(30px,4vw,39px);
+    display:grid;grid-template-columns:auto minmax(0,1fr);grid-template-areas:"face heading" "face actions";
+    align-items:center;align-content:center;gap:10px clamp(16px,3vw,32px);
+    margin:0 0 12px;padding:clamp(14px,2vw,24px);border-radius:14px;background:var(--clock-panel);color:#fff;
+  }
   .round-clock[hidden],.round-clock [hidden],#kocRoundPlan[hidden],#liveKocActions[hidden]{display:none!important;}
-  .round-clock-title{font-size:var(--fs-sm);color:var(--teal-900);}
-  .round-clock-duration,.round-clock-reading{font:750 var(--fs-lg) var(--font-mono);width:7ch;text-align:center;}
-  .round-clock-actions{display:flex;flex-wrap:wrap;gap:5px;}
-  .round-clock-actions button{padding:6px 9px;min-height:40px;font-size:var(--fs-sm);}
-  .round-clock-expired{font-weight:700;color:var(--teal-900);}
-  .round-clock-expired:empty,.score-unit:empty{display:none;}
+  .round-clock-heading{grid-area:heading;align-self:end;}
+  .round-clock-title{display:block;font-size:var(--fs-sm);font-weight:750;}
+  .round-clock-face{
+    grid-area:face;display:grid;place-items:center;position:relative;isolation:isolate;
+    inline-size:var(--clock-diameter);aspect-ratio:1;border-radius:50%;
+    background:conic-gradient(var(--clock-accent) 0 var(--clock-remaining,100%),var(--clock-track) var(--clock-remaining,100%) 100%);
+  }
+  .round-clock-face::before{
+    content:"";position:absolute;inset:7px;border-radius:50%;background:var(--clock-face);z-index:-1;
+  }
+  .round-clock .round-clock-duration,.round-clock-reading{
+    font:750 var(--clock-digits)/1.15 var(--font-mono);font-variant-numeric:tabular-nums;
+    text-align:center;color:inherit;
+  }
+  .round-clock .round-clock-duration{inline-size:5.35ch;padding:3px 0;background:transparent;border-color:var(--clock-track);}
+  .round-clock-actions{grid-area:actions;align-self:start;display:flex;flex-wrap:wrap;gap:6px;}
+  .round-clock-actions .btn{padding:6px 10px;min-height:44px;font-size:var(--fs-sm);color:#fff;border-color:var(--clock-track);}
+  .round-clock-actions .btn:hover{background:var(--clock-face);}
+  .round-clock-actions [data-clock-action="start"]{background:var(--clock-accent);color:#203850;border-color:var(--clock-accent);}
+  .round-clock-actions [data-clock-action="start"]:hover{background:#edf8ae;}
+  .round-clock :is(button,input):focus-visible{outline:2px solid #fff;outline-offset:3px;}
+  .round-clock-expired{display:block;font-size:clamp(25px,4.5vw,44px);font-weight:850;line-height:1.15;}
+  .round-clock-ended{--clock-panel:#a32e3d;--clock-face:#731e2b;--clock-track:#f5a2aa;}
+  #livePresentation .round-clock{
+    --clock-diameter:clamp(154px,22vw,228px);
+    --clock-digits:clamp(31px,4.5vw,49px);
+  }
+  @media (max-width:540px){
+    .round-clock{
+      grid-template-columns:minmax(0,1fr);grid-template-areas:"heading" "face" "actions";
+      justify-items:center;text-align:center;
+    }
+    .round-clock-actions{justify-content:center;}
+  }
+  .score-unit:empty{display:none;}
+
   .score-unit{margin:0 0 8px;font-size:var(--fs-sm);color:var(--ink-soft);}
   .schedule-quality{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,200px),1fr));gap:12px;margin:0 0 12px;}
   .schedule-quality-card h4{margin:0 0 5px;}
@@ -1431,7 +1470,7 @@
   </section>
 
   <footer class="app-footer">
-    <span id="appVersion">v2.6.0</span>
+    <span id="appVersion">v2.6.1</span>
     <details><summary data-i18n="whatsNew">Wat is nieuw?</summary>
       <ul>
         <li data-i18n="changeIllustrations">Nieuwe baanillustraties, marineblauw/lime en een puntenscore van 26–6.</li>
@@ -6785,7 +6824,11 @@
     Object.keys(controls).forEach(function(action){actions.appendChild(toolButton(controls[action],action));});
     var alert = liveElement('span','round-clock-expired');
     alert.setAttribute('role','status');
-    root.replaceChildren(title,reading,duration,actions,alert);
+    var face = liveElement('div','round-clock-face');
+    face.append(reading,duration);
+    var heading = liveElement('div','round-clock-heading');
+    heading.append(title,alert);
+    root.replaceChildren(heading,face,actions);
     root.dataset.clockLang = state.lang;
     actions.addEventListener('click',function(event){
       var action = event.target.dataset.clockAction;
@@ -6824,7 +6867,11 @@
       input.hidden = clock.started;
       if (syncDuration) {input.value = clockText(clock.initial);input.setCustomValidity('');}
       var status = root.querySelector('.round-clock-expired');
-      var message = clock.started && !remaining ? t('timerExpired') : '';
+      var expired = clock.started && remaining === 0;
+      var progress = Math.min(1,remaining/(clock.initial*1000));
+      root.style.setProperty('--clock-remaining', (progress*100).toFixed(3)+'%');
+      root.classList.toggle('round-clock-ended',expired);
+      var message = expired ? t('timerExpired') : '';
       if (status.textContent !== message) status.textContent = message;
       var target = clockTargetRound();
       var visibility = {start:!running && remaining>0,pause:running,minus:clock.started && remaining>0,
