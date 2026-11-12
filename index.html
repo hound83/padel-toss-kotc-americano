@@ -177,11 +177,12 @@
   .app-notice.visible{display:flex;}
   .app-notice button{background:var(--ball);border:0;border-radius:8px;padding:9px 12px;font-weight:800;cursor:pointer;}
   .koc-setup{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px 20px;margin:16px 0;}
-  .koc-entry-option{display:flex;align-items:center;gap:9px;margin:5px 0 10px;font-weight:700;cursor:pointer;}
-  .koc-entry-option[hidden]{display:none;}
-  .koc-entry-option input{width:19px;height:19px;accent-color:var(--teal-900);}
-  .koc-entry-hint{margin:0 0 16px;}
-  .koc-roster{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;}
+  .koc-roster,.koc-roster-group{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;}
+  .koc-roster-group{grid-column:1/-1;margin-top:5px;}
+  .koc-roster-group[hidden],#kocWaitingToggle[hidden]{display:none;}
+  .koc-roster-group h3{grid-column:1/-1;margin:0;font-size:var(--fs-sm);}
+  .koc-waiting-fields{padding:12px;border:1px solid var(--line);border-radius:12px;background:#f1f5e3;}
+  .koc-roster-group .koc-help{grid-column:1/-1;margin:0;}
   .koc-player{border:1px solid var(--line);border-radius:10px;padding:10px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;background:white;}
   .koc-player.absent{opacity:.48;background:#f2f4f8;}
   .koc-player.entry-selected:not(.absent){border-color:var(--teal-700);background:#EFF8F7;}
@@ -190,8 +191,12 @@
   .koc-dup-warning{color:#A82D24;font-weight:700;font-size:var(--fs-sm);margin:8px 0 0;}
   .koc-player input[type=checkbox]{width:18px;height:18px;accent-color:var(--teal-900);flex-shrink:0;}
   .koc-player input[type=text]{min-width:0;flex:1 1 80px;width:50%;border:0;border-bottom:1px solid var(--line);background:transparent;padding:7px 2px;font:inherit;color:var(--ink);}
-  .koc-waiting-slot{width:100%;font-size:var(--fs-sm);font-weight:700;color:var(--teal-900);}
-  .koc-entry-marker{display:flex;align-items:center;gap:8px;width:100%;font-size:var(--fs-sm);font-weight:700;color:var(--teal-900);cursor:pointer;}
+  .koc-entry-marker{
+    min-height:36px;padding:4px 9px;margin-left:auto;border:1px solid var(--line);border-radius:8px;
+    background:var(--surface);color:var(--teal-900);font:700 var(--fs-sm) var(--font-body);cursor:pointer;
+  }
+  .koc-entry-marker[aria-pressed="true"]{background:var(--ball);border-color:var(--teal-700);}
+  .koc-entry-marker:disabled{cursor:default;}
   .koc-result,.live-koc-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:12px;}
   .koc-result{margin:20px 0;}
   .round-options{display:flex;flex-wrap:wrap;align-items:end;gap:10px 18px;margin:0 0 18px;}
@@ -203,7 +208,44 @@
   .round-option-field input[type=number]{width:86px;}
   .round-option-checkbox{display:flex;gap:8px;align-items:center;min-height:40px;}
   .round-option-checkbox input{width:18px;height:18px;accent-color:var(--teal-900);}
-  .round-option-note{font-size:var(--fs-sm);margin:0;width:100%;}
+  .koc-round-settings{
+    display:grid;grid-template-columns:minmax(0,1fr) minmax(260px,.48fr);gap:16px;
+    align-items:start;margin:0 0 20px;
+  }
+  .koc-round-choices,.koc-clock-settings{min-width:0;}
+  .koc-choice-group{margin:0;padding:0;border:0;min-width:0;}
+  .koc-choice-group + .koc-choice-group{margin-top:12px;}
+  .koc-choice-group legend,.koc-clock-settings h3{
+    padding:0;margin:0 0 8px;font-size:var(--fs-md);font-weight:800;color:var(--teal-900);
+  }
+  .koc-choice-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;}
+  .koc-choice-card{
+    display:grid;grid-template-columns:auto minmax(0,1fr);align-content:start;gap:3px 8px;
+    padding:11px;border:1.5px solid var(--line);border-radius:10px;background:var(--surface);cursor:pointer;
+  }
+  .koc-choice-card:has(input:checked){border-color:var(--teal-700);background:#eef4e4;}
+  .koc-choice-card:has(input:focus-visible){outline:2px solid var(--teal-700);outline-offset:2px;}
+  .koc-choice-card input{margin:3px 0 0;accent-color:var(--teal-900);}
+  .koc-choice-card small{grid-column:2;font-size:var(--fs-sm);line-height:1.4;color:var(--ink-soft);}
+  .koc-clock-settings{padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--mist);}
+  .koc-clock-settings header{display:flex;align-items:center;justify-content:space-between;gap:8px;}
+  .koc-clock-settings h3{margin:0;}
+  .koc-clock-settings .round-option-checkbox{position:relative;min-height:44px;}
+  .koc-clock-settings input[role="switch"]{
+    appearance:none;position:relative;margin:0;inline-size:40px;block-size:24px;border-radius:20px;
+    border:1px solid var(--teal-700);background:var(--surface);cursor:pointer;
+  }
+  .koc-clock-settings input[role="switch"]::before{
+    content:"";position:absolute;inset:3px auto 3px 3px;aspect-ratio:1;border-radius:50%;background:var(--teal-900);
+  }
+  .koc-clock-settings input[role="switch"]:checked{background:var(--teal-900);}
+  .koc-clock-settings input[role="switch"]:checked::before{inset-inline-start:19px;background:var(--ball);}
+  .koc-clock-settings .round-option-checkbox label{min-width:2em;cursor:pointer;}
+  .koc-clock-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:start;gap:8px;margin-top:8px;}
+  .koc-clock-fields[hidden]{display:none;}
+  .koc-clock-fields input[type=number]{width:100%;}
+  @media(max-width:780px){.koc-round-settings{grid-template-columns:1fr;}}
+  @media(max-width:540px){.koc-choice-list{grid-template-columns:1fr;}}
   .round-rules{margin:12px 0 16px;padding:10px 14px;border:1px solid var(--line);border-radius:10px;background:var(--surface);}
   .round-rules summary,.koc-round-history summary{cursor:pointer;font-weight:750;color:var(--teal-900);}
   .round-rules p,.round-rules ol{margin:8px 0;font-size:var(--fs-sm);line-height:1.5;}
@@ -422,7 +464,7 @@
     .mode-home .format-select{gap:10px;}
     .mode-home .format-btn{min-height:158px;padding:16px 10px;}
     .mode-home .format-btn .mode-icon{font-size:29px;}
-    .koc-roster{grid-template-columns:repeat(2,minmax(0,1fr));}
+    .koc-roster,.koc-roster-group{grid-template-columns:repeat(2,minmax(0,1fr));}
   }
   @media(max-width:370px){.mode-home .format-select{grid-template-columns:1fr;}.mode-home .format-btn{min-height:112px;}}
 
@@ -1272,24 +1314,20 @@
     <div class="koc-setup" id="kocSetup">
       <p class="sub-heading" data-i18n="kocCourts">Aantal banen</p>
       <div class="courts-select" id="kocCourtButtons" aria-label="KOC court selection"></div>
-      <div class="round-options" id="kocRoundSettings"></div>
+      <div class="koc-round-settings" id="kocRoundSettings"></div>
       <div class="koc-roster-tools">
         <p class="sub-heading" data-i18n="kocNames">Wie spelen er mee?</p>
         <p class="koc-help" data-i18n="kocNamesHint">Pas namen aan of vink een afwezige speler uit. Je kunt met minder spelers beginnen.</p>
-        <label class="koc-entry-option" for="kocEntryToggle">
-          <input type="checkbox" id="kocEntryToggle">
-          <span data-i18n="kocEntryMode">Indelen op laagste baan</span>
-        </label>
-        <p class="koc-help koc-entry-hint" id="kocEntryHint" data-i18n="kocEntryHelp" hidden>Vink bij de laatste vier baanplekken aan wie zo laag mogelijk begint.</p>
-        <label class="koc-entry-option" for="kocWaitingToggle">
-          <input type="checkbox" id="kocWaitingToggle" aria-describedby="kocWaitingHint">
-          <span data-i18n="kocWaitingOption">Met twee wachtspelers</span>
-        </label>
-        <p class="koc-help koc-entry-hint" id="kocWaitingHint" hidden>
-          <span data-i18n="kocWaitingIntro">De laatste twee spelers wachten de eerste ronde als alle banen vol zijn.</span>
-          <span data-i18n="kocWaitingRule">Na elke ronde wisselt het verliezende duo op baan 1 met het wachtende duo.</span>
-        </p>
-        <div class="koc-roster" id="kocRoster"></div>
+        <button class="bulk-entry-trigger" type="button" id="kocWaitingToggle" aria-controls="kocWaitingFields"></button>
+        <div class="koc-roster" id="kocRoster">
+          <div class="koc-roster-group" id="kocLowestFields" role="group" aria-labelledby="kocLowestHeading" hidden>
+            <h3 id="kocLowestHeading" data-i18n="kocEntryMode">Voorkeur voor baan 1</h3>
+          </div>
+          <div class="koc-roster-group koc-waiting-fields" id="kocWaitingFields" role="group" aria-labelledby="kocWaitingHeading" hidden>
+            <h3 id="kocWaitingHeading" data-i18n="kocWaitingHeading">Wachten in ronde 1</h3>
+            <p class="koc-help" data-i18n="kocWaitingIntro">Deze twee spelers wachten de eerste ronde als alle banen vol zijn.</p>
+          </div>
+        </div>
         <p class="koc-help" id="kocCount" aria-live="polite"></p>
         <p class="koc-dup-warning" id="kocDupError" role="alert" hidden></p>
         <p class="koc-dup-warning" id="kocWaitingError" role="alert" hidden></p>
@@ -1487,7 +1525,7 @@
   </section>
 
   <footer class="app-footer">
-    <span id="appVersion">v2.6.2</span>
+    <span id="appVersion">v2.6.3</span>
     <details><summary data-i18n="whatsNew">Wat is nieuw?</summary>
       <ul>
         <li data-i18n="changeIllustrations">Nieuwe baanillustraties, marineblauw/lime en een puntenscore van 26–6.</li>
@@ -1620,13 +1658,17 @@
   // ================= i18n =================
   var STR = {
     nl: {
-      kocVariant: "KOC-variant",
+      kocVariant: "Hoe wil je spelen?",
       kocStartOnly: "Startindeling",
+      kocStartDescription: "De app deelt de eerste ronde in. Daarna schuif je zelf door.",
       kocPlanner: "Rondeplanner",
+      kocPlannerDescription: "Vul de uitslagen in. De app schuift de spelers door en maakt nieuwe koppels voor de volgende ronde.",
       kocPairing: "Koppels per ronde",
       kocPairingBalanced: "Vrij met balans",
+      kocPairingBalancedDescription: "Alle combinaties op de baan zijn mogelijk.",
       kocPairingCrossed: "Gekruist met balans",
-      kocPairingCrossedHint: "Na het doorschuiven kiest de planner de best passende kruising van de twee aangekomen duo’s. Vink je precies twee spelers aan voor de laagste baan, dan helpt dat tijdelijk bij de koppelkeuze.",
+      kocPairingCrossedDescription: "Iedereen krijgt een nieuwe partner. De app kiest de beste kruising.",
+      kocPairingCrossedHint: "Na het doorschuiven kiest de planner de best passende kruising van de twee aangekomen duo’s. Kies je voor precies twee spelers baan 1 als voorkeur, dan telt dat tijdelijk mee bij de koppelkeuze.",
       kocPlannerHint: "Vul per baan de eindstand in. De planner deelt de volgende ronde in.",
       kocPlannerFull: "Voor de Rondeplanner zijn vier spelers per baan nodig, eventueel met twee wachtspelers.",
       kocNextRound: "Volgende ronde maken",
@@ -1653,6 +1695,12 @@
       kocServiceD: "De tweede speler van het andere duo serveert vier punten.",
       kocServiceRepeat: "Herhaal daarna deze volgorde. Bij gelijkspel als de tijd om is, speel je nog één beslissend punt.",
       timerOption: "Rondeklok gebruiken",
+      timerSettingsTitle: "Rondeklok",
+      timerOn: "Aan",
+      timerOff: "Uit",
+      timerKocPlay: "Rondeduur (min)",
+      timerKocBreak: "Wisseltijd (min)",
+      timerKocBreakHint: "Optioneel · 0 = uit",
       timerPlay: "Speeltijd (minuten)",
       timerBreak: "Wisseltijd (minuten, 0 = uit)",
       timerHeading: "Rondeklok · ronde {n}",
@@ -1881,19 +1929,19 @@
       formatKocDesc: 'Eén startindeling, daarna zelf doorschuiven',
       kocSub: 'Vul spelers in en maak een startindeling. Daarna bepalen de resultaten het doorschuiven.',
       kocCourts: 'Aantal banen',
-      kocWaitingOption: 'Met twee wachtspelers',
-      kocWaitingIntro: 'De laatste twee spelers wachten de eerste ronde als alle banen vol zijn.',
-      kocWaitingSlot: 'Wachtplek',
+      kocWaitingAdd: '+ Wachtduo toevoegen',
+      kocWaitingRemove: 'Wachtduo verwijderen',
+      kocWaitingHeading: 'Wachten in ronde 1',
+      kocWaitingIntro: 'Deze twee spelers wachten de eerste ronde als alle banen vol zijn.',
       kocWaitingTitle: 'Wachtduo bij de start',
       kocWaitingRule: 'Na elke ronde wisselt het verliezende duo op baan 1 met het wachtende duo.',
       kocWaitingPairNeeded: 'Er is één speler extra. Vink één speler uit of laat nog één speler meedoen voor een wachtduo.',
       kocNames: 'Wie spelen er mee?',
       kocNamesHint: 'Pas namen aan of vink afwezige spelers uit. Je kunt met minder spelers beginnen.',
-      kocEntryMode: 'Indelen op laagste baan',
-      kocEntryHelp: 'Vink bij de laatste vier baanplekken aan wie zo laag mogelijk begint.',
-      kocEntryPlayer: 'Laagste baan',
+      kocEntryMode: 'Voorkeur voor baan 1',
+      kocEntryPlayer: 'Baan 1',
       kocAttendanceLabel: 'Aanwezig: speler {n}',
-      kocEntryAria: 'Indelen op laagste baan: speler {n}',
+      kocEntryAria: 'Voorkeur voor baan 1: speler {n}',
       kocCount: '{active} van {total} spelers aanwezig',
       kocRoll: '🎲 Genereer startindeling',
       kocReroll: '🎲 Opnieuw gooien',
@@ -1951,13 +1999,17 @@
       playcountSummary: 'Van {min} tot {max} potjes per speler'
     },
     en: {
-      kocVariant: "KOC variant",
+      kocVariant: "How do you want to play?",
       kocStartOnly: "Starting lineup",
+      kocStartDescription: "The app sets up round one. After that, players move courts themselves.",
       kocPlanner: "Round planner",
+      kocPlannerDescription: "Enter the results. The app moves players between courts and makes new pairs for the next round.",
       kocPairing: "Pairing each round",
       kocPairingBalanced: "Open pairing with balance",
+      kocPairingBalancedDescription: "All pairings on the court are possible.",
       kocPairingCrossed: "Crossed pairing with balance",
-      kocPairingCrossedHint: "After moving courts, the planner balances the new teams by splitting the two arriving pairs. Marking exactly two players for the lowest court gives the planner a temporary pairing hint.",
+      kocPairingCrossedDescription: "Everyone gets a new partner. The app picks the most balanced split.",
+      kocPairingCrossedHint: "After moving courts, the planner balances the new teams by splitting the two arriving pairs. Setting a court 1 preference for exactly two players gives the planner a temporary pairing hint.",
       kocPlannerHint: "Enter the final score for each court to generate the next round.",
       kocPlannerFull: "The round planner needs four players on each court, with an optional pair waiting.",
       kocNextRound: "Generate next round",
@@ -1984,6 +2036,12 @@
       kocServiceD: "The second player of the other pair serves four points.",
       kocServiceRepeat: "Then repeat this order. If tied when time runs out, play one more point to decide the match.",
       timerOption: "Use a round clock",
+      timerSettingsTitle: "Round clock",
+      timerOn: "On",
+      timerOff: "Off",
+      timerKocPlay: "Round length (min)",
+      timerKocBreak: "Changeover (min)",
+      timerKocBreakHint: "Optional · 0 = off",
       timerPlay: "Playing time (minutes)",
       timerBreak: "Changeover time (minutes, 0 = off)",
       timerHeading: "Round clock · round {n}",
@@ -2212,19 +2270,19 @@
       formatKocDesc: 'One starting lineup, then move courts based on results',
       kocSub: 'Enter players and generate a starting lineup. Results decide movement after that.',
       kocCourts: 'Number of courts',
-      kocWaitingOption: 'With two waiting players',
-      kocWaitingIntro: 'The last two players sit out the first round when all courts are full.',
-      kocWaitingSlot: 'Waiting slot',
+      kocWaitingAdd: '+ Add a waiting pair',
+      kocWaitingRemove: 'Remove waiting pair',
+      kocWaitingHeading: 'Waiting in round 1',
+      kocWaitingIntro: 'These two players sit out the first round when all courts are full.',
       kocWaitingTitle: 'Pair waiting at the start',
       kocWaitingRule: 'After each round, the losing pair on court 1 swaps with the waiting pair.',
       kocWaitingPairNeeded: 'There is one extra player. Mark one player absent or add one more player to make a waiting pair.',
       kocNames: 'Who is playing?',
       kocNamesHint: 'Edit names or untick absent players. You can start with fewer players.',
-      kocEntryMode: 'Start on lowest court',
-      kocEntryHelp: 'Use the last four court slots to mark who starts as low as possible.',
-      kocEntryPlayer: 'Lowest court',
+      kocEntryMode: 'Court 1 preference',
+      kocEntryPlayer: 'Court 1',
       kocAttendanceLabel: 'Attending: player {n}',
-      kocEntryAria: 'Start on lowest court: player {n}',
+      kocEntryAria: 'Court 1 preference: player {n}',
       kocCount: '{active} of {total} players attending',
       kocRoll: '🎲 Generate starting lineup',
       kocReroll: '🎲 Reroll',
@@ -2502,14 +2560,14 @@
     var k = ensureKocRoster();
     // Older saves can still have one court. New setups start at two.
     var multiCourt = k.courts >= 2;
-    var entryToggle = document.getElementById('kocEntryToggle');
     var waitingToggle = document.getElementById('kocWaitingToggle');
-    entryToggle.checked = k.incomingEnabled;
-    waitingToggle.checked = k.waitingEnabled;
-    entryToggle.parentElement.hidden = !multiCourt;
-    waitingToggle.parentElement.hidden = !multiCourt;
-    document.getElementById('kocEntryHint').hidden = !multiCourt || !k.incomingEnabled;
-    document.getElementById('kocWaitingHint').hidden = !multiCourt || !k.waitingEnabled;
+    var lowestFields = document.getElementById('kocLowestFields');
+    var waitingFields = document.getElementById('kocWaitingFields');
+    waitingToggle.hidden = !multiCourt;
+    waitingToggle.textContent = t(k.waitingEnabled ? 'kocWaitingRemove' : 'kocWaitingAdd');
+    waitingToggle.setAttribute('aria-expanded', String(k.waitingEnabled));
+    waitingFields.hidden = !k.waitingEnabled;
+    lowestFields.hidden = !multiCourt;
     var buttons = document.getElementById('kocCourtButtons');
     buttons.innerHTML = '';
     function changeKocCourts(next){
@@ -2570,7 +2628,7 @@
     more.appendChild(select);
     buttons.appendChild(more);
     var roster = document.getElementById('kocRoster');
-    roster.innerHTML = '';
+    roster.querySelectorAll('.koc-player').forEach(function(row){row.remove();});
     k.roster.slice(0, kocCapacity(k)).forEach(function(person, i){
       var row = document.createElement('div');
       row.className = 'koc-player' + (person.active === false ? ' absent' : '');
@@ -2581,6 +2639,7 @@
       checkbox.addEventListener('change', function(){
         person.active = checkbox.checked;
         row.classList.toggle('absent', !checkbox.checked);
+        if (marker) marker.disabled = !checkbox.checked;
         k.assignment = null;
         k.displayOrder = null;
         var hasDuplicates = renderKocCount();
@@ -2605,32 +2664,37 @@
       row.appendChild(checkbox);
       row.appendChild(input);
       if (i >= k.courts * 4){
-        row.appendChild(liveElement('span', 'koc-waiting-slot', t('kocWaitingSlot')));
-      } else if (multiCourt && k.incomingEnabled && kocLowestCourtSlot(k, i)){
-        var marker = document.createElement('label');
-        marker.className = 'koc-entry-marker';
-        var markerCheckbox = document.createElement('input');
-        markerCheckbox.type = 'checkbox';
-        markerCheckbox.checked = person.incoming === true;
-        markerCheckbox.setAttribute('aria-label', tf('kocEntryAria', { n: i + 1 }));
-        row.classList.toggle('entry-selected', markerCheckbox.checked);
-        markerCheckbox.addEventListener('change', function(){
-          person.incoming = markerCheckbox.checked;
-          row.classList.toggle('entry-selected', markerCheckbox.checked);
+        waitingFields.appendChild(row);
+      } else if (multiCourt && kocLowestCourtSlot(k, i)){
+        var marker = liveElement('button', 'koc-entry-marker', t('kocEntryPlayer'));
+        marker.type = 'button';
+        marker.disabled = !checkbox.checked;
+        marker.setAttribute('aria-label', tf('kocEntryAria', { n: i + 1 }));
+        function paintMarker(){
+          var selected = k.incomingEnabled && person.incoming === true;
+          marker.setAttribute('aria-pressed', String(selected));
+          row.classList.toggle('entry-selected', selected);
+        }
+        paintMarker();
+        marker.addEventListener('click', function(){
+          clearBulkUndo();
+          if (!k.incomingEnabled){
+            k.roster.forEach(function(player){player.incoming = false;});
+            k.incomingEnabled = true;
+          }
+          person.incoming = !person.incoming;
+          paintMarker();
           k.assignment = null;
           k.displayOrder = null;
           renderKocCount();
           renderKocResult();
           document.getElementById('kocRoll').textContent = t('kocRoll');
           document.getElementById('kocStatus').textContent = t('kocChanged');
+          scheduleAutosave();
         });
-        var markerText = document.createElement('span');
-        markerText.textContent = t('kocEntryPlayer');
-        marker.appendChild(markerCheckbox);
-        marker.appendChild(markerText);
         row.appendChild(marker);
-      }
-      roster.appendChild(row);
+        lowestFields.appendChild(row);
+      } else roster.insertBefore(row, lowestFields);
     });
     if (state.format === 'koc') renderRoundSettings();
     var hasDuplicates = renderKocCount();
@@ -2641,21 +2705,14 @@
       t(hasDuplicates ? 'kocDup' : k.assignment ? 'kocGenerated' : 'kocNoSchedule');
   }
 
-  document.getElementById('kocEntryToggle').addEventListener('change', function(e){
+  document.getElementById('kocWaitingToggle').addEventListener('click', function(){
     var k = ensureKocRoster();
-    k.incomingEnabled = e.target.checked;
+    clearBulkUndo();
+    k.waitingEnabled = !k.waitingEnabled;
     k.assignment = null;
     k.displayOrder = null;
     renderKoc();
-    document.getElementById('kocStatus').textContent = t('kocChanged');
-  });
-
-  document.getElementById('kocWaitingToggle').addEventListener('change', function(e){
-    var k = ensureKocRoster();
-    k.waitingEnabled = e.target.checked;
-    k.assignment = null;
-    k.displayOrder = null;
-    renderKoc();
+    scheduleAutosave();
   });
 
   function renderKocCount(){
@@ -5443,7 +5500,9 @@
   });
 
   function setupBulkNameTools(){
-    installBulkNameTool('bulkKoc', document.getElementById('kocRoster'), false, applyBulkKocNames).kind = 'koc';
+    var koc = installBulkNameTool('bulkKoc', document.getElementById('kocRoster'), false, applyBulkKocNames);
+    koc.kind = 'koc';
+    koc.trigger.after(document.getElementById('kocWaitingToggle'));
     installBulkNameTool('bulkSingle', namesGrid, false, function(names){
       return applyBulkSetupNames(names, namesGrid, state.names);
     }).kind = 'setup';
@@ -5866,6 +5925,10 @@
 
   function applyLoadedState(st){
     state = st;
+    if (state.format === 'koc' && state.roundTimer && !state.koc.roundTimer){
+      state.koc.roundTimer = state.roundTimer;
+      delete state.roundTimer;
+    }
     roundTimer();
     presetCountsAutomatic = false;
     resetBulkNameTools();
@@ -6686,15 +6749,18 @@
   }
 
   function roundTimer(){
-    var saved = state.roundTimer;
+    var isKoc = state.format === 'koc';
+    var owner = isKoc ? state.koc : state;
+    var saved = owner.roundTimer;
+    var play = isKoc ? 20 : 12;
     if (!saved || !saved.clock || !Number.isInteger(saved.play) || saved.play < 1 || saved.play > 99 ||
         !Number.isInteger(saved.change) || saved.change < 0 || saved.change > 99 || !Number.isInteger(saved.round) || saved.round < 1 ||
         !['play','change'].includes(saved.phase) || !Number.isInteger(saved.clock.initial) || saved.clock.initial < 1 ||
         !Number.isFinite(saved.clock.remaining) || saved.clock.remaining < 0 ||
-        (saved.clock.deadline !== null && !Number.isFinite(saved.clock.deadline))) state.roundTimer = {
-      enabled:false,play:12,change:0,round:1,phase:'play',clock:PadelRounds.createClock(720)
+        (saved.clock.deadline !== null && !Number.isFinite(saved.clock.deadline))) owner.roundTimer = {
+      enabled:false,play:play,change:0,round:1,phase:'play',clock:PadelRounds.createClock(play*60)
     };
-    return state.roundTimer;
+    return owner.roundTimer;
   }
 
   function toolButton(key, action){
@@ -6704,7 +6770,7 @@
     return button;
   }
 
-  function addRoundOption(root, name, key, type, value, onChange){
+  function addRoundOption(root, name, key, type, value, onChange, container){
     var input = liveElement(type === 'select' ? 'select' : 'input','');
     input.id = root.id + name;
     var label = liveElement('label','',t(key));
@@ -6728,8 +6794,39 @@
     var field = liveElement('div',type === 'checkbox' ? 'round-option-checkbox' : 'round-option-field');
     if (type === 'checkbox') field.append(input,label);
     else field.append(label,input);
-    root.appendChild(field);
+    (container || root).appendChild(field);
     return input;
+  }
+
+  function addKocChoice(root, name, heading, options, selected, onChange){
+    var group = liveElement('fieldset','koc-choice-group');
+    var list = liveElement('div','koc-choice-list');
+    group.append(liveElement('legend','',t(heading)),list);
+    options.forEach(function(option){
+      var value = option[0], title = option[1], description = option[2];
+      var label = liveElement('label','koc-choice-card');
+      var input = liveElement('input','');
+      input.type = 'radio';
+      input.name = name;
+      input.id = name + '-' + value;
+      input.value = value;
+      input.checked = selected === value;
+      input.setAttribute('aria-labelledby',input.id+'-title');
+      input.setAttribute('aria-describedby',input.id+'-description');
+      var text = liveElement('strong','',t(title));
+      text.id = input.id+'-title';
+      var help = liveElement('small','',t(description));
+      help.id = input.id+'-description';
+      input.addEventListener('change',function(){
+        if (!input.checked) return;
+        onChange(value);
+        document.getElementById(input.id).focus({preventScroll:true});
+        scheduleAutosave();
+      });
+      label.append(input,text,help);
+      list.appendChild(label);
+    });
+    root.appendChild(group);
   }
 
   function renderRoundSettings(){
@@ -6737,28 +6834,37 @@
     var root = document.getElementById(koc ? 'kocRoundSettings' : 'roundSettings');
     root.replaceChildren();
     var timer = roundTimer();
+    var clockHeader = root, clockFields = root;
     if (koc){
       var k = ensureKocRoster();
-      var mode = addRoundOption(root,'Variant','kocVariant','select',
-        [['start','kocStartOnly'],['planner','kocPlanner']],function(input){
-          k.guided = input.value === 'planner';
+      var choices = liveElement('div','koc-round-choices');
+      root.appendChild(choices);
+      addKocChoice(choices,'kocVariant','kocVariant',[
+        ['start','kocStartOnly','kocStartDescription'],
+        ['planner','kocPlanner','kocPlannerDescription']
+      ],k.guided ? 'planner' : 'start',function(value){
+          k.guided = value === 'planner';
           k.assignment = null;
           k.displayOrder = null;
           k.lastSignature = '';
           renderKoc();
+          renderRoundRules();
         });
-      mode.value = k.guided ? 'planner' : 'start';
       if (k.guided){
-        var pairing = addRoundOption(root,'Pairing','kocPairing','select',
-          [['balanced','kocPairingBalanced'],['crossed','kocPairingCrossed']],function(input){
-            k.crossed = input.value === 'crossed';
-            renderRoundSettings();
-            renderRoundRules();
-            document.getElementById(input.id).focus();
-          });
-        pairing.value = k.crossed === true ? 'crossed' : 'balanced';
-        root.appendChild(liveElement('p','round-option-note',t(k.crossed === true ? 'kocPairingCrossedHint' : 'kocPlannerHint')));
+        addKocChoice(choices,'kocPairing','kocPairing',[
+          ['balanced','kocPairingBalanced','kocPairingBalancedDescription'],
+          ['crossed','kocPairingCrossed','kocPairingCrossedDescription']
+        ],k.crossed === true ? 'crossed' : 'balanced',function(value){
+          k.crossed = value === 'crossed';
+          renderRoundRules();
+        });
       }
+      var clockBox = liveElement('section','koc-clock-settings');
+      clockHeader = liveElement('header','');
+      clockFields = liveElement('div','koc-clock-fields');
+      clockHeader.appendChild(liveElement('h3','',t('timerSettingsTitle')));
+      clockBox.append(clockHeader,clockFields);
+      root.appendChild(clockBox);
     } else {
       var scoring = addRoundOption(root,'Score','scoringChoice','select',
         [['points','scoringPoints'],['games','scoringGames']],function(input){
@@ -6769,16 +6875,23 @@
       scoring.value = scoreMode();
       scoring.disabled = liveHasScore();
     }
-    addRoundOption(root,'Enabled','timerOption','checkbox',timer.enabled,function(input){
+    var clockSwitch = addRoundOption(root,'Enabled',koc ? (timer.enabled ? 'timerOn' : 'timerOff') : 'timerOption','checkbox',timer.enabled,function(input){
       timer.enabled = input.checked;
       if (timer.enabled) prepareRoundClock(koc ? 1 : liveCurrentRound(),true);
       else timer.clock = PadelRounds.changeClock(timer.clock,'pause',Date.now());
       renderRoundSettings();
+      if (koc) document.getElementById(input.id).focus({preventScroll:true});
       paintRoundClocks();
-    });
+    },clockHeader);
+    if (koc){
+      clockSwitch.setAttribute('role','switch');
+      clockSwitch.setAttribute('aria-label',t('timerSettingsTitle'));
+      clockFields.hidden = !timer.enabled;
+    }
     if (timer.enabled){
       ['play','change'].forEach(function(phase){
-        addRoundOption(root,phase === 'play' ? 'Play' : 'Break',phase === 'play' ? 'timerPlay' : 'timerBreak',
+        var key = phase === 'play' ? (koc ? 'timerKocPlay' : 'timerPlay') : (koc ? 'timerKocBreak' : 'timerBreak');
+        var field = addRoundOption(root,phase === 'play' ? 'Play' : 'Break',key,
           'number',timer[phase],function(input){
             if (!input.value || !input.checkValidity()) {input.value = timer[phase];return;}
             timer[phase] = Number(input.value);
@@ -6788,7 +6901,13 @@
               timer.clock = PadelRounds.createClock(timer[phase]*60);
             }
             paintRoundClocks(true);
-          });
+          },clockFields);
+        if (koc && phase === 'change'){
+          var hint = liveElement('small','',t('timerKocBreakHint'));
+          hint.id = field.id+'Hint';
+          field.setAttribute('aria-describedby',hint.id);
+          field.parentNode.appendChild(hint);
+        }
       });
     }
   }

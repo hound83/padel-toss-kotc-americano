@@ -30,20 +30,22 @@ test('round planner, clock, rules and scoring options work in the browser',async
   }
   const koc=await open('koc',true);
   await koc.locator('#kocCourtButtons [data-courts="2"]').tap();
-  await koc.locator('#kocRoundSettingsVariant').selectOption('planner');
-  const pairing=koc.locator('#kocRoundSettingsPairing');
-  assert.equal(await pairing.inputValue(),'balanced');
-  await pairing.selectOption('crossed');
-  assert.match(await koc.locator('#kocRoundSettings .round-option-note').innerText(),/precies twee spelers/);
+  assert.equal(await koc.getByRole('radio',{name:'Startindeling'}).isChecked(),true);
+  assert.equal(await koc.locator('#kocPairing-balanced').count(),0);
+  await koc.locator('#kocVariant-planner-title').tap();
+  assert.equal(await koc.locator('#kocPairing-balanced').isChecked(),true);
+  const pairing=koc.locator('#kocPairing-crossed');
+  await koc.locator('#kocPairing-crossed-title').tap();
+  assert.equal(await pairing.isChecked(),true);
   assert.equal(await koc.locator('#roundSettingsScore').isVisible(),false);
-  await koc.locator('#kocWaitingToggle').check();
-  await koc.locator('#kocEntryToggle').check();
-  const marks=koc.locator('#kocRoster .koc-entry-marker input');
-  await marks.nth(0).uncheck();
-  await marks.nth(1).uncheck();
-  await marks.nth(2).check();
-  await marks.nth(3).check();
-  await koc.locator('#kocRoundSettingsEnabled').check();
+  await koc.locator('#kocWaitingToggle').tap();
+  const marks=koc.locator('#kocRoster .koc-entry-marker');
+  await marks.nth(2).tap();
+  await marks.nth(3).tap();
+  assert.equal(await koc.locator('#kocRoundSettingsPlay').count(),0);
+  await koc.getByRole('switch',{name:'Rondeklok'}).check();
+  assert.equal(await koc.locator('#kocRoundSettingsPlay').inputValue(),'20');
+  assert.equal(await koc.locator('#kocRoundSettingsBreak').inputValue(),'0');
   await koc.locator('#kocRoundSettingsPlay').fill('10');
   await koc.locator('#kocRoundSettingsBreak').fill('2');
   await koc.locator('#kocRoundSettingsBreak').press('Tab');
@@ -142,7 +144,7 @@ test('round planner, clock, rules and scoring options work in the browser',async
   await koc.locator('#resumeContinue').tap();
   assert.equal(await koc.locator('#kocRoundHeading').textContent(),'Ronde 2');
   assert.deepEqual(await cards.locator('.koc-waiting-card li').allTextContents(),expectedWaiting);
-  assert.equal(await pairing.inputValue(),'crossed');
+  assert.equal(await pairing.isChecked(),true);
 
   assert.equal(await duration.inputValue(),'00:01');
   assert.equal(await clock.locator('[data-clock-action=start]').isVisible(),true);
@@ -150,6 +152,8 @@ test('round planner, clock, rules and scoring options work in the browser',async
   const savedTeams=await readTeams();
   const legacySave=await koc.evaluate(()=>JSON.parse(localStorage.getItem('padel-toss-americano-session-v2')));
   delete legacySave.state.koc.crossed;
+  legacySave.state.roundTimer=legacySave.state.koc.roundTimer;
+  delete legacySave.state.koc.roundTimer;
   const legacyContext=await browser.newContext();
   t.after(()=>legacyContext.close());
   await legacyContext.addInitScript(save=>{
@@ -158,12 +162,26 @@ test('round planner, clock, rules and scoring options work in the browser',async
   const legacy=await legacyContext.newPage();
   await legacy.goto(origin);
   await legacy.locator('#resumeContinue').click();
-  assert.equal(await legacy.locator('#kocRoundSettingsPairing').inputValue(),'balanced');
+  assert.equal(await legacy.locator('#kocPairing-balanced').isChecked(),true);
+  assert.equal(await legacy.locator('#kocRoundSettingsPlay').inputValue(),'10');
   const legacyTeams=await legacy.locator('#kocRoundCards .koc-round-team ul').all();
   assert.deepEqual(await Promise.all(legacyTeams.map(team=>team.locator('li').allTextContents())),savedTeams);
 
   const desktop=await open('koc');
-  await desktop.locator('#kocRoundSettingsEnabled').check();
+  const choice=desktop.getByRole('radio',{name:'Startindeling'});
+  await choice.focus();
+  await choice.press('ArrowRight');
+  assert.equal(await desktop.getByRole('radio',{name:'Rondeplanner'}).isChecked(),true);
+  await desktop.getByRole('radio',{name:'Rondeplanner'}).press('ArrowLeft');
+  assert.equal(await choice.isChecked(),true);
+  await desktop.getByRole('switch',{name:'Rondeklok'}).press('Space');
+  const choiceBox=await desktop.locator('.koc-round-choices').boundingBox();
+  const clockSettings=await desktop.locator('.koc-clock-settings').boundingBox();
+  assert.ok(clockSettings.x>=choiceBox.x+choiceBox.width);
+  assert.equal(await desktop.locator('#kocRoundSettingsPlay').inputValue(),'20');
+  if(process.env.PADEL_SCREENSHOT_DIR){
+    await desktop.locator('#kocSetup').screenshot({path:path.join(process.env.PADEL_SCREENSHOT_DIR,'koc-setup-desktop.png')});
+  }
   await desktop.locator('#kocRoll').click();
   const regularClock=desktop.locator('#panelKoc [data-round-clock]');
   const result=desktop.locator('#kocResult');
@@ -186,6 +204,8 @@ test('round planner, clock, rules and scoring options work in the browser',async
   }
 
   const toss=await open('toss');
+  await toss.locator('#roundSettingsEnabled').check();
+  assert.equal(await toss.locator('#roundSettingsPlay').inputValue(),'12');
   await toss.locator('#roundSettingsScore').selectOption('games');
   await toss.locator('#continueTo2').click();
   await toss.locator('#generateBtn').click();

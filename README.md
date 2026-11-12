@@ -89,15 +89,15 @@ Als de baanindeling groter is dan het scherm, verdeelt de presentatie de kaarten
 
 - Kies bij Toss, Gesplitste Toss en Americano tussen elk punt tellen en padeltelling in games. Gewone Toss gebruikt die keuze in **Hoe speel je dit?**. Scorevelden bij Americano en bij groepen met uitslagen tonen de gekozen eenheid.
 - Open **Speelverdeling bekijken** boven het schema voor het aantal wedstrijden per speler, opeenvolgende rustbeurten en terugkerende duo’s.
-- Zet **Rondeklok gebruiken** aan en kies de standaard speeltijd en optioneel de wisseltijd. Start elke klok handmatig. De ring loopt terug met de resterende tijd. Bij KOC staat de klok op brede schermen rechts, in presentatiemodus naast de titel. Op smalle schermen staat hij onder de titel. Op nul kleurt het klokpaneel rood en verschijnt **Tijd om**. Tijdens het lopen kun je één minuut aftrekken of bijtellen. Reset zet de tijd terug op de begintijd van die ronde. De volgende ronde begint met de standaardduur en een stilstaande klok.
+- Zet de **Rondeklok** aan en kies de standaard speeltijd en optioneel de wisseltijd. Een nieuwe KOC-klok staat op 20 minuten. Start elke klok handmatig. De ring loopt terug met de resterende tijd. Bij KOC staat de klok op brede schermen rechts, in presentatiemodus naast de titel. Op smalle schermen staat hij onder de titel. Op nul kleurt het klokpaneel rood en verschijnt **Tijd om**. Tijdens het lopen kun je één minuut aftrekken of bijtellen. Reset zet de tijd terug op de begintijd van die ronde. De volgende ronde begint met de standaardduur en een stilstaande klok.
 
 ## Speciaal voor KOC
 
 - Kies **2 tot en met 4 banen** met dezelfde knoppen als bij de andere speelvormen, of **5 tot en met 12 banen** via de dropdown.
 - Vink afwezige spelers uit of pas namen aan; starten met minder spelers kan ook.
 - De eerste speler start op de hoogste baan, de tweede op de baan eronder.
-- Zet desgewenst **Indelen op laagste baan** aan. De laatste vier baanplekken krijgen dan een vinkje. Gemarkeerde spelers beginnen zo laag mogelijk. Bij vier banen zijn dit spelers 13–16.
-- Schakel **Met twee wachtspelers** in om twee extra spelers toe te voegen. Bij volle bezetting wachten de laatste twee spelers de eerste ronde. Bij vier banen zijn dit spelers 17 en 18. Na elke ronde wisselt het verliezende duo van baan 1 met het wachtende duo. De startindeling, presentatie en WhatsApp-tekst tonen het wachtduo en de wisselregel.
+- Kies **Baan 1** bij de gewenste spelers in de laatste vier baanplekken. Gemarkeerde spelers beginnen zo laag mogelijk. Bij vier banen zijn dit spelers 13–16.
+- Klik op **Wachtduo toevoegen** naast **Namenlijst plakken** om twee extra spelers toe te voegen. Bij volle bezetting wachten de laatste twee spelers de eerste ronde. Bij vier banen zijn dit spelers 17 en 18. Na elke ronde wisselt het verliezende duo van baan 1 met het wachtende duo. De startindeling, presentatie en WhatsApp-tekst tonen het wachtduo en de wisselregel.
 - Bij minder deelnemers blijven vrije plekken op de laagste banen. Daardoor kunnen niet altijd alle gemarkeerde spelers op baan 1 starten.
 - Gebruik **🎲 Genereer startindeling** opnieuw om een andere willekeurige indeling te maken.
 - Kopieer de indeling eenvoudig voor **WhatsApp**.
