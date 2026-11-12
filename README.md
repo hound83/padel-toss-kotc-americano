@@ -92,9 +92,9 @@ Als de baanindeling groter is dan het scherm, verdeelt de presentatie de kaarten
 - Kies **1 tot en met 4 banen** met dezelfde knoppen als bij de andere speelvormen, of **5 tot en met 12 banen** via de dropdown.
 - Vink afwezige spelers uit of pas namen aan; starten met minder spelers kan ook.
 - De eerste speler start op de hoogste baan, de tweede op de baan eronder.
-- Zet desgewenst **Instroomspelers indelen** aan. De laatste vier spelers krijgen dan een eigen vinkje; gemarkeerde spelers starten zo laag mogelijk, bij voorkeur op baan 1.
-- Schakel **Met twee wachtspelers** in om twee extra spelers toe te voegen. De loting wijst aan welk duo de eerste ronde wacht. Na elke ronde wisselt het verliezende duo van baan 1 met het wachtende duo. De startindeling, presentatie en WhatsApp-tekst tonen het wachtduo en de wisselregel.
-- Bij minder deelnemers blijven vrije plekken op de laagste banen. Daardoor kunnen niet altijd alle gemarkeerde instroomspelers op baan 1 starten.
+- Zet desgewenst **Indelen op laagste baan** aan. De laatste vier baanplekken krijgen dan een vinkje. Gemarkeerde spelers beginnen zo laag mogelijk. Bij vier banen zijn dit spelers 13–16.
+- Schakel **Met twee wachtspelers** in om twee extra spelers toe te voegen. Bij volle bezetting wachten de laatste twee spelers de eerste ronde. Bij vier banen zijn dit spelers 17 en 18. Na elke ronde wisselt het verliezende duo van baan 1 met het wachtende duo. De startindeling, presentatie en WhatsApp-tekst tonen het wachtduo en de wisselregel.
+- Bij minder deelnemers blijven vrije plekken op de laagste banen. Daardoor kunnen niet altijd alle gemarkeerde spelers op baan 1 starten.
 - Gebruik **🎲 Genereer startindeling** opnieuw om een andere willekeurige indeling te maken.
 - Kopieer de indeling eenvoudig voor **WhatsApp**.
 - De app verzorgt de **start**. Het doorschuiven na de eerste wedstrijden gebeurt op de baan.

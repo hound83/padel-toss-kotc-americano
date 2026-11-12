@@ -207,21 +207,22 @@ test('all court sizes and random absences remain valid with 0-4 incoming players
 
 
 
-test('waiting rotation draws two distinct players and fills every court',()=>{
+test('waiting rotation reserves the last two players and fills every court',()=>{
   for(let courts=1;courts<=12;courts++){
     const attendees=Array.from({length:courts*4+2},(_,i)=>i);
-    const roster=attendees.map(i=>({incoming:i>=attendees.length-4}));
+    const roster=attendees.map(i=>({incoming:i>=courts*4-4}));
     for(let roll=0;roll<20;roll++){
       const assignment=makeAssignment(attendees,{courts,roster,incomingEnabled:true,waitingEnabled:true});
       assert.deepEqual(Object.keys(assignment).map(Number),attendees);
       assert.equal(assignment[0],courts);
       assert.equal(assignment[1],Math.max(1,courts-1));
       const placements=Object.values(assignment);
-      assert.equal(placements.filter(court=>court===0).length,2);
+      assert.deepEqual(attendees.filter(i=>assignment[i]===0),[courts*4,courts*4+1]);
       for(let court=1;court<=courts;court++){
         assert.equal(placements.filter(value=>value===court).length,4);
       }
-      if(courts>=2)assert.ok(attendees.slice(-4).every(i=>assignment[i]>0));
+      const marked=attendees.slice(courts*4-4,courts*4);
+      assert.equal(marked.filter(i=>assignment[i]===1).length,courts===2?3:4);
     }
   }
 });
