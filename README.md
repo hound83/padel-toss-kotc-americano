@@ -27,9 +27,7 @@
 | 🎾 **Toss** | Genereert een speelschema voor de hele groep. Geen uitslagen bijhouden nodig. |
 | ⚖️ **Gesplitste Toss** | Deelt spelers in binnen niveaugroepen (**Zilver**, **Goud** en **Platina**), met optionele scores en een klassement per groep. |
 | 🏆 **Americano / Competitieve Toss** | Eén groep met een speelschema, scores en een klassement. |
-| 👑 **King of the Court (KOC)** | Genereert **alleen de startindeling** per baan. Daarna spelen en schuiven de spelers zelf door volgens de KOC-regels. |
-
-> **Toss en King of the Court zijn verschillende speelvormen.** De KOC-functie is bedoeld als hulpmiddel om te starten, niet als complete wedstrijdadministratie.
+| 👑 **King of the Court (KOC)** | Kies **Startindeling** of **Rondeplanner** met uitslagen en doorschuiven per ronde. |
 
 ## Zo werkt het
 
@@ -77,7 +75,7 @@ De [Americano-repetitie](docs/americano-rehearsal.md) toont de gevolgen voor pun
 
 De presentatiemodus is een afzonderlijke liveweergave, niet het hele lange schema:
 
-- **KOC:** uitsluitend de startindeling per baan, zonder invoervelden of speelvormkeuze.
+- **KOC:** toon de startindeling of speel de actuele ronde met uitslagen en nieuwe koppels in de Rondeplanner.
 - **Toss:** huidige ronde en volgende ronde; gebruik **vorige/volgende** om door te schuiven (er zijn geen uitslagen om automatisch af te leiden wanneer een ronde klaar is).
 - **Americano:** huidige wedstrijden, volgende ronde en het klassement. De actieve ronde schuift automatisch vooruit zodra alle uitslagen van die ronde compleet zijn. Met de pijlen kun je tijdelijk een andere ronde tonen en daarna **Auto** hervatten.
 - **Gesplitste Toss:** de huidige en volgende ronde van alle niveaus. Automatisch doorschuiven kan alleen wanneer alle actieve niveaus resultaten bijhouden; anders gebruik je de pijlen.

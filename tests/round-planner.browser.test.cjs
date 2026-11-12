@@ -110,7 +110,7 @@ test('round planner, clock, rules and scoring options work in the browser',async
   await gameScores.first().fill('4');
   await gameScores.nth(1).fill('3');
   assert.match(await gameScores.first().getAttribute('aria-label'),/^Games voor /);
-  assert.match(await americano.locator('#boardCol thead').innerText(),/Games/);
+  assert.match(await americano.locator('#boardCol thead').textContent(),/Games/);
   await americano.locator('#backToSettingsBtn').click();
   assert.equal(await americano.locator('#roundSettingsScore').isEnabled(),false);
 
