@@ -9,6 +9,12 @@ These are standing instructions for `hound83/padel-toss-kotc-americano`. The use
 - Mark each item `- [x]` once its outcome is verified. Add brief evidence such as a file path, test result, commit, PR, or verified live link. Save the log at each meaningful checkpoint with the current branch, commit, or worktree location as applicable. Keep open items unchecked and record any blocker and the next concrete action.
 - When resuming, open the existing log and verify the checkpoint against the current repository state. Before the final reply, reconcile the checklist with the latest request. Record `Done` when all requested outcomes are verified, or `In progress` or `Blocked` with the remaining work. Leave the log available for the user's review.
 
+## Effort and collaboration
+
+- Use the research, tools, and verification needed to complete the assignment. Follow promising leads when they can improve the result, resolve an important uncertainty, or verify a requirement.
+- Build on relevant work already available, including Grok's findings and PRs. Verify what you rely on and repeat checks when independent verification adds value.
+- When searches keep turning up the same evidence or a line of inquiry is unlikely to affect the outcome, record the useful findings and any material gap, then return to the assignment.
+
 ## Outcome ownership
 
 - Treat a substantial implementation request as ownership of a **complete, useful milestone**, not just the first code change. Investigate, implement, test, inspect real user flows, repair discovered in-scope defects, and document the result before stopping. Keep explicitly small fixes small; do not invent unrelated work.
@@ -18,7 +24,7 @@ These are standing instructions for `hound83/padel-toss-kotc-americano`. The use
 
 ## Repository orientation
 
-- Inspect the current branch, user changes, recent remote commits/PRs if available, and `README.md`. Inspect only the relevant portion of `index.html`, `tests/`, and `sw.js` for the task. Do not trust older chat snapshots as current state.
+- Inspect the current branch, user changes, recent remote commits/PRs if available, and `README.md`. Start with the relevant parts of `index.html`, `tests/`, and `sw.js`, and follow related code or documentation as needed. Do not trust older chat snapshots as current state.
 - This is a static GitHub Pages app: `index.html` contains the HTML, CSS, JavaScript and actual assignment logic. There is no current `package.json` or server-side scheduler. Avoid introducing dependencies or a framework without a demonstrated need.
 - The four distinct modes are **Toss**, **Split Toss** (Silver/Gold/Platinum groups), **Americano** (scoring/ranking), and **King of the Court** (start assignment only). Never conflate their rules.
 
