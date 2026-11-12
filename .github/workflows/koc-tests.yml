@@ -16,7 +16,7 @@ jobs:
         with:
           node-version: '22'
       - name: Scheduling, ranking and name-list unit tests
-        run: node --test tests/koc.test.cjs tests/bulk-names.test.cjs tests/americano-ranking.test.cjs
+        run: node --test tests/koc.test.cjs tests/bulk-names.test.cjs tests/americano-ranking.test.cjs tests/round-planner.test.cjs
       - name: Install browser test dependencies
         run: |
           npm install --no-save --no-package-lock playwright@1.58.0

@@ -26,12 +26,12 @@ These are standing instructions for `hound83/padel-toss-kotc-americano`. The use
 
 - Inspect the current branch, user changes, recent remote commits/PRs if available, and `README.md`. Start with the relevant parts of `index.html`, `tests/`, and `sw.js`, and follow related code or documentation as needed. Do not trust older chat snapshots as current state.
 - This is a static GitHub Pages app: `index.html` contains the HTML, CSS, JavaScript and actual assignment logic. There is no current `package.json` or server-side scheduler. Avoid introducing dependencies or a framework without a demonstrated need.
-- The four distinct modes are **Toss**, **Split Toss** (Silver/Gold/Platinum groups), **Americano** (scoring/ranking), and **King of the Court** (start assignment only). Never conflate their rules.
+- The four distinct modes are **Toss**, **Split Toss** (Silver/Gold/Platinum groups), **Americano** (scoring/ranking), and **King of the Court** (Startindeling or Rondeplanner). Never conflate their rules.
 
 ## Product and data invariants
 
 - Preserve existing scheduling rules, player participation, score/ranking behavior, local session recovery, JSON import/export, presentation mode, and Dutch/English operation unless an explicit change requires otherwise.
-- For KOC, the app creates only the **starting courts**; subsequent movement is performed by players. Use 2–12 courts for new setups and keep one-court saves readable. Preserve absences, re-roll, the established organizer placement and lowest-court vacancy rules. Read `tests/koc.test.cjs` before changing these algorithms; do not replace product rules with generic "random" behavior.
+- KOC **Startindeling** creates the starting courts. KOC **Rondeplanner** uses point scores to move players and form partnerships for the next round. With a waiting pair, the losers on court 1 take the waiting places. Use 2–12 courts for new setups and keep one-court saves readable. Preserve absences, re-roll, the established organizer placement and lowest-court vacancy rules. Read `tests/koc.test.cjs` before changing these algorithms; do not replace product rules with generic "random" behavior.
 - Player names and sessions remain local to the browser; no new server-side collection or tracking without explicit product authorization.
 - When changing app assets or offline behavior, verify service-worker/cache updating, fresh installs, upgrades, and reload behavior. A visually correct online page can still be stale offline.
 
