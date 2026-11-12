@@ -31,8 +31,18 @@ test('round planner, clock, rules and scoring options work in the browser',async
   const koc=await open('koc',true);
   await koc.locator('#kocCourtButtons [data-courts="2"]').tap();
   await koc.locator('#kocRoundSettingsVariant').selectOption('planner');
+  const pairing=koc.locator('#kocRoundSettingsPairing');
+  assert.equal(await pairing.inputValue(),'balanced');
+  await pairing.selectOption('crossed');
+  assert.match(await koc.locator('#kocRoundSettings .round-option-note').innerText(),/precies twee spelers/);
   assert.equal(await koc.locator('#roundSettingsScore').isVisible(),false);
   await koc.locator('#kocWaitingToggle').check();
+  await koc.locator('#kocEntryToggle').check();
+  const marks=koc.locator('#kocRoster .koc-entry-marker input');
+  await marks.nth(0).uncheck();
+  await marks.nth(1).uncheck();
+  await marks.nth(2).check();
+  await marks.nth(3).check();
   await koc.locator('#kocRoundSettingsEnabled').check();
   await koc.locator('#kocRoundSettingsPlay').fill('10');
   await koc.locator('#kocRoundSettingsBreak').fill('2');
@@ -88,6 +98,12 @@ test('round planner, clock, rules and scoring options work in the browser',async
   await clock.locator('[data-clock-action=phase]').tap();
 
   const cards=koc.locator('#kocRoundCards');
+  const teams=cards.locator('.koc-round-team ul');
+  const readTeams=async()=>Promise.all((await teams.all()).map(team=>team.locator('li').allTextContents()));
+  const firstTeams=await readTeams();
+  for(const team of firstTeams.slice(-2)){
+    assert.equal(team.filter(name=>['Speler 7','Speler 8'].includes(name)).length,1);
+  }
   assert.deepEqual(await cards.locator('.koc-waiting-card li').allTextContents(),['Speler 9','Speler 10']);
   const expectedWaiting=await cards.locator('.koc-courts .koc-court').last().locator('.koc-round-team').nth(1).locator('li').allTextContents();
   for(const [key,value] of [['2:0','20'],['2:1','13'],['1:0','17'],['1:1','17']]){
@@ -100,12 +116,18 @@ test('round planner, clock, rules and scoring options work in the browser',async
   assert.equal(await duration.inputValue(),'10:00');
   assert.equal(await clock.locator('[data-clock-action=start]').isVisible(),true);
   assert.deepEqual(await cards.locator('.koc-waiting-card li').allTextContents(),expectedWaiting);
+  for(const team of await readTeams()){
+    assert.ok(!firstTeams.some(previous=>team.every(name=>previous.includes(name))));
+    assert.ok(!team.every(name=>['Speler 9','Speler 10'].includes(name)));
+  }
   assert.ok((await cards.locator('.koc-courts .koc-court').last().locator('li').allTextContents()).includes('Speler 9'));
   assert.equal(await koc.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
   await koc.locator('#kocPresent').tap();
   assert.equal(await koc.locator('#liveSubtitle').textContent(),'Ronde 2');
   assert.equal(await koc.locator('#livePresentation [data-round-clock] input').inputValue(),'10:00');
   const liveClock=koc.locator('#livePresentation [data-round-clock]');
+  assert.equal(await koc.locator('.live-head #liveRoundClock').count(),1);
+  assert.ok((await liveClock.boundingBox()).y>(await koc.locator('#liveSubtitle').boundingBox()).y);
   assert.ok((await liveClock.locator('.round-clock-face').boundingBox()).width>=150);
   await liveClock.locator('input').fill('00:01');
   await liveClock.locator('[data-clock-action=start]').tap();
@@ -120,9 +142,48 @@ test('round planner, clock, rules and scoring options work in the browser',async
   await koc.locator('#resumeContinue').tap();
   assert.equal(await koc.locator('#kocRoundHeading').textContent(),'Ronde 2');
   assert.deepEqual(await cards.locator('.koc-waiting-card li').allTextContents(),expectedWaiting);
+  assert.equal(await pairing.inputValue(),'crossed');
 
   assert.equal(await duration.inputValue(),'00:01');
   assert.equal(await clock.locator('[data-clock-action=start]').isVisible(),true);
+
+  const savedTeams=await readTeams();
+  const legacySave=await koc.evaluate(()=>JSON.parse(localStorage.getItem('padel-toss-americano-session-v2')));
+  delete legacySave.state.koc.crossed;
+  const legacyContext=await browser.newContext();
+  t.after(()=>legacyContext.close());
+  await legacyContext.addInitScript(save=>{
+    localStorage.setItem('padel-toss-americano-session-v2',JSON.stringify(save));
+  },legacySave);
+  const legacy=await legacyContext.newPage();
+  await legacy.goto(origin);
+  await legacy.locator('#resumeContinue').click();
+  assert.equal(await legacy.locator('#kocRoundSettingsPairing').inputValue(),'balanced');
+  const legacyTeams=await legacy.locator('#kocRoundCards .koc-round-team ul').all();
+  assert.deepEqual(await Promise.all(legacyTeams.map(team=>team.locator('li').allTextContents())),savedTeams);
+
+  const desktop=await open('koc');
+  await desktop.locator('#kocRoundSettingsEnabled').check();
+  await desktop.locator('#kocRoll').click();
+  const regularClock=desktop.locator('#panelKoc [data-round-clock]');
+  const result=desktop.locator('#kocResult');
+  const regularBox=await regularClock.boundingBox();
+  const resultBox=await result.boundingBox();
+  assert.ok(regularBox.width<resultBox.width*.6);
+  assert.ok(Math.abs(regularBox.x+regularBox.width-resultBox.x-resultBox.width)<2);
+  await desktop.locator('#kocPresent').click();
+  const head=desktop.locator('.live-head');
+  const presentationClock=head.locator('#liveRoundClock');
+  const title=await head.locator('#liveTitle').boundingBox();
+  const clockBox=await presentationClock.boundingBox();
+  assert.ok(clockBox.x>title.x+title.width);
+  assert.ok((await desktop.locator('#liveKoc').boundingBox()).y<260);
+  assert.ok(await presentationClock.locator('input').evaluate(el=>parseFloat(getComputedStyle(el).fontSize)>=50));
+  if(process.env.PADEL_SCREENSHOT_DIR){
+    await desktop.locator('#livePresentation').screenshot({
+      path:path.join(process.env.PADEL_SCREENSHOT_DIR,'koc-presentation-clock.png')
+    });
+  }
 
   const toss=await open('toss');
   await toss.locator('#roundSettingsScore').selectOption('games');

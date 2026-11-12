@@ -49,6 +49,63 @@ test('all players keep a unique place across rounds and repeat partners are avoi
   assert.ok(uneven.matches[1].teams.every(pair=>pair[0]<4 !== pair[1]<4));
 });
 
+test('crossed pairing picks the closer of the two splits even when the old pairs would tie',()=>{
+  const first = {number:1,waiting:[],matches:[
+    {court:1,teams:[[0,1],[2,3]],score:[17,16]},
+    {court:2,teams:[[4,5],[6,7]],score:[17,16]}
+  ]};
+  const strength = () => [1,-1,0,0,.8,-.8,0,0];
+  const next = rounds.nextKocRound([first],8,strength,random,{crossed:true});
+  assert.deepEqual(next.matches[1].teams,[[0,5],[1,4]]);
+});
+
+test('crossed pairing separates arriving partners, including the returning waiting pair',()=>{
+  for(const courts of [2,4,12]){
+    for(const waiting of [0,2]){
+      const count = courts*4+waiting;
+      const assignment = Object.fromEntries(ids(count).map(i=>[i,i < courts*4 ? Math.floor(i/4)+1 : 0]));
+      const options = {crossed:true};
+      const history = [rounds.startKocRounds(assignment,courts,count,fit,random,options)];
+      for(let i=0;i<8;i++){
+        const last = history.at(-1);
+        last.matches.forEach((match,index)=>{match.score = index%2 ? [19,18] : [15,17];});
+        const previousPairs = last.matches.flatMap(match=>match.teams).map(sort);
+        if (last.waiting.length) previousPairs.push(sort(last.waiting));
+        const next = rounds.nextKocRound(history,count,fit,random,options);
+        next.matches.forEach(match=>match.teams.map(sort).forEach(pair=>{
+          assert.ok(!previousPairs.some(([a,b])=>a===pair[0] && b===pair[1]));
+        }));
+        if (waiting) assert.deepEqual(next.waiting,last.matches[0].teams[0]);
+        history.push(next);
+        assert.ok(rounds.validKocRounds(history,courts,count));
+      }
+    }
+  }
+});
+
+test('two marked players start in separate teams and their hint fades with games played',()=>{
+  const assignment = {0:1,1:1,2:1,3:1,4:2,5:2,6:2,7:2};
+  const options = {crossed:true,hintedPlayers:[2,3]};
+  const first = rounds.startKocRounds(assignment,2,8,fit,random,options);
+  assert.ok(first.matches[0].teams.every(pair=>pair.some(p=>p<2) && pair.some(p=>p>=2)));
+  const neutral = rounds.startKocRounds(assignment,2,8,fit,random,{crossed:true});
+  assert.deepEqual(rounds.startKocRounds(assignment,2,8,fit,random,
+    {crossed:true,hintedPlayers:[0,1,2,3]}),neutral);
+
+  const played = {number:1,waiting:[],matches:[
+    {court:1,teams:[[0,1],[2,3]],score:[17,15]},
+    {court:2,teams:[[4,5],[6,7]],score:[17,15]}
+  ]};
+  for(const [count,expected] of [[1,.0625-.2],[3,.0625-.12],[6,.0625]]){
+    const history = Array.from({length:count},(_,i)=>({...played,number:i+1}));
+    rounds.nextKocRound(history,8,(games,n)=>{
+      assert.ok(Math.abs(games[0].margin-expected)<1e-10);
+      assert.equal(games[1].margin,.0625);
+      return fit(games,n);
+    },random,options);
+  }
+});
+
 test('manual clock can be adjusted while running and resets to the start duration',()=>{
   let clock = rounds.createClock(720);
   clock = rounds.changeClock(clock,'set',1000,500);
