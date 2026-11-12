@@ -253,6 +253,23 @@
     }
     .round-clock-actions{justify-content:center;}
   }
+  #panelKoc .round-clock,#livePresentation .koc-live-head .round-clock{
+    --clock-diameter:clamp(154px,14vw,186px);
+    --clock-digits:clamp(34px,4.4vw,56px);
+    grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"heading face" "actions face";
+    gap:6px 14px;padding:12px;margin-inline-start:auto;
+  }
+  #panelKoc .round-clock{inline-size:min(100%,31rem);}
+  .live-head.koc-live-head{gap:10px;margin-bottom:10px;padding-bottom:8px;}
+  .koc-live-head .round-clock{inline-size:min(49%,31rem);margin-block-end:0;}
+  @media (max-width:800px){
+    .koc-live-head .round-clock{inline-size:100%;}
+  }
+  @media (max-width:540px){
+    #panelKoc .round-clock,#livePresentation .koc-live-head .round-clock{
+      grid-template-columns:minmax(0,1fr);grid-template-areas:"heading" "face" "actions";
+    }
+  }
   .score-unit:empty{display:none;}
 
   .score-unit{margin:0 0 8px;font-size:var(--fs-sm);color:var(--ink-soft);}
@@ -1470,7 +1487,7 @@
   </section>
 
   <footer class="app-footer">
-    <span id="appVersion">v2.6.1</span>
+    <span id="appVersion">v2.6.2</span>
     <details><summary data-i18n="whatsNew">Wat is nieuw?</summary>
       <ul>
         <li data-i18n="changeIllustrations">Nieuwe baanillustraties, marineblauw/lime en een puntenscore van 26–6.</li>
@@ -1509,7 +1526,7 @@
       <button type="button" id="livePagePause" data-i18n="liveScreenPause" aria-pressed="false"></button>
     </div>
     <p class="score-unit" id="liveScoreUnit"></p>
-    <div class="round-clock" data-round-clock hidden></div>
+    <div id="liveRoundClock" class="round-clock" data-round-clock hidden></div>
     <div id="liveKocActions" hidden>
       <p class="score-unit" data-i18n="kocScoreHint"></p>
       <button class="btn btn-primary" id="liveKocNext" type="button" data-i18n="kocNextRound"></button>
@@ -1606,6 +1623,10 @@
       kocVariant: "KOC-variant",
       kocStartOnly: "Startindeling",
       kocPlanner: "Rondeplanner",
+      kocPairing: "Koppels per ronde",
+      kocPairingBalanced: "Vrij met balans",
+      kocPairingCrossed: "Gekruist met balans",
+      kocPairingCrossedHint: "Na het doorschuiven kiest de planner de best passende kruising van de twee aangekomen duo’s. Vink je precies twee spelers aan voor de laagste baan, dan helpt dat tijdelijk bij de koppelkeuze.",
       kocPlannerHint: "Vul per baan de eindstand in. De planner deelt de volgende ronde in.",
       kocPlannerFull: "Voor de Rondeplanner zijn vier spelers per baan nodig, eventueel met twee wachtspelers.",
       kocNextRound: "Volgende ronde maken",
@@ -1933,6 +1954,10 @@
       kocVariant: "KOC variant",
       kocStartOnly: "Starting lineup",
       kocPlanner: "Round planner",
+      kocPairing: "Pairing each round",
+      kocPairingBalanced: "Open pairing with balance",
+      kocPairingCrossed: "Crossed pairing with balance",
+      kocPairingCrossedHint: "After moving courts, the planner balances the new teams by splitting the two arriving pairs. Marking exactly two players for the lowest court gives the planner a temporary pairing hint.",
       kocPlannerHint: "Enter the final score for each court to generate the next round.",
       kocPlannerFull: "The round planner needs four players on each court, with an optional pair waiting.",
       kocNextRound: "Generate next round",
@@ -2763,7 +2788,7 @@
     k.assignment = best;
     k.lastSignature = signature;
     k.displayOrder = shuffle(attendees);
-    if (k.guided) k.roundPlan = [PadelRounds.startKocRounds(best,k.courts,k.roster.length,fitAmericanoStrength)];
+    if (k.guided) k.roundPlan = [PadelRounds.startKocRounds(best,k.courts,k.roster.length,fitAmericanoStrength,Math.random,kocPairingOptions(k))];
     prepareRoundClock(1,true);
     renderKocResult();
     document.getElementById('kocRoll').textContent = t('kocReroll');
@@ -6516,6 +6541,11 @@
   function renderLivePresentation(){
     if (!document.body.classList.contains('presentation-mode'))return;
     var root=document.getElementById('livePresentation'), koc=state.format==='koc';
+    var head = root.querySelector('.live-head');
+    var clock = document.getElementById('liveRoundClock');
+    head.classList.toggle('koc-live-head',koc);
+    if (koc && clock.parentNode !== head) head.appendChild(clock);
+    else if (!koc && clock.parentNode === head) document.getElementById('liveScoreUnit').after(clock);
     var current=koc?0:liveCurrentRound();
     document.getElementById('liveTitle').textContent=
       (koc?'👑 ':state.format==='splitToss'?'🗂️ ':state.format==='americano'?'🏆 ':'🎾 ')+
@@ -6718,7 +6748,17 @@
           renderKoc();
         });
       mode.value = k.guided ? 'planner' : 'start';
-      if (k.guided) root.appendChild(liveElement('p','round-option-note',t('kocPlannerHint')));
+      if (k.guided){
+        var pairing = addRoundOption(root,'Pairing','kocPairing','select',
+          [['balanced','kocPairingBalanced'],['crossed','kocPairingCrossed']],function(input){
+            k.crossed = input.value === 'crossed';
+            renderRoundSettings();
+            renderRoundRules();
+            document.getElementById(input.id).focus();
+          });
+        pairing.value = k.crossed === true ? 'crossed' : 'balanced';
+        root.appendChild(liveElement('p','round-option-note',t(k.crossed === true ? 'kocPairingCrossedHint' : 'kocPlannerHint')));
+      }
     } else {
       var scoring = addRoundOption(root,'Score','scoringChoice','select',
         [['points','scoringPoints'],['games','scoringGames']],function(input){
@@ -6759,7 +6799,10 @@
       var rules = {toss:'tossRules',splitToss:'splitRules',americano:'americanoRules',koc:'kocRules'};
       details.appendChild(liveElement('p','',t(rules[state.format] || 'tossRules')));
       if (state.format === 'koc'){
-        if (state.koc.guided) details.appendChild(liveElement('p','',t('kocPlannerHint')));
+        if (state.koc.guided){
+          details.appendChild(liveElement('p','',t('kocPlannerHint')));
+          if (state.koc.crossed === true) details.appendChild(liveElement('p','',t('kocPairingCrossedHint')));
+        }
         details.appendChild(liveElement('p','',t('kocServiceIntro')));
         var order = liveElement('ol','');
         ['kocServiceA','kocServiceB','kocServiceC','kocServiceD'].forEach(function(key){
@@ -6914,6 +6957,14 @@
     return Array.isArray(rounds) ? rounds[rounds.length-1] : null;
   }
 
+  function kocPairingOptions(k){
+    var crossed = k.crossed === true;
+    var hintedPlayers = crossed && k.incomingEnabled ? Object.keys(k.assignment).map(Number).filter(function(player){
+      return k.assignment[player] === 1 && kocLowestCourtSlot(k,player) && k.roster[player].incoming === true;
+    }) : [];
+    return {crossed:crossed, hintedPlayers:hintedPlayers};
+  }
+
   function kocGuidedReady(k, attendees){
     return k.courts >= 2 && (attendees === k.courts*4 || attendees === kocCapacity(k));
   }
@@ -7000,7 +7051,7 @@
   function advanceKocRound(){
     if (!currentKocRound()) return;
     var k = ensureKocRoster();
-    var round = PadelRounds.nextKocRound(k.roundPlan,k.roster.length,fitAmericanoStrength);
+    var round = PadelRounds.nextKocRound(k.roundPlan,k.roster.length,fitAmericanoStrength,Math.random,kocPairingOptions(k));
     if (!round) return;
     k.roundPlan.push(round);
     prepareRoundClock(round.number,true);

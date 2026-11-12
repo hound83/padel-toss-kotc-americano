@@ -27,11 +27,37 @@
     return Number.isSafeInteger(value) && value >= 0;
   }
 
+  function chooseCrossedTeams([a,b,c,d], strength, random){
+    const firstGap = Math.abs(strength[a]+strength[c]-strength[b]-strength[d]);
+    const secondGap = Math.abs(strength[a]+strength[d]-strength[b]-strength[c]);
+    const first = Math.abs(firstGap-secondGap) > .025 ? firstGap < secondGap : random() < .5;
+    return first ? [[a,c],[b,d]] : [[a,d],[b,c]];
+  }
+
+  function estimateKocStrength(games, playerCount, fitStrength, hintedPlayers){
+    if (hintedPlayers.length !== 2){
+      return games.length ? fitStrength(games, playerCount) : new Float64Array(playerCount);
+    }
+    const played = new Uint32Array(playerCount);
+    games.forEach(game => game.players.forEach(player => {played[player]++;}));
+    const hint = new Float64Array(playerCount);
+    hintedPlayers.forEach(player => {
+      hint[player] = -.12 * Math.max(0, 1-played[player]/6);
+    });
+    // Fit the remaining score difference around the fading starting estimate.
+    const adjusted = games.map(({players,margin}) => {
+      const [a,b,c,d] = players;
+      return {players, margin:margin-(hint[a]+hint[b]-hint[c]-hint[d])};
+    });
+    return fitStrength(adjusted,playerCount).map((strength,player) => strength+hint[player]);
+  }
+
   function roundComplete(round){
     return round.matches.every(match => match.score.every(validScore) && match.score[0] !== match.score[1]);
   }
 
-  function makeRound(number, byCourt, waiting, history, playerCount, fitStrength, random = Math.random){
+  function makeRound(number, byCourt, waiting, history, playerCount, fitStrength, random, {crossed = false, hintedPlayers = []}){
+    const crossArrivals = crossed && number > 1;
     const games = [];
     const partnerCounts = new Map();
     const recentPartners = new Set();
@@ -39,34 +65,36 @@
       const players = match.teams.flat();
       const [left,right] = match.score;
       games.push({players, margin:(left-right)/Math.max(1,left+right)});
+      if (crossArrivals) return;
       match.teams.forEach(pair => {
         const key = pair.slice().sort((a,b) => a-b).join(':');
         partnerCounts.set(key, (partnerCounts.get(key) || 0) + 1);
         if (index === history.length-1) recentPartners.add(key);
       });
     }));
-    const strength = games.length ? fitStrength(games, playerCount) : new Float64Array(playerCount);
+    const strength = estimateKocStrength(games,playerCount,fitStrength,hintedPlayers);
     const disadvantage = new Float64Array(playerCount);
-    games.forEach(game => {
+    if (!crossArrivals) games.forEach(game => {
       const [a,b,c,d] = game.players;
       const gap = strength[a]+strength[b]-strength[c]-strength[d];
       (gap > 0 ? [c,d] : [a,b]).forEach(player => {disadvantage[player] += Math.abs(gap);});
     });
     const matches = byCourt.slice(1).map((players,index) => ({
-      court:index+1, teams:chooseTeams(players,strength,partnerCounts,recentPartners,disadvantage,random),
+      court:index+1, teams:crossArrivals ? chooseCrossedTeams(players,strength,random)
+        : chooseTeams(players,strength,partnerCounts,recentPartners,disadvantage,random),
       score:[null,null]
     }));
     return {number,matches,waiting:waiting.slice()};
   }
 
-  function startKocRounds(assignment, courts, playerCount, fitStrength, random){
+  function startKocRounds(assignment, courts, playerCount, fitStrength, random = Math.random, options = {}){
     const byCourt = Array.from({length:courts+1}, () => []);
     Object.keys(assignment).forEach(key => byCourt[assignment[key]].push(Number(key)));
     if (byCourt.slice(1).some(players => players.length !== 4) || ![0,2].includes(byCourt[0].length)) return null;
-    return makeRound(1,byCourt,byCourt[0],[],playerCount,fitStrength,random);
+    return makeRound(1,byCourt,byCourt[0],[],playerCount,fitStrength,random,options);
   }
 
-  function nextKocRound(rounds, playerCount, fitStrength, random){
+  function nextKocRound(rounds, playerCount, fitStrength, random = Math.random, options = {}){
     const last = rounds.at(-1);
     if (!last || !roundComplete(last)) return null;
     const courts = last.matches.length;
@@ -78,7 +106,7 @@
       byCourt[lower].push(...match.teams[1-winner]);
     });
     byCourt[1].push(...last.waiting);
-    return makeRound(last.number+1,byCourt,byCourt[0],rounds,playerCount,fitStrength,random);
+    return makeRound(last.number+1,byCourt,byCourt[0],rounds,playerCount,fitStrength,random,options);
   }
 
   function validKocRounds(rounds,courts,rosterSize){
