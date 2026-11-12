@@ -194,6 +194,43 @@
   .koc-entry-marker{display:flex;align-items:center;gap:8px;width:100%;font-size:var(--fs-sm);font-weight:700;color:var(--teal-900);cursor:pointer;}
   .koc-result,.live-koc-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:12px;}
   .koc-result{margin:20px 0;}
+  .round-options{display:flex;flex-wrap:wrap;align-items:end;gap:10px 18px;margin:0 0 18px;}
+  .round-option-field{display:grid;gap:4px;max-width:100%;}
+  .round-option-field label,.round-option-checkbox label{font-weight:700;font-size:var(--fs-sm);}
+  .round-option-field select,.round-option-field input,.round-clock-duration{
+    font:inherit;padding:8px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);
+  }
+  .round-option-field input[type=number]{width:86px;}
+  .round-option-checkbox{display:flex;gap:8px;align-items:center;min-height:40px;}
+  .round-option-checkbox input{width:18px;height:18px;accent-color:var(--teal-900);}
+  .round-option-note{font-size:var(--fs-sm);margin:0;width:100%;}
+  .round-rules{margin:12px 0 16px;padding:10px 14px;border:1px solid var(--line);border-radius:10px;background:var(--surface);}
+  .round-rules summary,.koc-round-history summary{cursor:pointer;font-weight:750;color:var(--teal-900);}
+  .round-rules p,.round-rules ol{margin:8px 0;font-size:var(--fs-sm);line-height:1.5;}
+  .round-clock{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin:0 0 12px;padding:9px 12px;
+    border:1px solid var(--line);border-radius:10px;background:var(--surface);}
+  .round-clock[hidden],.round-clock [hidden],#kocRoundPlan[hidden],#liveKocActions[hidden]{display:none!important;}
+  .round-clock-title{font-size:var(--fs-sm);color:var(--teal-900);}
+  .round-clock-duration,.round-clock-reading{font:750 var(--fs-lg) var(--font-mono);width:7ch;text-align:center;}
+  .round-clock-actions{display:flex;flex-wrap:wrap;gap:5px;}
+  .round-clock-actions button{padding:6px 9px;min-height:40px;font-size:var(--fs-sm);}
+  .round-clock-expired{font-weight:700;color:var(--teal-900);}
+  .round-clock-expired:empty,.score-unit:empty{display:none;}
+  .score-unit{margin:0 0 8px;font-size:var(--fs-sm);color:var(--ink-soft);}
+  .schedule-quality{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,200px),1fr));gap:12px;margin:0 0 12px;}
+  .schedule-quality-card h4{margin:0 0 5px;}
+  .schedule-quality-card ul{max-height:180px;overflow:auto;margin:0;padding-left:20px;}
+  .schedule-quality-card p{margin:0;}
+  .koc-round-teams{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;padding:8px;}
+  .koc-round-team{display:flex;flex-direction:column;min-width:0;align-items:center;text-align:center;}
+  .koc-round-team ul{padding:0 2px 6px;width:100%;}
+  .koc-round-team li{font-size:var(--fs-base);padding:5px 0;}
+  .koc-round-score{margin-top:auto;width:56px;max-width:100%;min-height:44px;text-align:center;font:inherit;
+    border:1px solid var(--teal-700);border-radius:7px;color:var(--ink);background:var(--mist);}
+  .koc-round-history{margin-top:14px;font-size:var(--fs-sm);}
+  #liveKocActions{display:flex;align-items:center;gap:8px 14px;flex-wrap:wrap;margin:0 0 10px;}
+  #liveKocActions p{margin:0;}
+
   .koc-courts{
     display:grid;gap:inherit;
     grid-template-columns:repeat(auto-fit,minmax(min(100%,max(var(--koc-card-min,190px),calc((100% - 36px)/4))),1fr));
@@ -1162,6 +1199,8 @@
     <p class="error-msg" id="countError" data-i18n="countError">Vul een aantal spelers in tussen 4 en 96.</p>
     <p class="error-msg" id="loadError"></p>
 
+    <div class="round-options" id="roundSettings"></div>
+    <details class="round-rules" data-round-rules></details>
     <div class="actions-row" style="margin-top:22px;">
       <button class="btn btn-ghost" id="backToModes" type="button" data-i18n="backToModes">← Speelvormen</button>
       <button class="btn btn-ghost" id="cancelToScheduleBtn1" type="button" data-i18n="cancelToScheduleBtn" style="display:none;">← Terug naar schema</button>
@@ -1174,9 +1213,10 @@
   <section class="panel" id="panelKoc">
     <h2 class="panel-title" data-i18n="formatKoc">King of the Court</h2>
     <p class="panel-sub" data-i18n="kocSub">Vul de spelers in, kies je banen en maak een startindeling. Daarna wijzen de uitslagen zichzelf.</p>
-    <div class="koc-setup">
+    <div class="koc-setup" id="kocSetup">
       <p class="sub-heading" data-i18n="kocCourts">Aantal banen</p>
       <div class="courts-select" id="kocCourtButtons" aria-label="KOC court selection"></div>
+      <div class="round-options" id="kocRoundSettings"></div>
       <div class="koc-roster-tools">
         <p class="sub-heading" data-i18n="kocNames">Wie spelen er mee?</p>
         <p class="koc-help" data-i18n="kocNamesHint">Pas namen aan of vink een afwezige speler uit. Je kunt met minder spelers beginnen.</p>
@@ -1202,12 +1242,23 @@
     <div class="koc-actions">
       <button class="btn btn-ghost" id="kocBack" type="button" data-i18n="backToModes">← Speelvormen</button>
       <button class="btn btn-primary" id="kocRoll" type="button" data-i18n="kocRoll">🎲 Genereer startindeling</button>
+      <button class="btn btn-ghost" id="kocRoundReset" type="button" data-i18n="kocResetRounds" hidden></button>
       <button class="btn btn-ghost" id="kocCopy" type="button" data-i18n="kocCopy">Kopieer voor WhatsApp</button>
       <button class="btn btn-ghost" id="kocSave" type="button" data-i18n="saveBtn">💾 Speelschema opslaan</button>
       <button class="btn btn-ghost" id="kocLoad" type="button" data-i18n="loadBtn">📂 Opgeslagen schema laden</button>
       <button class="btn btn-ghost" id="kocPresent" type="button" data-i18n="presentBtn">Presentatiemodus</button>
     </div>
     <p class="koc-help" id="kocStatus" aria-live="polite"></p>
+
+    <details class="round-rules" data-round-rules></details>
+    <div class="round-clock" data-round-clock hidden></div>
+    <section id="kocRoundPlan" hidden>
+      <h3 id="kocRoundHeading" tabindex="-1"></h3>
+      <p class="score-unit" data-i18n="kocScoreHint"></p>
+      <div class="koc-result" id="kocRoundCards"></div>
+      <button class="btn btn-primary" id="kocRoundNext" type="button" data-i18n="kocNextRound"></button>
+      <details class="koc-round-history" id="kocRoundHistory" hidden></details>
+    </section>
     <div class="koc-result" id="kocResult"></div>
   </section>
 
@@ -1298,6 +1349,15 @@
       <button class="btn btn-ghost" id="presentBtn" data-i18n="presentBtn">Presentatiemodus</button>
     </div>
 
+    <details class="round-rules" data-round-rules></details>
+    <p class="score-unit" id="scheduleScoreUnit"></p>
+    <div class="round-clock" data-round-clock hidden></div>
+    <div class="playcount-wrap">
+      <button type="button" class="btn btn-ghost" id="playcountToggleBtn" data-i18n="playcountToggleShow">📊 Speelverdeling bekijken</button>
+      <div class="playcount-panel" id="playcountPanel" style="display:none;">
+        <div id="playcountTables"></div>
+      </div>
+    </div>
     <div class="schedule-layout">
       <div class="rounds-col">
         <div class="round-tools schedule-round-tools" id="scheduleRoundTools" role="group" data-i18n-aria-label="roundNavigation" hidden>
@@ -1311,12 +1371,6 @@
       <div class="board-col" id="boardCol" role="region" tabindex="0" data-i18n-aria-label="boardTitle"></div>
     </div>
 
-    <div class="playcount-wrap">
-      <button type="button" class="btn btn-ghost" id="playcountToggleBtn" data-i18n="playcountToggleShow">📊 Toon speeltelling</button>
-      <div class="playcount-panel" id="playcountPanel" style="display:none;">
-        <div id="playcountTables"></div>
-      </div>
-    </div>
     <section class="test-score-tools" id="testScoreTools" aria-labelledby="testScoreHeading" hidden>
       <h3 id="testScoreHeading" data-i18n="testScoreHeading">Testscores voor de oefenmodus</h3>
       <p data-i18n="testScoreSession">Dit oefenschema wordt apart bewaard in deze browser.</p>
@@ -1377,7 +1431,7 @@
   </section>
 
   <footer class="app-footer">
-    <span id="appVersion">v2.5.1</span>
+    <span id="appVersion">v2.6.0</span>
     <details><summary data-i18n="whatsNew">Wat is nieuw?</summary>
       <ul>
         <li data-i18n="changeIllustrations">Nieuwe baanillustraties, marineblauw/lime en een puntenscore van 26–6.</li>
@@ -1414,6 +1468,12 @@
       <span class="round-tools-label" id="livePageLabel"></span>
       <button type="button" id="livePageNext" data-i18n-aria-label="liveScreenNext">&rarr;</button>
       <button type="button" id="livePagePause" data-i18n="liveScreenPause" aria-pressed="false"></button>
+    </div>
+    <p class="score-unit" id="liveScoreUnit"></p>
+    <div class="round-clock" data-round-clock hidden></div>
+    <div id="liveKocActions" hidden>
+      <p class="score-unit" data-i18n="kocScoreHint"></p>
+      <button class="btn btn-primary" id="liveKocNext" type="button" data-i18n="kocNextRound"></button>
     </div>
     <div id="liveKoc" class="live-koc-grid"></div>
     <div class="live-layout" id="liveLayout">
@@ -1490,6 +1550,7 @@
   </form>
 </dialog>
 
+<script src="./round-planner.js"></script>
 <script>
 (function(){
   "use strict";
@@ -1503,6 +1564,61 @@
   // ================= i18n =================
   var STR = {
     nl: {
+      kocVariant: "KOC-variant",
+      kocStartOnly: "Startindeling",
+      kocPlanner: "Rondeplanner",
+      kocPlannerHint: "Vul per baan de eindstand in. De planner deelt de volgende ronde in.",
+      kocPlannerFull: "Voor de Rondeplanner zijn vier spelers per baan nodig, eventueel met twee wachtspelers.",
+      kocNextRound: "Volgende ronde maken",
+      kocScoreHint: "Vul per baan de eindstand in. Speel bij gelijkspel eerst nog één punt buiten de klok.",
+      kocRoundsHistory: "Vorige rondes",
+      kocRoundWaiting: "Wachtduo deze ronde",
+      kocRoundTitle: "Ronde {n}",
+      kocResetRounds: "Nieuwe startindeling",
+      kocResetRoundsText: "Een nieuwe startindeling maken? De uitslagen en rondes van deze KOC worden dan gewist. Je spelerslijst blijft bewaard.",
+      howToPlay: "Hoe speel je dit?",
+      scoringChoice: "Telling",
+      scoringPoints: "Elk punt telt",
+      scoringGames: "Padeltelling in games",
+      pointsRule: "Tel elk gewonnen punt door als 1, 2, 3… Een eindstand kan 21–17 zijn.",
+      gamesRule: "Tel binnen een game 15, 30 en 40. Bij score-invoer geef je de gewonnen games door, bijvoorbeeld 4–3.",
+      tossRules: "Speel de wedstrijden in het schema. Wissel na elke ronde volgens de volgende indeling.",
+      splitRules: "Speel binnen je eigen niveaugroep en volg per ronde de baanindeling. Als scores aanstaan voor je groep, geef je de eindstand door.",
+      americanoRules: "Speel met wisselende partners. Vul na elke wedstrijd de eindstand in. Die telt mee voor het individuele klassement.",
+      kocRules: "Winnaars gaan één baan omhoog en verliezers één baan omlaag. Op de hoogste baan blijven de winnaars staan. Op baan 1 blijven de verliezers staan, of wisselen zij met het wachtduo als dat meedoet. Op elke baan worden de koppels opnieuw ingedeeld.",
+      kocServiceIntro: "Begin met een Spaanse toss om te bepalen welk duo als eerste serveert. Daarna telt elke rally als één punt.",
+      kocServiceA: "De eerste speler van het duo dat de Spaanse toss heeft gewonnen serveert vier punten.",
+      kocServiceB: "De eerste speler van het andere duo serveert vier punten.",
+      kocServiceC: "De tweede speler van het duo dat de Spaanse toss heeft gewonnen serveert vier punten.",
+      kocServiceD: "De tweede speler van het andere duo serveert vier punten.",
+      kocServiceRepeat: "Herhaal daarna deze volgorde. Bij gelijkspel als de tijd om is, speel je nog één beslissend punt.",
+      timerOption: "Rondeklok gebruiken",
+      timerPlay: "Speeltijd (minuten)",
+      timerBreak: "Wisseltijd (minuten, 0 = uit)",
+      timerHeading: "Rondeklok · ronde {n}",
+      timerChangeHeading: "Wisselklok · ronde {n}",
+      timerDuration: "Tijd (mm:ss)",
+      timerStart: "Start",
+      timerPause: "Pauze",
+      timerResume: "Hervat",
+      timerReset: "Reset",
+      timerMinus: "−1 min",
+      timerPlus: "+1 min",
+      timerNext: "Klok klaarzetten voor volgende ronde",
+      timerShowPlay: "Speelklok",
+      timerShowBreak: "Wisselklok",
+      timerExpired: "Tijd om",
+      timerInvalid: "Gebruik mm:ss, bijvoorbeeld 08:30.",
+      qualityRest: "Langste opeenvolgende rustbeurten",
+      qualityPairs: "Duo’s die vaker samen spelen",
+      qualityNone: "Geen",
+      qualityTimes: "{n}×",
+      gameScoreForTeam: "Games voor {team}",
+      gameColumn: "Games",
+      scoreUnitPoints: "Uitslagen in punten",
+      scoreUnitGames: "Uitslagen in gewonnen games",
+      boardGames: "Het klassement telt gewonnen games. Bij een gelijke stand telt het gamesaldo en daarna het onderlinge resultaat.",
+      rankGamesBreakdown: "Gespeeld {points} games voor, saldo {balance}. Klassement {rankPoints} games, gecorrigeerd rangsaldo {rankBalance}.",
       stepSetup: 'Instellen', stepNames: 'Namen', stepSchedule: 'Schema',
       stepsLabel: 'Stappen', playerUnitSingular: 'speler', roundUnitPlural: 'rondes',
       homeTitle: 'Wat gaan we spelen?', homeSub: 'Kies je speelvorm en maak je indeling.',
@@ -1768,13 +1884,68 @@
       modalRegenerateText: 'Een nieuw schema maken vervangt het huidige schema en alle ingevulde scores. Weet je het zeker?',
       confirmRegenerateBtn: 'Ja, nieuw schema maken',
       dupNameError: 'Dubbele namen zijn niet toegestaan — gemarkeerd hieronder.',
-      playcountToggleShow: '📊 Toon speeltelling',
-      playcountToggleHide: '📊 Verberg speeltelling',
+      playcountToggleShow: '📊 Speelverdeling bekijken',
+      playcountToggleHide: '📊 Verberg speelverdeling',
       playcountColHeader: 'Potjes',
       playcountAddedTag: 'NIEUW',
       playcountSummary: 'Van {min} tot {max} potjes per speler'
     },
     en: {
+      kocVariant: "KOC variant",
+      kocStartOnly: "Starting lineup",
+      kocPlanner: "Round planner",
+      kocPlannerHint: "Enter the final score for each court to generate the next round.",
+      kocPlannerFull: "The round planner needs four players on each court, with an optional pair waiting.",
+      kocNextRound: "Generate next round",
+      kocScoreHint: "Enter the final score for each court. If tied, play one more point after the clock stops.",
+      kocRoundsHistory: "Previous rounds",
+      kocRoundWaiting: "Pair waiting this round",
+      kocRoundTitle: "Round {n}",
+      kocResetRounds: "New starting lineup",
+      kocResetRoundsText: "Create a new starting lineup? This clears the KOC rounds and scores while keeping the roster.",
+      howToPlay: "How to play",
+      scoringChoice: "Scoring",
+      scoringPoints: "Count every point",
+      scoringGames: "Padel games",
+      pointsRule: "Count each point won as 1, 2, 3… A final score could be 21–17.",
+      gamesRule: "Count 15, 30 and 40 within a game. When entering scores, report games won, for example 4–3.",
+      tossRules: "Play the matches in the schedule. Follow the next lineup after each round.",
+      splitRules: "Play within your level group and follow the court schedule. If your group tracks scores, enter the final score.",
+      americanoRules: "Play with rotating partners. Enter each match’s final score for the individual standings.",
+      kocRules: "Winners move up one court and losers move down one. The winners stay on the top court. On court 1, the losing pair stays or swaps with the waiting pair if one is in use. Each court gets new pairings.",
+      kocServiceIntro: "Start with a Spanish toss to decide which pair serves first. Then count every rally as one point.",
+      kocServiceA: "The first player of the pair that won the Spanish toss serves four points.",
+      kocServiceB: "The first player of the other pair serves four points.",
+      kocServiceC: "The second player of the pair that won the Spanish toss serves four points.",
+      kocServiceD: "The second player of the other pair serves four points.",
+      kocServiceRepeat: "Then repeat this order. If tied when time runs out, play one more point to decide the match.",
+      timerOption: "Use a round clock",
+      timerPlay: "Playing time (minutes)",
+      timerBreak: "Changeover time (minutes, 0 = off)",
+      timerHeading: "Round clock · round {n}",
+      timerChangeHeading: "Changeover clock · round {n}",
+      timerDuration: "Time (mm:ss)",
+      timerStart: "Start",
+      timerPause: "Pause",
+      timerResume: "Resume",
+      timerReset: "Reset",
+      timerMinus: "−1 min",
+      timerPlus: "+1 min",
+      timerNext: "Prepare clock for next round",
+      timerShowPlay: "Playing clock",
+      timerShowBreak: "Changeover clock",
+      timerExpired: "Time up",
+      timerInvalid: "Use mm:ss, for example 08:30.",
+      qualityRest: "Longest consecutive breaks",
+      qualityPairs: "Repeated partnerships",
+      qualityNone: "None",
+      qualityTimes: "{n}×",
+      gameScoreForTeam: "Games for {team}",
+      gameColumn: "Games",
+      scoreUnitPoints: "Scores in points",
+      scoreUnitGames: "Scores in games won",
+      boardGames: "Standings count games won. Ties are settled by game margin and then head-to-head.",
+      rankGamesBreakdown: "Raw {points} games for, margin {balance}. Standings {rankPoints} games, adjusted ranking margin {rankBalance}.",
       stepSetup: 'Setup', stepNames: 'Names', stepSchedule: 'Schedule',
       stepsLabel: 'Steps', playerUnitSingular: 'player', roundUnitPlural: 'rounds',
       homeTitle: 'What shall we play?', homeSub: 'Choose your format and create your lineup.',
@@ -2040,8 +2211,8 @@
       modalRegenerateText: 'Generating a new schedule replaces the current one and any scores you\'ve entered. Are you sure?',
       confirmRegenerateBtn: 'Yes, generate new schedule',
       dupNameError: 'Duplicate names aren\'t allowed — marked below.',
-      playcountToggleShow: '📊 Show play count',
-      playcountToggleHide: '📊 Hide play count',
+      playcountToggleShow: '📊 View playing distribution',
+      playcountToggleHide: '📊 Hide playing distribution',
       playcountColHeader: 'Games',
       playcountAddedTag: 'NEW',
       playcountSummary: 'From {min} to {max} games per player'
@@ -2066,6 +2237,9 @@
       el.setAttribute('aria-label', t(el.getAttribute('data-i18n-aria-label')));
     });
     document.documentElement.lang = state.lang;
+    renderRoundRules();
+    renderRoundSettings();
+    paintRoundClocks(true);
     document.getElementById('splitTossIllustration').src = splitTossArtwork();
     renderAppTitle();
   }
@@ -2222,7 +2396,10 @@
   function renderKocResult(){
     var k = ensureKocRoster(), root = document.getElementById('kocResult');
     root.innerHTML = '';
-    if (!k.assignment || kocDuplicateIndices().length) return;
+    var round = currentKocRound();
+    renderGuidedKoc(round);
+    paintRoundClocks();
+    if (round || !k.assignment || kocDuplicateIndices().length) return;
     // The display order is randomised once per roll, then kept stable while
     // names are edited and when an auto-saved session is resumed.
     var indices = Object.keys(k.assignment).map(Number);
@@ -2391,6 +2568,7 @@
       }
       roster.appendChild(row);
     });
+    if (state.format === 'koc') renderRoundSettings();
     var hasDuplicates = renderKocCount();
     if (state.step === 4) renderMeta();
     renderKocResult();
@@ -2440,10 +2618,11 @@
     warning.hidden = !hasDuplicates;
     warning.textContent = hasDuplicates ? t('kocDup') : '';
     var incompletePair = kocIncompleteWaitingPair(k, attendees.length);
+    var plannerIncomplete = k.guided === true && !kocGuidedReady(k,attendees.length);
     var waitingError = document.getElementById('kocWaitingError');
-    waitingError.hidden = !incompletePair;
-    waitingError.textContent = incompletePair ? t('kocWaitingPairNeeded') : '';
-    document.getElementById('kocRoll').disabled = attendees.length < 4 || incompletePair || hasDuplicates;
+    waitingError.hidden = !incompletePair && !plannerIncomplete;
+    waitingError.textContent = incompletePair ? t('kocWaitingPairNeeded') : plannerIncomplete ? t('kocPlannerFull') : '';
+    document.getElementById('kocRoll').disabled = attendees.length < 4 || incompletePair || plannerIncomplete || hasDuplicates;
     document.getElementById('kocCopy').disabled = !k.assignment || hasDuplicates;
     document.getElementById('kocSave').disabled = hasDuplicates;
     document.getElementById('kocPresent').disabled = hasDuplicates;
@@ -2523,11 +2702,12 @@
   }
 
   function rollKoc(){
+    if (currentKocRound()) return;
     var k = ensureKocRoster();
     var attendees = kocAttendees();
     var status = document.getElementById('kocStatus');
     if (attendees.length < 4){ status.textContent = t('kocMin'); return; }
-    if (kocIncompleteWaitingPair(k, attendees.length)) return;
+    if (kocIncompleteWaitingPair(k, attendees.length) || (k.guided && !kocGuidedReady(k,attendees.length))) return;
     if (kocDuplicateIndices().length){
       renderKocCount();
       status.textContent = t('kocDup');
@@ -2544,10 +2724,12 @@
     k.assignment = best;
     k.lastSignature = signature;
     k.displayOrder = shuffle(attendees);
+    if (k.guided) k.roundPlan = [PadelRounds.startKocRounds(best,k.courts,k.roster.length,fitAmericanoStrength)];
+    prepareRoundClock(1,true);
     renderKocResult();
     document.getElementById('kocRoll').textContent = t('kocReroll');
     renderKocCount();
-    status.textContent = t('kocGenerated');
+    status.textContent = k.guided ? '' : t('kocGenerated');
   }
 
   document.getElementById('kocRoll').addEventListener('click', rollKoc);
@@ -2564,8 +2746,15 @@
         .filter(function(i){return k.assignment[i] === c;}).map(kocPlayerName);
       lines.push(t('courtLabel') + ' ' + c + (c === k.courts ? ' 👑' : '') + ': ' + (names.join(', ') || '—'));
     }
-    var waiting = kocWaitingNames(k);
-    if (waiting.length) lines.push('', t('kocWaitingTitle') + ': ' + waiting.join(', '), t('kocWaitingRule'));
+    var round = currentKocRound();
+    if (round){
+      lines = [lines[0],tf('kocRoundTitle',{n:round.number})];
+      round.matches.slice().reverse().forEach(function(match){
+        lines.push(t('courtLabel') + ' ' + match.court + ': ' + match.teams.map(function(team){return team.map(kocPlayerName).join(' & ');}).join(' vs '));
+      });
+    }
+    var waiting = round ? round.waiting.map(kocPlayerName) : kocWaitingNames(k);
+    if (waiting.length) lines.push('', t(round ? 'kocRoundWaiting' : 'kocWaitingTitle') + ': ' + waiting.join(', '), t('kocWaitingRule'));
     var output = lines.join('\n');
     function copied(ok){ document.getElementById('kocStatus').textContent = t(ok ? 'kocCopied' : 'kocCopyFail'); }
     if (navigator.clipboard && navigator.clipboard.writeText){
@@ -2911,6 +3100,9 @@
     if (state.step !== n) clearBulkUndo();
     state.step = n;
     renderAppTitle();
+    renderRoundRules();
+    if (n === 1 || n === 4) renderRoundSettings();
+    paintRoundClocks();
     if (n === 0){
       document.querySelectorAll('.format-btn').forEach(function(button){
         button.classList.remove('active');
@@ -3580,6 +3772,7 @@
   document.getElementById('cancelToScheduleBtn2').addEventListener('click', function(){ goToStep(3); });
 
   function runGenerate(){
+    prepareRoundClock(1,true);
     if (state.format === 'splitToss'){
       var rosters = activeLevelIndexes().map(function(levelIdx){
         var lv = LEVELS[levelIdx];
@@ -3760,15 +3953,15 @@
       input.type = 'number';
       input.min = '0';
       input.inputMode = 'numeric';
-      input.setAttribute('aria-label', tf('scoreForTeam', {team:names.join(' & ')}));
+      input.setAttribute('aria-label', tf(scoreMode() === 'games' ? 'gameScoreForTeam' : 'scoreForTeam', {team:names.join(' & ')}));
       input.setAttribute('data-key', key);
       input.setAttribute('data-team', side);
       var existing = state.scores[key];
       if (existing && typeof existing[side] === 'number') input.value = existing[side];
       input.addEventListener('input', function(){
-        var value = parseInt(input.value, 10);
+        var value = input.value === '' ? null : Number(input.value);
         if (!state.scores[key]) state.scores[key] = { t1: null, t2: null };
-        state.scores[key][side] = isNaN(value) ? null : value;
+        state.scores[key][side] = PadelRounds.validScore(value) ? value : null;
         renderLeaderboard();
         var tools = document.getElementById('scheduleRoundTools');
         updateRoundControls(tools, Number(tools.dataset.round));
@@ -3904,6 +4097,7 @@
     var boardCol = document.getElementById('boardCol');
     var anyResults = state.pools.some(function(p){ return p.resultsEnabled; });
     boardCol.style.display = anyResults ? '' : 'none';
+    document.getElementById('scheduleScoreUnit').textContent = anyResults ? t(scoreMode() === 'games' ? 'scoreUnitGames' : 'scoreUnitPoints') : '';
     document.getElementById('testScoreTools').hidden = !rehearsalMode || !anyResults;
     document.getElementById('testScoreStatus').textContent = '';
     updateRoundControls(document.getElementById('scheduleRoundTools'), liveCurrentRound());
@@ -4059,6 +4253,7 @@
   function renderPlayCounts(){
     var container = document.getElementById('playcountTables');
     container.innerHTML = '';
+    renderScheduleQuality(container);
 
     if (state.format === 'splitToss'){
       LEVELS.map(function(lv){ return { id: lv.id, label: t(lv.labelKey) }; }).forEach(function(g){
@@ -4353,7 +4548,7 @@
 
   function signedBalance(value){return (value > 0 ? '+' : '') + value;}
   function rankBreakdown(row){
-    return tf('rankBreakdown',{points:row.points,balance:signedBalance(row.forPts-row.againstPts),
+    return tf(scoreMode() === 'games' ? 'rankGamesBreakdown' : 'rankBreakdown',{points:row.points,balance:signedBalance(row.forPts-row.againstPts),
       rankPoints:row.adjPoints,baseBalance:signedBalance(row.adjDiff),effect:signedBalance(row.drawEffect),
       rankBalance:signedBalance(row.rankDiff)});
   }
@@ -4417,7 +4612,7 @@
     var sub = document.createElement('div');
     sub.className = 'board-sub';
     var americano = state.format === 'americano';
-    sub.textContent = t(americano ? (opts.weighted ? 'boardSubWeighted' : 'boardSubFallback') : 'boardSub');
+    sub.textContent = t(scoreMode() === 'games' ? 'boardGames' : americano ? (opts.weighted ? 'boardSubWeighted' : 'boardSubFallback') : 'boardSub');
     wrap.appendChild(sub);
 
     var table = document.createElement('table');
@@ -4426,7 +4621,7 @@
     var headHtml = '<tr><th>' + t('thRank') + '</th><th>' + t('thPlayer') + '</th>' +
       (opts.showGroupTag ? '<th>' + t('thGroup') + '</th>' : '') +
       '<th style="text-align:right;">' + t(americano && opts.weighted ? 'thRankBalance' : 'thDiff') + '</th>' +
-      '<th style="text-align:right;">' + t('thPts') + '</th>' +
+      '<th style="text-align:right;">' + t(scoreMode() === 'games' ? 'gameColumn' : 'thPts') + '</th>' +
       '<th class="marker-col"></th></tr>';
     thead.innerHTML = headHtml;
     table.appendChild(thead);
@@ -5595,6 +5790,7 @@
       if (!st.koc || !Array.isArray(st.koc.roster) || !Number.isInteger(st.koc.courts) ||
           st.koc.courts < 1 || st.koc.courts > 12) return 'loadErrCorrupt';
       if (st.koc.assignment && !validKocAssignment(st.koc)) return 'loadErrCorrupt';
+      if (st.koc.roundPlan && (!st.koc.guided || !st.koc.assignment || !PadelRounds.validKocRounds(st.koc.roundPlan,st.koc.courts,st.koc.roster.length))) return 'loadErrCorrupt';
       return null;
     }
     for (var i = 0; i < st.pools.length; i++){
@@ -5606,6 +5802,7 @@
 
   function applyLoadedState(st){
     state = st;
+    roundTimer();
     presetCountsAutomatic = false;
     resetBulkNameTools();
     if (state.lang !== 'en') state.lang = 'nl';
@@ -5915,6 +6112,8 @@
   function fillTestScores(nextOnly){
     if (!rehearsalMode) return;
     var firstFilled = 0;
+    var games = scoreMode() === 'games';
+    var target = games ? 8 : 32;
     var max = liveMaxRound();
     for (var round = 1; round <= max; round++){
       liveMatchesForRound(round).forEach(function(group){
@@ -5924,8 +6123,8 @@
           var score = state.scores[key] || {};
           var hasLeft = typeof score.t1 === 'number', hasRight = typeof score.t2 === 'number';
           if (hasLeft && hasRight) return;
-          if (!hasLeft) score.t1 = hasRight ? Math.max(0,32 - score.t2) : 9 + Math.floor(Math.random() * 15);
-          if (!hasRight) score.t2 = Math.max(0,32 - score.t1);
+          if (!hasLeft) score.t1 = hasRight ? Math.max(0,target - score.t2) : (games ? 2 : 9) + Math.floor(Math.random() * (games ? 5 : 15));
+          if (!hasRight) score.t2 = Math.max(0,target - score.t1);
           state.scores[key] = score;
           if (!firstFilled) firstFilled = round;
         });
@@ -5973,6 +6172,7 @@
     var max = liveMaxRound();
     tools.hidden = state.format === 'koc' || !max;
     if (tools.hidden) return;
+    prepareRoundClock(current,false);
     var label = tools.querySelector('.round-tools-label');
     var text = tf('liveRoundLabel',{n:current,max:max});
     if (label.textContent !== text) label.textContent = text;
@@ -6038,13 +6238,13 @@
     input.min = '0';
     input.inputMode = 'numeric';
     var names = court[side === 't1' ? 'team1' : 'team2'];
-    input.setAttribute('aria-label', tf('scoreForTeam', {team:names.join(' & ')}));
+    input.setAttribute('aria-label', tf(scoreMode() === 'games' ? 'gameScoreForTeam' : 'scoreForTeam', {team:names.join(' & ')}));
     var current = state.scores[key];
     input.value = current && typeof current[side] === 'number' ? String(current[side]) : '';
     input.addEventListener('input',function(){
       var value = input.value === '' ? null : Number(input.value);
       if (!state.scores[key]) state.scores[key] = {t1:null,t2:null};
-      state.scores[key][side] = Number.isFinite(value) && value >= 0 ? value : null;
+      state.scores[key][side] = PadelRounds.validScore(value) ? value : null;
       renderLeaderboard();
       var tools = document.getElementById('liveRoundTools');
       updateRoundControls(tools, Number(tools.dataset.round));
@@ -6282,15 +6482,21 @@
       (koc?'👑 ':state.format==='splitToss'?'🗂️ ':state.format==='americano'?'🏆 ':'🎾 ')+
       t(koc?'formatKoc':state.format==='splitToss'?'formatSplitToss':
         state.format==='americano'?'formatAmericano':'formatToss');
-    document.getElementById('liveSubtitle').textContent=
+    var kocRound = koc && currentKocRound();
+    document.getElementById('liveSubtitle').textContent = kocRound ? tf('kocRoundTitle',{n:kocRound.number}) :
       koc?t('liveKocSubtitle'):tf('livePlaying',{n:current,max:liveMaxRound()});
+    document.getElementById('liveKocActions').hidden = !kocRound;
+    document.getElementById('liveScoreUnit').textContent = scoreMode() === 'games' && state.pools.some(function(pool){return pool.resultsEnabled;}) ? t('scoreUnitGames') : '';
     document.getElementById('liveKoc').hidden=!koc;
     document.getElementById('liveLayout').hidden=koc;
     if (koc){
       var list=document.getElementById('liveKoc');
       list.innerHTML='';
       var schedule=ensureKocRoster();
-      if (!schedule.assignment){
+      if (kocRound){
+        renderKocRoundCards(list,kocRound,true);
+        updateKocAdvance(kocRound);
+      } else if (!schedule.assignment){
         list.appendChild(liveElement('p','live-empty',t('kocNoSchedule')));
       } else {
         var courtGrid=liveElement('div','koc-courts');
@@ -6320,6 +6526,7 @@
     }
     updateRoundControls(document.getElementById('liveRoundTools'),current);
     root.scrollTop=0;
+    paintRoundClocks(true);
     fitLiveScreens(false);
   }
   document.querySelectorAll('.round-tools [data-round-action]').forEach(function(button){
@@ -6403,7 +6610,380 @@
     });
   }
 
+
+  // ---------- Play rules, scoring and manual clocks ----------
+  function scoreMode(){
+    return state.format !== 'koc' && state.scoreMode === 'games' ? 'games' : 'points';
+  }
+
+  function roundTimer(){
+    var saved = state.roundTimer;
+    if (!saved || !saved.clock || !Number.isInteger(saved.play) || saved.play < 1 || saved.play > 99 ||
+        !Number.isInteger(saved.change) || saved.change < 0 || saved.change > 99 || !Number.isInteger(saved.round) || saved.round < 1 ||
+        !['play','change'].includes(saved.phase) || !Number.isInteger(saved.clock.initial) || saved.clock.initial < 1 ||
+        !Number.isFinite(saved.clock.remaining) || saved.clock.remaining < 0 ||
+        (saved.clock.deadline !== null && !Number.isFinite(saved.clock.deadline))) state.roundTimer = {
+      enabled:false,play:12,change:0,round:1,phase:'play',clock:PadelRounds.createClock(720)
+    };
+    return state.roundTimer;
+  }
+
+  function toolButton(key, action){
+    var button = liveElement('button','btn btn-ghost',t(key));
+    button.type = 'button';
+    if (action) button.dataset.clockAction = action;
+    return button;
+  }
+
+  function addRoundOption(root, name, key, type, value, onChange){
+    var input = liveElement(type === 'select' ? 'select' : 'input','');
+    input.id = root.id + name;
+    var label = liveElement('label','',t(key));
+    label.htmlFor = input.id;
+    if (type === 'select'){
+      value.forEach(function(option){
+        var element = liveElement('option','',t(option[1]));
+        element.value = option[0];
+        input.appendChild(element);
+      });
+    } else {
+      input.type = type;
+      if (type === 'checkbox') input.checked = value;
+      else {
+        input.value = value;
+        input.min = name === 'Play' ? '1' : '0';
+        input.max = '99';
+      }
+    }
+    input.addEventListener('change',function(){onChange(input);scheduleAutosave();});
+    var field = liveElement('div',type === 'checkbox' ? 'round-option-checkbox' : 'round-option-field');
+    if (type === 'checkbox') field.append(input,label);
+    else field.append(label,input);
+    root.appendChild(field);
+    return input;
+  }
+
+  function renderRoundSettings(){
+    var koc = state.format === 'koc';
+    var root = document.getElementById(koc ? 'kocRoundSettings' : 'roundSettings');
+    root.replaceChildren();
+    var timer = roundTimer();
+    if (koc){
+      var k = ensureKocRoster();
+      var mode = addRoundOption(root,'Variant','kocVariant','select',
+        [['start','kocStartOnly'],['planner','kocPlanner']],function(input){
+          k.guided = input.value === 'planner';
+          k.assignment = null;
+          k.displayOrder = null;
+          k.lastSignature = '';
+          renderKoc();
+        });
+      mode.value = k.guided ? 'planner' : 'start';
+      if (k.guided) root.appendChild(liveElement('p','round-option-note',t('kocPlannerHint')));
+    } else {
+      var scoring = addRoundOption(root,'Score','scoringChoice','select',
+        [['points','scoringPoints'],['games','scoringGames']],function(input){
+          state.scoreMode = input.value;
+          renderRoundRules();
+          if (state.pools.length) {renderSchedule();renderLeaderboard();}
+        });
+      scoring.value = scoreMode();
+      scoring.disabled = liveHasScore();
+    }
+    addRoundOption(root,'Enabled','timerOption','checkbox',timer.enabled,function(input){
+      timer.enabled = input.checked;
+      if (timer.enabled) prepareRoundClock(koc ? 1 : liveCurrentRound(),true);
+      else timer.clock = PadelRounds.changeClock(timer.clock,'pause',Date.now());
+      renderRoundSettings();
+      paintRoundClocks();
+    });
+    if (timer.enabled){
+      ['play','change'].forEach(function(phase){
+        addRoundOption(root,phase === 'play' ? 'Play' : 'Break',phase === 'play' ? 'timerPlay' : 'timerBreak',
+          'number',timer[phase],function(input){
+            if (!input.value || !input.checkValidity()) {input.value = timer[phase];return;}
+            timer[phase] = Number(input.value);
+            if (phase === 'change' && !timer.change && timer.phase === 'change'){
+              switchClockPhase(timer,'play');
+            } else if (timer.phase === phase && !timer.clock.started){
+              timer.clock = PadelRounds.createClock(timer[phase]*60);
+            }
+            paintRoundClocks(true);
+          });
+      });
+    }
+  }
+
+  function renderRoundRules(){
+    document.querySelectorAll('[data-round-rules]').forEach(function(details){
+      details.replaceChildren(liveElement('summary','',t('howToPlay')));
+      var rules = {toss:'tossRules',splitToss:'splitRules',americano:'americanoRules',koc:'kocRules'};
+      details.appendChild(liveElement('p','',t(rules[state.format] || 'tossRules')));
+      if (state.format === 'koc'){
+        if (state.koc.guided) details.appendChild(liveElement('p','',t('kocPlannerHint')));
+        details.appendChild(liveElement('p','',t('kocServiceIntro')));
+        var order = liveElement('ol','');
+        ['kocServiceA','kocServiceB','kocServiceC','kocServiceD'].forEach(function(key){
+          order.appendChild(liveElement('li','',t(key)));
+        });
+        details.append(order,liveElement('p','',t('kocServiceRepeat')));
+      } else details.appendChild(liveElement('p','',t(scoreMode() === 'games' ? 'gamesRule' : 'pointsRule')));
+    });
+  }
+
+  function clockText(seconds){
+    return String(Math.floor(seconds/60)).padStart(2,'0') + ':' + String(seconds%60).padStart(2,'0');
+  }
+
+  function switchClockPhase(timer,phase){
+    timer.phase = phase;
+    timer.clock = PadelRounds.createClock(timer[phase]*60);
+  }
+
+  function prepareRoundClock(round,force){
+    var timer = roundTimer();
+    if (!timer.enabled || !Number.isInteger(round) || round < 1) return;
+    var running = timer.clock.deadline !== null && PadelRounds.remainingMillis(timer.clock,Date.now()) > 0;
+    if (!force && (timer.round === round || running)) return;
+    timer.round = round;
+    switchClockPhase(timer,'play');
+    paintRoundClocks(true);
+  }
+
+  function clockTargetRound(){
+    if (state.format === 'koc'){
+      var round = currentKocRound();
+      return round ? round.number : roundTimer().round+1;
+    }
+    var controls = document.getElementById(document.body.classList.contains('presentation-mode') ? 'liveRoundTools' : 'scheduleRoundTools');
+    return Number(controls.dataset.round) || 1;
+  }
+
+  function buildClockView(root){
+    var title = liveElement('strong','round-clock-title');
+    var reading = liveElement('output','round-clock-reading');
+    reading.setAttribute('aria-live','off');
+    var duration = liveElement('input','round-clock-duration');
+    duration.type = 'text';
+    duration.placeholder = 'mm:ss';
+    duration.maxLength = 5;
+    duration.setAttribute('aria-label',t('timerDuration'));
+    function setDuration(){
+      var match = duration.value.trim().match(/^(\d{1,2}):([0-5]\d)$/);
+      var seconds = match && Number(match[1])*60 + Number(match[2]);
+      if (!seconds) {duration.setCustomValidity(t('timerInvalid'));return false;}
+      duration.setCustomValidity('');
+      var timer = roundTimer();
+      timer.clock = PadelRounds.changeClock(timer.clock,'set',Date.now(),seconds);
+      return true;
+    }
+    duration.addEventListener('input',function(){duration.setCustomValidity('');});
+    duration.addEventListener('change',function(){if (setDuration()) {paintRoundClocks(true);scheduleAutosave();}});
+    var actions = liveElement('div','round-clock-actions');
+    var controls = {start:'timerStart',pause:'timerPause',minus:'timerMinus',plus:'timerPlus',
+      reset:'timerReset',next:'timerNext',phase:'timerShowBreak'};
+    Object.keys(controls).forEach(function(action){actions.appendChild(toolButton(controls[action],action));});
+    var alert = liveElement('span','round-clock-expired');
+    alert.setAttribute('role','status');
+    root.replaceChildren(title,reading,duration,actions,alert);
+    root.dataset.clockLang = state.lang;
+    actions.addEventListener('click',function(event){
+      var action = event.target.dataset.clockAction;
+      if (!action) return;
+      var timer = roundTimer();
+      if (action === 'next'){prepareRoundClock(clockTargetRound(),true);}
+      else if (action === 'phase'){switchClockPhase(timer,timer.phase === 'play' ? 'change' : 'play');}
+      else if (action === 'plus' || action === 'minus'){
+        timer.clock = PadelRounds.changeClock(timer.clock,'adjust',Date.now(),action === 'plus' ? 60 : -60);
+      } else {
+        if (action === 'start' && !timer.clock.started && !setDuration()) {duration.reportValidity();return;}
+        timer.clock = PadelRounds.changeClock(timer.clock,action,Date.now());
+      }
+      paintRoundClocks(true);
+      scheduleAutosave();
+    });
+  }
+
+  function paintRoundClocks(syncDuration){
+    var timer = roundTimer(), clock = timer.clock;
+    var remaining = PadelRounds.remainingMillis(clock,Date.now());
+    var running = clock.deadline !== null && remaining > 0;
+    document.querySelectorAll('[data-round-clock]').forEach(function(root){
+      var available = state.format === 'koc' ? !!state.koc.assignment : state.pools.length > 0;
+      root.hidden = !timer.enabled || !available;
+      if (root.hidden) return;
+      if (root.dataset.clockLang !== state.lang) {buildClockView(root);syncDuration = true;}
+      var title = root.querySelector('.round-clock-title');
+      var heading = tf(timer.phase === 'play' ? 'timerHeading' : 'timerChangeHeading',{n:timer.round});
+      if (title.textContent !== heading) title.textContent = heading;
+      var reading = root.querySelector('.round-clock-reading');
+      var text = clockText(Math.ceil(remaining/1000));
+      if (reading.textContent !== text) reading.textContent = text;
+      reading.hidden = !clock.started;
+      var input = root.querySelector('.round-clock-duration');
+      input.hidden = clock.started;
+      if (syncDuration) {input.value = clockText(clock.initial);input.setCustomValidity('');}
+      var status = root.querySelector('.round-clock-expired');
+      var message = clock.started && !remaining ? t('timerExpired') : '';
+      if (status.textContent !== message) status.textContent = message;
+      var target = clockTargetRound();
+      var visibility = {start:!running && remaining>0,pause:running,minus:clock.started && remaining>0,
+        plus:clock.started,reset:clock.started && !running,next:!running && target>timer.round,phase:!running && timer.change>0 && (!clock.started || !remaining)};
+      root.querySelectorAll('[data-clock-action]').forEach(function(button){
+        var action = button.dataset.clockAction;
+        button.hidden = !visibility[action];
+        if (action === 'start') button.textContent = t(clock.started ? 'timerResume' : 'timerStart');
+        if (action === 'phase') button.textContent = t(timer.phase === 'play' ? 'timerShowBreak' : 'timerShowPlay');
+      });
+    });
+  }
+
+  function renderScheduleQuality(container){
+    var quality = PadelRounds.summarizeSchedule(state.pools);
+    var grid = liveElement('div','schedule-quality');
+    var rows = [
+      ['qualityRest',quality.rest.map(function(row){return row[0] + ' · ' + tf('qualityTimes',{n:row[1]});})],
+      ['qualityPairs',quality.repeats.map(function(pair){return pair.names.join(' & ') + ' · ' + tf('qualityTimes',{n:pair.count});})]
+    ];
+    rows.forEach(function(group){
+      var card = liveElement('section','schedule-quality-card');
+      card.appendChild(liveElement('h4','',t(group[0])));
+      if (!group[1].length) card.appendChild(liveElement('p','',t('qualityNone')));
+      else {
+        var list = liveElement('ul','');
+        group[1].forEach(function(line){list.appendChild(liveElement('li','',line));});
+        card.appendChild(list);
+      }
+      grid.appendChild(card);
+    });
+    container.appendChild(grid);
+  }
+
+
+
+  // ---------- Guided King of the Court ----------
+  function currentKocRound(){
+    var rounds = state.koc && state.koc.guided && state.koc.roundPlan;
+    return Array.isArray(rounds) ? rounds[rounds.length-1] : null;
+  }
+
+  function kocGuidedReady(k, attendees){
+    return k.courts >= 2 && (attendees === k.courts*4 || attendees === kocCapacity(k));
+  }
+
+  function updateKocAdvance(round){
+    ['kocRoundNext','liveKocNext'].forEach(function(id){
+      var button = document.getElementById(id);
+      button.disabled = !round || !PadelRounds.roundComplete(round);
+    });
+  }
+
+  function renderKocRoundCards(root,round,live){
+    var grid = liveElement('div','koc-courts');
+    root.appendChild(grid);
+    round.matches.slice().reverse().forEach(function(match){
+      var cardClass = live ? 'live-koc-card' : 'koc-court';
+      var card = liveElement('article',cardClass + (match.court === round.matches.length ? ' crown' : ''));
+      card.appendChild(liveElement('h3','',t('courtLabel') + ' ' + match.court +
+        (match.court === round.matches.length ? ' 👑' : '')));
+      var teams = liveElement('div','koc-round-teams');
+      match.teams.forEach(function(team,side){
+        var box = liveElement('div','koc-round-team');
+        var names = team.map(kocPlayerName);
+        var list = liveElement('ul','');
+        names.forEach(function(name){list.appendChild(liveElement('li','',name));});
+        var score = liveElement('input','koc-round-score');
+        score.type = 'number';
+        score.min = '0';
+        score.step = '1';
+        score.inputMode = 'numeric';
+        score.value = match.score[side] === null ? '' : match.score[side];
+        score.setAttribute('aria-label',tf('scoreForTeam',{team:names.join(' & ')}));
+        score.dataset.kocRoundScore = match.court + ':' + side;
+        score.addEventListener('input',function(){
+          if (currentKocRound() !== round) return;
+          var value = score.value === '' ? null : Number(score.value);
+          match.score[side] = PadelRounds.validScore(value) ? value : null;
+          document.querySelectorAll('[data-koc-round-score="' + score.dataset.kocRoundScore + '"]').forEach(function(other){
+            if (other !== score) other.value = match.score[side] === null ? '' : match.score[side];
+          });
+          updateKocAdvance(round);
+          scheduleAutosave();
+        });
+        box.append(list,score);
+        teams.appendChild(box);
+      });
+      card.appendChild(teams);
+      grid.appendChild(card);
+    });
+    if (round.waiting.length){
+      var waiting = liveElement('article',(live ? 'live-koc-card' : 'koc-court') + ' koc-waiting-card');
+      waiting.appendChild(liveElement('h3','',t('kocRoundWaiting')));
+      var names = liveElement('ul','');
+      round.waiting.forEach(function(player){names.appendChild(liveElement('li','',kocPlayerName(player)));});
+      waiting.append(names,liveElement('p','koc-waiting-note',t('kocWaitingRule')));
+      root.appendChild(waiting);
+    }
+  }
+
+  function renderGuidedKoc(round){
+    var panel = document.getElementById('kocRoundPlan');
+    var cards = document.getElementById('kocRoundCards');
+    panel.hidden = !round;
+    document.getElementById('kocSetup').hidden = !!round;
+    document.getElementById('kocRoll').hidden = !!round;
+    document.getElementById('kocRoundReset').hidden = !round;
+    cards.replaceChildren();
+    if (!round) return;
+    document.getElementById('kocRoundHeading').textContent = tf('kocRoundTitle',{n:round.number});
+    renderKocRoundCards(cards,round,false);
+    var history = document.getElementById('kocRoundHistory');
+    history.hidden = round.number < 2;
+    history.replaceChildren(liveElement('summary','',t('kocRoundsHistory')));
+    state.koc.roundPlan.slice(0,-1).reverse().forEach(function(previous){
+      var row = liveElement('p','',tf('kocRoundTitle',{n:previous.number}) + ' · ');
+      row.append(previous.matches.map(function(match){
+        return t('courtLabel') + ' ' + match.court + ' ' + match.score.join('–');
+      }).join(' · '));
+      history.appendChild(row);
+    });
+    updateKocAdvance(round);
+  }
+
+  function advanceKocRound(){
+    if (!currentKocRound()) return;
+    var k = ensureKocRoster();
+    var round = PadelRounds.nextKocRound(k.roundPlan,k.roster.length,fitAmericanoStrength);
+    if (!round) return;
+    k.roundPlan.push(round);
+    prepareRoundClock(round.number,true);
+    renderKocResult();
+    if (document.body.classList.contains('presentation-mode')){
+      renderLivePresentation();
+      document.getElementById('liveTitle').focus();
+    } else document.getElementById('kocRoundHeading').focus();
+    scheduleAutosave();
+  }
+
+  ['kocRoundNext','liveKocNext'].forEach(function(id){
+    document.getElementById(id).addEventListener('click',advanceKocRound);
+  });
+  document.getElementById('kocRoundReset').addEventListener('click',function(){
+    showConfirmModal(t('kocResetRoundsText'),t('kocResetRounds'),function(){
+      var k = ensureKocRoster();
+      k.roundPlan = null;
+      k.assignment = null;
+      k.displayOrder = null;
+      prepareRoundClock(1,true);
+      renderKoc();
+      scheduleAutosave();
+    });
+  });
+  setInterval(paintRoundClocks,250);
+
+
   // init
+  applyStaticTranslations();
   setupBulkNameTools();
   renderKoc();
   goToStep(0);
@@ -6428,4 +7008,3 @@
 </script>
 </body>
 </html>
-

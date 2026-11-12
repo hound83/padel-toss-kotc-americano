@@ -87,7 +87,13 @@ Dezelfde rondeknoppen staan boven het gewone schema en blijven in beeld tijdens 
 
 Als de baanindeling groter is dan het scherm, verdeelt de presentatie de kaarten over meerdere schermen. Ze wisselen elke 12 seconden. Met de schermpijlen blader je zelf en met **Pauze** zet je het wisselen stil. Tijdens score-invoer blijft het actieve scherm in beeld.
 
-### Speciaal voor KOC
+### Rondeklok en speelregels
+
+- Kies bij Toss, Gesplitste Toss en Americano tussen elk punt tellen en padeltelling in games. Gewone Toss gebruikt die keuze in **Hoe speel je dit?**. Scorevelden bij Americano en bij groepen met uitslagen tonen de gekozen eenheid.
+- Open **Speelverdeling bekijken** boven het schema voor het aantal wedstrijden per speler, opeenvolgende rustbeurten en terugkerende duo’s.
+- Zet **Rondeklok gebruiken** aan en kies de standaard speeltijd en optioneel de wisseltijd. Start elke klok handmatig. Tijdens het lopen kun je één minuut aftrekken of bijtellen. Reset zet de tijd terug op de begintijd van die ronde. De volgende ronde begint met de standaardduur en een stilstaande klok.
+
+## Speciaal voor KOC
 
 - Kies **2 tot en met 4 banen** met dezelfde knoppen als bij de andere speelvormen, of **5 tot en met 12 banen** via de dropdown.
 - Vink afwezige spelers uit of pas namen aan; starten met minder spelers kan ook.
@@ -97,7 +103,9 @@ Als de baanindeling groter is dan het scherm, verdeelt de presentatie de kaarten
 - Bij minder deelnemers blijven vrije plekken op de laagste banen. Daardoor kunnen niet altijd alle gemarkeerde spelers op baan 1 starten.
 - Gebruik **🎲 Genereer startindeling** opnieuw om een andere willekeurige indeling te maken.
 - Kopieer de indeling eenvoudig voor **WhatsApp**.
-- De app verzorgt de **start**. Het doorschuiven na de eerste wedstrijden gebeurt op de baan.
+- Bij **Startindeling** loot je de beginbanen en schuiven de spelers daarna zelf door.
+- In **Rondeplanner** voer je de eindstand per baan in. De planner schuift winnaars en verliezers door, wisselt bij baan 1 met het wachtduo als dat meedoet en maakt nieuwe koppels. Hij gebruikt de uitslagen van die sessie om gelijkwaardige potjes te bevorderen en recente partners minder vaak samen te zetten.
+- Beide KOC-varianten tellen ieder punt door. **Hoe speel je dit?** legt de Spaanse toss, de servicevolgorde en het beslissende punt bij gelijkspel uit.
 
 ## 📱 Als app gebruiken
 
