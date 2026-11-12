@@ -2,6 +2,13 @@
 
 These are standing instructions for `hound83/padel-toss-kotc-americano`. The user's current request defines the scope and destination; this document defines the working method.
 
+## Assignment checklist and recovery
+
+- Before starting a new repository assignment, save a temporary Markdown task log. Turn the prompt into a `- [ ]` checklist with one item per requested outcome. Capture the constraints, acceptance checks, and delivery steps needed to reconstruct the assignment. Record the repository and starting branch or commit when known. Update the same log when the user changes the scope.
+- Keep the log private and outside the Git checkout. Use a location that survives a new chat or checkout. In ChatGPT Work, use the user's Library when available. Otherwise use a persistent `codex-task-logs/` folder. Name the file `task-log--<owner>--<repo>--<UTC-timestamp>--<short-task>.md`. For cross-repository work, use `multi-repo` in the filename and list the repositories in the log. Share the link or path at the start and in the final reply. If only transient storage is available, save there and state the recovery limitation. Omit credentials and unnecessary personal details.
+- Mark each item `- [x]` once its outcome is verified. Add brief evidence such as a file path, test result, commit, PR, or verified live link. Save the log at each meaningful checkpoint with the current branch, commit, or worktree location as applicable. Keep open items unchecked and record any blocker and the next concrete action.
+- When resuming, open the existing log and verify the checkpoint against the current repository state. Before the final reply, reconcile the checklist with the latest request. Record `Done` when all requested outcomes are verified, or `In progress` or `Blocked` with the remaining work. Leave the log available for the user's review.
+
 ## Outcome ownership
 
 - Treat a substantial implementation request as ownership of a **complete, useful milestone**, not just the first code change. Investigate, implement, test, inspect real user flows, repair discovered in-scope defects, and document the result before stopping. Keep explicitly small fixes small; do not invent unrelated work.
