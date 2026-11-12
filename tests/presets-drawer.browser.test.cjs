@@ -134,7 +134,7 @@ test('court defaults and name-list drawer retain the ordinary player layout', as
   await koc.locator('#kocCourtButtons .court-btn[data-courts="2"]').click();
   assert.equal(await koc.locator('#kocRoster .koc-player').count(),8);
   assert.equal(await koc.locator('#kocMoreSelect').inputValue(),'');
-  assert.equal(await koc.locator('#kocEntryToggle').isVisible(),true);
+  assert.equal(await koc.locator('#kocLowestFields').isVisible(),true);
   assert.equal(await koc.locator('#kocWaitingToggle').isVisible(),true);
   await koc.locator('#kocRoll').click();
   assert.equal(await koc.locator('#kocResult .koc-court').count(),2);
