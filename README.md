@@ -34,7 +34,7 @@
 ## Zo werkt het
 
 1. **Open de [webapp](https://hound83.github.io/padel-toss-kotc-americano/)** en kies een speelvorm.
-2. **Stel je avond in:** kies het aantal banen. Toss en Gesplitste Toss starten met 8 spelers per baan (Gesplitste Toss gelijk verdeeld over Zilver en Goud), Americano en KOC met 4 spelers per baan. Je kunt de aantallen met de tellers aanpassen.
+2. **Stel je avond in:** kies 2 tot en met 12 banen. Toss en Gesplitste Toss starten met 8 spelers per baan (Gesplitste Toss gelijk verdeeld over Zilver en Goud), Americano en KOC met 4 spelers per baan. Je kunt de aantallen met de tellers aanpassen.
 3. **Vul de namen in** of klik op **📋 Namenlijst plakken**. Plak één naam per regel in het tijdelijke zijpaneel; lege regels worden overgeslagen. Genereer daarna de indeling.
 4. **Speel!** Bekijk het schema, houd bij Americano de scores bij of gebruik de presentatiemodus om de indeling duidelijk te tonen.
 
@@ -89,7 +89,7 @@ Als de baanindeling groter is dan het scherm, verdeelt de presentatie de kaarten
 
 ### Speciaal voor KOC
 
-- Kies **1 tot en met 4 banen** met dezelfde knoppen als bij de andere speelvormen, of **5 tot en met 12 banen** via de dropdown.
+- Kies **2 tot en met 4 banen** met dezelfde knoppen als bij de andere speelvormen, of **5 tot en met 12 banen** via de dropdown.
 - Vink afwezige spelers uit of pas namen aan; starten met minder spelers kan ook.
 - De eerste speler start op de hoogste baan, de tweede op de baan eronder.
 - Zet desgewenst **Indelen op laagste baan** aan. De laatste vier baanplekken krijgen dan een vinkje. Gemarkeerde spelers beginnen zo laag mogelijk. Bij vier banen zijn dit spelers 13–16.

@@ -34,6 +34,7 @@ test('court defaults and name-list drawer retain the ordinary player layout', as
     assert.equal(await page.locator('#langSwitch').isVisible(),true);
     assert.equal(await page.locator('#homeLangSwitch').count(),0);
     await page.locator('.format-btn[data-format="' + format + '"]').click();
+    if(format!=='koc')assert.deepEqual(await page.locator('#courtsSelect .court-btn .cb-num').allTextContents(),['2','3','4']);
     return page;
   }
 
@@ -122,25 +123,21 @@ test('court defaults and name-list drawer retain the ordinary player layout', as
   await koc.locator('#bulkDrawerCancel').click();
   assert.equal(await koc.locator('#bulkDrawerLayer').isVisible(),false);
 
-  // KOC must offer the identical 1–4 buttons and 5–12 dropdown as the
-  // other formats, including the new one-court and twelve-court extremes.
+  // KOC shares the same court range as the other formats.
   const kocButtons = await koc.locator('#kocCourtButtons .court-btn .cb-num').allTextContents();
-  assert.deepEqual(kocButtons,['1','2','3','4']);
+  assert.deepEqual(kocButtons,['2','3','4']);
   const kocDropdownOptions = await koc.locator('#kocMoreSelect option').evaluateAll(
     opts=>opts.map(x=>x.value).filter(Boolean));
   assert.deepEqual(kocDropdownOptions,['5','6','7','8','9','10','11','12']);
   assert.equal(await koc.locator('#kocCourtButtons .court-btn[data-courts="4"]').getAttribute('aria-pressed'),'true');
 
-  await koc.locator('#kocCourtButtons .court-btn[data-courts="1"]').click();
-  assert.equal(await koc.locator('#kocRoster .koc-player').count(),4);
+  await koc.locator('#kocCourtButtons .court-btn[data-courts="2"]').click();
+  assert.equal(await koc.locator('#kocRoster .koc-player').count(),8);
   assert.equal(await koc.locator('#kocMoreSelect').inputValue(),'');
-  await koc.locator('#kocEntryToggle').check();
-  assert.equal(await koc.locator('.koc-entry-marker').count(),4);
-  for (let i=0;i<4;i++) await koc.locator('.koc-entry-marker input').nth(i).check();
+  assert.equal(await koc.locator('#kocEntryToggle').isVisible(),true);
+  assert.equal(await koc.locator('#kocWaitingToggle').isVisible(),true);
   await koc.locator('#kocRoll').click();
-  assert.equal(await koc.locator('#kocResult .koc-court').count(),1);
-  assert.deepEqual((await koc.locator('#kocResult .koc-court li').allTextContents()).sort(),
-    ['Speler 1','Speler 2','Speler 3','Speler 4']);
+  assert.equal(await koc.locator('#kocResult .koc-court').count(),2);
 
   await koc.locator('#kocMoreSelect').selectOption('5');
   assert.equal(await koc.locator('#kocRoster .koc-player').count(),20);

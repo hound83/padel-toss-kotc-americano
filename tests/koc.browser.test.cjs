@@ -219,6 +219,34 @@ test('real browser: KOC setup, entrants, absence, language, reload and mobile la
   await mobilePage.locator('#kocRoll').tap();
   assert.deepEqual(await waitingCard.locator('li').allTextContents(),['Deelnemer 17','Deelnemer 18']);
 
+
+  await mobilePage.locator('#kocCourtButtons [data-courts="3"]').tap();
+  assert.equal(await mobilePage.locator('#kocEntryToggle').isVisible(),true);
+  assert.equal(await mobilePage.locator('#kocWaitingToggle').isVisible(),true);
+  assert.equal(await mobilePage.locator('#kocRoster .koc-player').count(),14);
+  assert.deepEqual(await lowestRows.locator('input[type=text]').evaluateAll(inputs=>inputs.map(input=>input.getAttribute('aria-label'))),
+    ['Speler 9','Speler 10','Speler 11','Speler 12']);
+  for(const marker of await lowestRows.locator('.koc-entry-marker input').all())await marker.check();
+  await mobilePage.locator('#kocRoll').tap();
+  assert.deepEqual(await waitingCard.locator('li').allTextContents(),['Deelnemer 13','Deelnemer 14']);
+  assert.deepEqual((await courts.last().locator('li').allTextContents()).sort(),names.slice(8,12).sort());
+
+  const oneCourt=JSON.parse(fs.readFileSync(waitingPath,'utf8'));
+  const savedKoc=oneCourt.state.koc;
+  savedKoc.courts=1;
+  savedKoc.roster=savedKoc.roster.slice(0,6);
+  savedKoc.assignment={0:1,1:1,2:1,3:1,4:0,5:0};
+  savedKoc.displayOrder=[0,1,2,3,4,5];
+  await mobilePage.locator('#loadFileInput').setInputFiles({
+    name:'koc-one-court.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(oneCourt))
+  });
+  await waitingCard.getByText('Deelnemer 5',{exact:true}).waitFor({state:'visible'});
+  assert.deepEqual(await waitingCard.locator('li').allTextContents(),['Deelnemer 5','Deelnemer 6']);
+  assert.equal(await courts.count(),1);
+  assert.equal(await mobilePage.locator('#kocEntryToggle').isVisible(),false);
+  assert.equal(await mobilePage.locator('#kocWaitingToggle').isVisible(),false);
+  assert.equal(await lowestRows.count(),0);
+
   // Production auto-registers the service worker on HTTPS only. On this local
   // HTTP test origin we register it explicitly and verify its upgrade cleanup.
   await page.evaluate(async () => {

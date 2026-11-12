@@ -178,6 +178,7 @@
   .app-notice button{background:var(--ball);border:0;border-radius:8px;padding:9px 12px;font-weight:800;cursor:pointer;}
   .koc-setup{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px 20px;margin:16px 0;}
   .koc-entry-option{display:flex;align-items:center;gap:9px;margin:5px 0 10px;font-weight:700;cursor:pointer;}
+  .koc-entry-option[hidden]{display:none;}
   .koc-entry-option input{width:19px;height:19px;accent-color:var(--teal-900);}
   .koc-entry-hint{margin:0 0 16px;}
   .koc-roster{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;}
@@ -1076,7 +1077,6 @@
 
     <p class="sub-heading" data-i18n="p1CourtsHeading">Hoeveel banen heb je?</p>
     <div class="courts-select" id="courtsSelect">
-      <button class="court-btn" type="button" data-courts="1"><div class="cb-num">1</div><div class="cb-label" data-i18n="courtUnitSingular">baan</div></button>
       <button class="court-btn" type="button" data-courts="2"><div class="cb-num">2</div><div class="cb-label" data-i18n="courtUnitPlural">banen</div></button>
       <button class="court-btn" type="button" data-courts="3"><div class="cb-num">3</div><div class="cb-label" data-i18n="courtUnitPlural">banen</div></button>
       <button class="court-btn" type="button" data-courts="4"><div class="cb-num">4</div><div class="cb-label" data-i18n="courtUnitPlural">banen</div></button>
@@ -2250,12 +2250,16 @@
 
   function renderKoc(){
     var k = ensureKocRoster();
-    document.getElementById('kocEntryToggle').checked = k.incomingEnabled;
-    document.getElementById('kocEntryHint').hidden = !k.incomingEnabled;
-    document.getElementById('kocWaitingToggle').checked = k.waitingEnabled;
-    document.getElementById('kocWaitingHint').hidden = !k.waitingEnabled;
-    // KOC shares the exact selector styling and 1–4 + 5–12 control model
-    // used by Toss, Split Toss and Americano.
+    // Older saves can still have one court. New setups start at two.
+    var multiCourt = k.courts >= 2;
+    var entryToggle = document.getElementById('kocEntryToggle');
+    var waitingToggle = document.getElementById('kocWaitingToggle');
+    entryToggle.checked = k.incomingEnabled;
+    waitingToggle.checked = k.waitingEnabled;
+    entryToggle.parentElement.hidden = !multiCourt;
+    waitingToggle.parentElement.hidden = !multiCourt;
+    document.getElementById('kocEntryHint').hidden = !multiCourt || !k.incomingEnabled;
+    document.getElementById('kocWaitingHint').hidden = !multiCourt || !k.waitingEnabled;
     var buttons = document.getElementById('kocCourtButtons');
     buttons.innerHTML = '';
     function changeKocCourts(next){
@@ -2268,7 +2272,7 @@
       document.getElementById('kocStatus').textContent = t('kocChanged');
       scheduleAutosave();
     }
-    for (var count = 1; count <= 4; count++){
+    for (var count = 2; count <= 4; count++){
       (function(value){
         var btn = document.createElement('button');
         btn.type = 'button';
@@ -2281,7 +2285,7 @@
         num.textContent = String(value);
         var label = document.createElement('div');
         label.className = 'cb-label';
-        label.textContent = t(value === 1 ? 'courtUnitSingular' : 'courtUnitPlural');
+        label.textContent = t('courtUnitPlural');
         btn.appendChild(num);
         btn.appendChild(label);
         btn.addEventListener('click', function(){ changeKocCourts(value); });
@@ -2352,7 +2356,7 @@
       row.appendChild(input);
       if (i >= k.courts * 4){
         row.appendChild(liveElement('span', 'koc-waiting-slot', t('kocWaitingSlot')));
-      } else if (k.incomingEnabled && kocLowestCourtSlot(k, i)){
+      } else if (multiCourt && k.incomingEnabled && kocLowestCourtSlot(k, i)){
         var marker = document.createElement('label');
         marker.className = 'koc-entry-marker';
         var markerCheckbox = document.createElement('input');
@@ -3272,7 +3276,7 @@
     });
   });
 
-  // The four buttons (1-4) and the "5 or more" dropdown are two halves of one
+  // The 2–4 buttons and the "5 or more" dropdown are two halves of one
   // control: picking either clears the other, so exactly one court count is
   // ever selected regardless of which half the user reached for.
   var courtsMoreSelect = document.getElementById('courtsMoreSelect');
@@ -5012,7 +5016,7 @@
   }
   function kocCourtsForCount(count){
     var withWaitingPair = state.koc.waitingEnabled && count % 4 === 2;
-    return Math.min(12, Math.max(1, Math.ceil(count / 4) - (withWaitingPair ? 1 : 0)));
+    return Math.min(12, Math.max(2, Math.ceil(count / 4) - (withWaitingPair ? 1 : 0)));
   }
 
   function renderBulkDrawerPreview(){
