@@ -44,6 +44,8 @@
   .brand h1{font-size:clamp(21px,5vw,29px);}
   .brand .ball-dot{width:23px;height:23px;}
   .masthead-back{order:3;margin-left:0;}
+  .masthead:has(.format-mark:not([hidden])) .brand{flex:0 0 100%;}
+  .masthead:has(.format-mark:not([hidden])) .masthead-back{order:1;}
 }
 @media(max-width:370px){
   .mode-home .format-btn{grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr);}

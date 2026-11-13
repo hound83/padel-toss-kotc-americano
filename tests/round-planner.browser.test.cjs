@@ -49,13 +49,13 @@ test('round planner, clock, rules and scoring options work in the browser',async
   await koc.locator('#kocRoundSettingsPlay').fill('10');
   await koc.locator('#kocRoundSettingsBreak').fill('2');
   await koc.locator('#kocRoundSettingsBreak').press('Tab');
-  const setupRules=koc.locator('#panelKoc > [data-round-rules]');
-  assert.match(await setupRules.locator('summary').textContent(),/King of the Court met de Rondeplanner/);
+  const setupRules=koc.locator('#playRules');
+  assert.equal(await setupRules.locator('summary').textContent(),'Spelregels voor King of the Court met Rondeplanner');
   await setupRules.locator('summary').tap();
   const serve=await setupRules.locator('ol li').allTextContents();
   assert.equal(serve.length,4);
-  assert.match(serve[0],/Spaanse toss heeft gewonnen/);
-  assert.match(serve[2],/Spaanse toss heeft gewonnen/);
+  assert.match(serve[0],/Spaanse toss won/);
+  assert.match(serve[2],/Spaanse toss won/);
   await koc.locator('#kocRoll').tap();
   const clock=koc.locator('#panelKoc [data-round-clock]');
   const reading=clock.locator('output');
@@ -195,31 +195,23 @@ test('round planner, clock, rules and scoring options work in the browser',async
   if(process.env.PADEL_SCREENSHOT_DIR){
     await desktop.locator('#kocSetup').screenshot({path:path.join(process.env.PADEL_SCREENSHOT_DIR,'koc-setup-desktop.png')});
   }
+  const playRules=desktop.locator('#playRules');
+  const summary=playRules.locator('summary');
+  await summary.scrollIntoViewIfNeeded();
+  await summary.press('Enter');
+  const beforeDraw=await playRules.evaluate(el=>({top:el.offsetTop,width:el.offsetWidth,height:el.offsetHeight}));
   await desktop.locator('#kocRoll').click();
+  assert.equal(await playRules.getAttribute('open'),'');
+  assert.deepEqual(await playRules.evaluate(el=>({top:el.offsetTop,width:el.offsetWidth,height:el.offsetHeight})),beforeDraw);
   const regularClock=desktop.locator('#panelKoc [data-round-clock]');
   const result=desktop.locator('#kocResult');
   const regularBox=await regularClock.boundingBox();
   const resultBox=await result.boundingBox();
   assert.ok(regularBox.width<resultBox.width*.6);
   assert.ok(Math.abs(regularBox.x+regularBox.width-resultBox.x-resultBox.width)<2);
-  const sideRules=desktop.locator('.koc-side-rules [data-round-rules]');
-  const sideSummary=sideRules.locator('summary');
-  assert.equal(await desktop.locator('#panelKoc > [data-round-rules]').isVisible(),false);
-  assert.equal(await sideSummary.textContent(),'Hoe speel je King of the Court?');
-  await sideSummary.scrollIntoViewIfNeeded();
-  const before=await Promise.all([regularClock.boundingBox(),result.boundingBox()]);
-  const sideBox=await sideRules.boundingBox();
-  assert.equal(sideBox.y,before[0].y);
-  assert.ok(sideBox.x+sideBox.width<before[0].x);
-  await sideSummary.press('Enter');
-  assert.equal(await sideRules.locator('ol li').first().isVisible(),true);
-  assert.deepEqual(await Promise.all([regularClock.boundingBox(),result.boundingBox()]),before);
-  assert.ok(await desktop.locator('.koc-side-rules').evaluate(el=>el.scrollHeight>el.clientHeight));
-  if(process.env.PADEL_SCREENSHOT_DIR){
-    await desktop.locator('.koc-round-tools').screenshot({
-      path:path.join(process.env.PADEL_SCREENSHOT_DIR,'koc-rules-with-clock.png')
-    });
-  }
+  assert.equal(await desktop.locator('.round-rules').count(),1);
+  assert.equal(await summary.textContent(),'Spelregels voor King of the Court');
+  assert.ok(await playRules.evaluate(el=>el.offsetWidth===el.parentElement.clientWidth-2*parseFloat(getComputedStyle(el.parentElement).paddingLeft)));
   await desktop.locator('#kocPresent').click();
   const head=desktop.locator('.live-head');
   const presentationClock=desktop.locator('#liveRoundClock');
@@ -244,26 +236,35 @@ test('round planner, clock, rules and scoring options work in the browser',async
   assert.deepEqual(await head.locator('#liveTitle').boundingBox(),title);
 
   const toss=await open('toss');
-  assert.equal(await toss.locator('#panel1 [data-round-rules] summary').textContent(),'Hoe speel je Toss?');
+  const tossRules=toss.locator('#playRules');
+  assert.equal(await tossRules.locator('summary').textContent(),'Spelregels voor Toss');
+  await tossRules.locator('summary').click();
+  assert.match(await tossRules.innerText(),/gezelligheid en kennismaken/);
+  assert.match(await tossRules.innerText(),/spreken zelf een telling af/);
+  assert.match(await tossRules.innerText(),/15, 30 en 40/);
+  assert.equal(await toss.locator('#roundSettingsScore').count(),0);
   await toss.locator('#roundSettingsEnabled').check();
   assert.equal(await toss.locator('#roundSettingsPlay').inputValue(),'12');
-  await toss.locator('#roundSettingsScore').selectOption('games');
   await toss.locator('#continueTo2').click();
+  assert.equal(await tossRules.getAttribute('open'),'');
   await toss.locator('#generateBtn').click();
   assert.equal(await toss.locator('#roundsCol input').count(),0);
   assert.equal(await toss.locator('#playcountPanel').isVisible(),false);
   await toss.locator('#playcountToggleBtn').click();
   assert.match(await toss.locator('#playcountPanel').innerText(),/opeenvolgende rustbeurten/);
   assert.match(await toss.locator('#playcountPanel').innerText(),/Duo’s die vaker samen spelen/);
-  await toss.locator('#panel3 [data-round-rules] summary').click();
-  assert.match(await toss.locator('#panel3 [data-round-rules]').innerText(),/15, 30 en 40/);
+  assert.equal(await tossRules.getAttribute('open'),'');
 
-  const americano=await open('americano');
-  assert.equal(await americano.locator('#panel1 [data-round-rules] summary').textContent(),'Hoe speel je Americano?');
+  const americano=await open('americano',true);
+  const brand=await americano.locator('.brand').boundingBox();
+  const language=await americano.locator('#langSwitch').boundingBox();
+  assert.ok(language.y>=brand.y+brand.height);
+  assert.ok((await americano.locator('#appTitle').boundingBox()).width>200);
+  assert.equal(await americano.locator('#playRules summary').textContent(),'Spelregels voor Americano');
   await americano.locator('#roundSettingsScore').selectOption('games');
   await americano.locator('#continueTo2').click();
   await americano.locator('#generateBtn').click();
-  assert.equal(await americano.locator('#panel3 [data-round-rules] summary').textContent(),'Hoe speel je Americano?');
+  assert.equal(await americano.locator('#playRules summary').textContent(),'Spelregels voor Americano');
   const gameScores=americano.locator('#scheduleRound1 input[data-key]');
   await gameScores.first().fill('4');
   await gameScores.nth(1).fill('3');
@@ -275,9 +276,9 @@ test('round planner, clock, rules and scoring options work in the browser',async
   assert.equal(await americano.locator('#roundSettingsScore').isEnabled(),false);
 
   const split=await open('splitToss');
-  assert.equal(await split.locator('#panel1 [data-round-rules] summary').textContent(),'Hoe speel je Gesplitste toss?');
+  assert.equal(await split.locator('#playRules summary').textContent(),'Spelregels voor Gesplitste Toss');
   await split.locator('.lang-btn[data-lang="en"]').click();
-  assert.equal(await split.locator('#panel1 [data-round-rules] summary').textContent(),'How to play Split Toss');
+  assert.equal(await split.locator('#playRules summary').textContent(),'How to play Split Toss');
   await split.locator('.lang-btn[data-lang="nl"]').click();
   await split.locator('#roundSettingsScore').selectOption('games');
   await split.locator('#continueTo2').click();
