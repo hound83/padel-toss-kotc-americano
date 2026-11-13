@@ -103,7 +103,7 @@ Als de baanindeling groter is dan het scherm, verdeelt de presentatie de kaarten
 - Kopieer de indeling eenvoudig voor **WhatsApp**.
 - Bij **Startindeling** loot je de beginbanen en schuiven de spelers daarna zelf door.
 - In **Rondeplanner** voer je de eindstand per baan in. De planner schuift winnaars en verliezers door, wisselt bij baan 1 met het wachtduo als dat meedoet en maakt nieuwe koppels. Bij **Vrij met balans** kiest de planner uit alle koppelcombinaties en probeert hij recente partners te spreiden. Bij **Gekruist met balans** splitst hij de twee duo’s die na het doorschuiven op dezelfde baan aankomen. Hij kiest met de uitslagen welke kruising de beste balans geeft. Twee aangevinkte spelers die op baan 1 starten krijgen een tijdelijke hint voor de koppelkeuze. Die loopt af over zes gespeelde wedstrijden.
-- Beide KOC-varianten tellen ieder punt door. **Hoe speel je dit?** legt de Spaanse toss, de servicevolgorde en het beslissende punt bij gelijkspel uit.
+- Beide KOC-varianten tellen ieder punt door. De speluitleg voor King of the Court legt de Spaanse toss, de servicevolgorde en het beslissende punt bij gelijkspel uit.
 
 ## 📱 Als app gebruiken
 
