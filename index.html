@@ -128,7 +128,7 @@
     display:flex;
     flex-wrap:wrap;
     gap:8px;
-    margin-bottom:34px;
+    margin-bottom:18px;
   }
   .steps[hidden]{ display:none; }
   .steps .step{
@@ -176,7 +176,7 @@
   .app-notice{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);z-index:100;max-width:min(94vw,540px);background:var(--teal-900);color:white;border-radius:12px;padding:14px 18px;box-shadow:0 12px 35px #17314955;display:none;gap:12px;align-items:center;}
   .app-notice.visible{display:flex;}
   .app-notice button{background:var(--ball);border:0;border-radius:8px;padding:9px 12px;font-weight:800;cursor:pointer;}
-  .koc-setup{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px 20px;margin:16px 0;}
+  .koc-setup{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px 20px;margin:12px 0;}
   .koc-roster,.koc-roster-group{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;}
   .koc-roster-group{grid-column:1/-1;margin-top:5px;}
   .koc-roster-group[hidden],#kocWaitingToggle[hidden]{display:none;}
@@ -250,24 +250,13 @@
     .koc-clock-settings{grid-column:2;grid-row:1/span 2;}
   }
   @media(max-width:540px){.koc-choice-list{grid-template-columns:1fr;}}
-  .round-rules{inline-size:fit-content;max-inline-size:min(100%,64ch);margin:0 0 16px;padding:10px 14px;border:1px solid var(--line);border-radius:10px;background:var(--surface);}
+  .masthead:has(+ .round-rules:not([hidden])){margin-bottom:14px;padding-bottom:12px;}
+  .round-rules{margin:0 0 16px;padding:9px 14px;border:1px solid var(--line);border-radius:10px;background:var(--surface);}
   .round-rules summary,.koc-round-history summary{cursor:pointer;font-weight:750;color:var(--teal-900);}
   .round-rules summary{min-block-size:24px;line-height:1.5;}
-  .round-rules p,.round-rules ol{margin:8px 0;font-size:var(--fs-sm);line-height:1.5;}
-  .koc-side-rules{display:none;}
-  @media (min-width:801px){
-    #panelKoc:has(.koc-round-tools > .round-clock:not([hidden])) > .round-rules{display:none;}
-    .koc-round-tools:has(> .round-clock:not([hidden])){
-      display:grid;grid-template-columns:minmax(0,1fr) minmax(0,min(48%,31rem));gap:16px;margin-bottom:12px;
-    }
-    .koc-round-tools:has(> .round-clock:not([hidden])) > .koc-side-rules{
-      display:block;contain:size;overflow:auto;scrollbar-gutter:stable;
-    }
-    .koc-side-rules:has(details[open]){max-inline-size:64ch;border:1px solid var(--line);border-radius:10px;background:var(--surface);}
-    .koc-side-rules .round-rules{margin:0;}
-    .koc-side-rules .round-rules[open]{inline-size:100%;border:0;background:transparent;}
-    #panelKoc .koc-round-tools > .round-clock{margin-bottom:0;}
-  }
+  .round-rules p,.round-rules ol{max-inline-size:105ch;margin:7px 0;font-size:var(--fs-sm);line-height:1.5;}
+  .round-rules ol{padding-inline-start:24px;}
+  .round-rules > :last-child:not(summary){margin-block-end:2px;}
   .round-clock{
     --clock-panel:#203850;
     --clock-face:#172a3f;
@@ -491,7 +480,7 @@
     color:var(--teal-900);
     margin:0 0 6px;
   }
-  .panel-sub{ color:var(--ink-soft); margin:0 0 26px; font-size:var(--fs-base); }
+  .panel-sub{ color:var(--ink-soft); margin:0 0 16px; font-size:var(--fs-base); }
 
   .sub-heading{
     font-family:var(--font-body);
@@ -668,7 +657,7 @@
     border:1px solid var(--line);
     border-radius:12px;
     padding:18px 20px;
-    margin-bottom:24px;
+    margin-bottom:16px;
   }
   .field-group{ display:flex; flex-direction:column; gap:8px; }
   .field-group label{ font-size:var(--fs-xs); font-weight:600; color:var(--teal-900); text-transform:uppercase; letter-spacing:.04em; }
@@ -1023,7 +1012,7 @@
   .cutoff-row td{ border-top:2px dashed var(--ball); }
 
   /* ---------- Play count panel ---------- */
-  .playcount-wrap{ margin:24px 0 30px; }
+  .playcount-wrap{ margin:14px 0 16px; }
   .test-score-tools{ padding-top:16px; border-top:1px solid var(--line); }
   .test-score-tools h3{ margin:0 0 8px; font-size:var(--fs-sm); }
   .test-score-actions{ display:flex; flex-wrap:wrap; gap:8px; }
@@ -1067,7 +1056,7 @@
   table.playcount-table .added-tag{ font-family:var(--font-mono); font-size:var(--fs-2xs); color:var(--ball-dark); margin-left:6px; }
 
   .schedule-actions{
-    display:flex; gap:10px; margin:22px 0 30px; flex-wrap:wrap;
+    display:flex; gap:10px; margin:0 0 16px; flex-wrap:wrap;
   }
 
   /* ---------- Edit roster panel ---------- */
@@ -1152,7 +1141,7 @@
   @media (max-width:520px){.split-preview-content,.split-preview .modal-actions{padding:12px;}}
 
   @media print{
-    .steps, .schedule-actions, .schedule-round-tools, .board, .checkpoint-card, .lang-switch, .test-score-tools{ display:none !important; }
+    .steps, .round-rules, .schedule-actions, .schedule-round-tools, .board, .checkpoint-card, .lang-switch, .test-score-tools{ display:none !important; }
     #loadBtn, #saveBtn{ display:none !important; }
     .koc-setup,.koc-roster-tools,.koc-actions,.app-footer,.present-exit{display:none!important;}
     body{ background:#fff; }
@@ -1180,6 +1169,8 @@
       <button type="button" class="lang-btn" data-lang="en" aria-pressed="false">EN</button>
     </div>
   </div>
+
+  <details class="round-rules" id="playRules" hidden></details>
 
   <nav class="steps" id="stepsNav" aria-label="Stappen" data-i18n-aria-label="stepsLabel" hidden>
     <button class="step" type="button" data-step="1" aria-controls="panel1"><span class="num" aria-hidden="true">1</span> <span data-i18n="stepSetup">Instellen</span></button>
@@ -1230,7 +1221,6 @@
   <section class="panel" id="panel1">
     <h2 class="panel-title" data-i18n="p1Title">Instellingen</h2>
     <p class="panel-sub" data-i18n="p1Sub">Hoeveel banen zijn er en hoeveel spelers doen mee?</p>
-    <details class="round-rules" data-round-rules></details>
 
     <p class="sub-heading" data-i18n="p1CourtsHeading">Hoeveel banen heb je?</p>
     <div class="courts-select" id="courtsSelect">
@@ -1325,7 +1315,6 @@
   <section class="panel" id="panelKoc">
     <h2 class="panel-title" data-i18n="formatKoc">King of the Court</h2>
     <p class="panel-sub" data-i18n="kocSub">Vul de spelers in, kies je banen en maak een startindeling. Daarna wijzen de uitslagen zichzelf.</p>
-    <details class="round-rules" data-round-rules></details>
     <div class="koc-setup" id="kocSetup">
       <p class="sub-heading" data-i18n="kocCourts">Aantal banen</p>
       <div class="courts-select" id="kocCourtButtons" aria-label="KOC court selection"></div>
@@ -1359,10 +1348,7 @@
     </div>
     <p class="koc-help" id="kocStatus" aria-live="polite"></p>
 
-    <div class="koc-round-tools">
-      <div class="koc-side-rules"><details class="round-rules" data-round-rules></details></div>
-      <div class="round-clock" data-round-clock hidden></div>
-    </div>
+    <div class="round-clock" data-round-clock hidden></div>
     <section id="kocRoundPlan" hidden>
       <h3 id="kocRoundHeading" tabindex="-1"></h3>
       <p class="score-unit" data-i18n="kocScoreHint"></p>
@@ -1451,7 +1437,6 @@
 
   <!-- STEP 3 -->
   <section class="panel" id="panel3">
-    <details class="round-rules" data-round-rules></details>
     <div class="schedule-actions">
       <button class="btn btn-ghost" id="backToSettingsBtn" data-i18n="backToSettingsBtn">← Instellingen wijzigen</button>
       <button class="btn btn-ghost" id="editPlayersBtn" data-i18n="editPlayersBtn">✎ Spelers wijzigen</button>
@@ -1542,7 +1527,7 @@
   </section>
 
   <footer class="app-footer">
-    <span id="appVersion">v2.6.5</span>
+    <span id="appVersion">v2.6.6</span>
     <details><summary data-i18n="whatsNew">Wat is nieuw?</summary>
       <ul>
         <li data-i18n="changeIllustrations">Nieuwe baanillustraties, marineblauw/lime en een puntenscore van 26–6.</li>
@@ -1675,46 +1660,46 @@
   // ================= i18n =================
   var STR = {
     nl: {
-      kocVariant: "Hoe wil je spelen?",
+      kocVariant: "Speelwijze",
       kocStartOnly: "Startindeling",
-      kocStartDescription: "De app deelt de eerste ronde in. Daarna schuif je zelf door.",
+      kocStartDescription: "De app maakt de eerste indeling. Daarna regelen de spelers zelf het doorschuiven.",
       kocPlanner: "Rondeplanner",
-      kocPlannerDescription: "Vul de uitslagen in. De app schuift de spelers door en maakt nieuwe koppels voor de volgende ronde.",
+      kocPlannerDescription: "Na invoer van de uitslagen deelt de app de banen en koppels voor de volgende ronde in.",
       kocPairing: "Koppels per ronde",
       kocPairingBalanced: "Vrij met balans",
       kocPairingBalancedDescription: "Alle combinaties op de baan zijn mogelijk.",
       kocPairingCrossed: "Gekruist met balans",
       kocPairingCrossedDescription: "Iedereen krijgt een nieuwe partner. De app kiest de beste kruising.",
-      kocPairingCrossedHint: "Na het doorschuiven kiest de planner de best passende kruising van de twee aangekomen duo’s. Kies je voor precies twee spelers baan 1 als voorkeur, dan telt dat tijdelijk mee bij de koppelkeuze.",
-      kocPlannerHint: "Vul per baan de eindstand in. De planner deelt de volgende ronde in.",
+      kocPairingCrossedHint: "Bij gekruist koppelen bestaat elk nieuw duo uit één speler van elk aankomend duo. De planner kiest de kruising op basis van de uitslagen. Een voorkeur voor baan 1 bij precies twee spelers telt tijdelijk mee.",
+      kocPlannerHint: "De Rondeplanner gebruikt de eindstanden om de banen en koppels voor de volgende ronde te bepalen.",
       kocPlannerFull: "Voor de Rondeplanner zijn vier spelers per baan nodig, eventueel met twee wachtspelers.",
       kocNextRound: "Volgende ronde maken",
-      kocScoreHint: "Vul per baan de eindstand in. Speel bij gelijkspel eerst nog één punt buiten de klok.",
+      kocScoreHint: "Voer per baan de eindstand in. Bij een gelijke stand volgt eerst één beslissend punt buiten de speeltijd.",
       kocRoundsHistory: "Vorige rondes",
       kocRoundWaiting: "Wachtduo deze ronde",
       kocRoundTitle: "Ronde {n}",
       kocResetRounds: "Nieuwe startindeling",
       kocResetRoundsText: "Een nieuwe startindeling maken? De uitslagen en rondes van deze KOC worden dan gewist. Je spelerslijst blijft bewaard.",
-      tossRulesTitle: "Hoe speel je Toss?",
-      splitRulesTitle: "Hoe speel je Gesplitste toss?",
-      americanoRulesTitle: "Hoe speel je Americano?",
-      kocRulesTitle: "Hoe speel je King of the Court?",
-      kocPlannerRulesTitle: "Hoe speel je King of the Court met de Rondeplanner?",
+      tossRulesTitle: "Spelregels voor Toss",
+      splitRulesTitle: "Spelregels voor Gesplitste Toss",
+      americanoRulesTitle: "Spelregels voor Americano",
+      kocRulesTitle: "Spelregels voor King of the Court",
+      kocPlannerRulesTitle: "Spelregels voor King of the Court met Rondeplanner",
       scoringChoice: "Telling",
       scoringPoints: "Elk punt telt",
       scoringGames: "Padeltelling in games",
-      pointsRule: "Tel elk gewonnen punt door als 1, 2, 3… Een eindstand kan 21–17 zijn.",
-      gamesRule: "Tel binnen een game 15, 30 en 40. Bij score-invoer geef je de gewonnen games door, bijvoorbeeld 4–3.",
-      tossRules: "Speel de wedstrijden in het schema. Wissel na elke ronde volgens de volgende indeling.",
-      splitRules: "Speel binnen je eigen niveaugroep en volg per ronde de baanindeling. Als scores aanstaan voor je groep, geef je de eindstand door.",
-      americanoRules: "Speel met wisselende partners. Vul na elke wedstrijd de eindstand in. Die telt mee voor het individuele klassement.",
-      kocRules: "Winnaars gaan één baan omhoog en verliezers één baan omlaag. Op de hoogste baan blijven de winnaars staan. Op baan 1 blijven de verliezers staan, of wisselen zij met het wachtduo als dat meedoet. Op elke baan worden de koppels opnieuw ingedeeld.",
-      kocServiceIntro: "Begin met een Spaanse toss om te bepalen welk duo als eerste serveert. Daarna telt elke rally als één punt.",
-      kocServiceA: "De eerste speler van het duo dat de Spaanse toss heeft gewonnen serveert vier punten.",
-      kocServiceB: "De eerste speler van het andere duo serveert vier punten.",
-      kocServiceC: "De tweede speler van het duo dat de Spaanse toss heeft gewonnen serveert vier punten.",
-      kocServiceD: "De tweede speler van het andere duo serveert vier punten.",
-      kocServiceRepeat: "Herhaal daarna deze volgorde. Bij gelijkspel als de tijd om is, speel je nog één beslissend punt.",
+      pointsRule: "Elke gewonnen rally telt als één punt. Een mogelijke eindstand is 21–17.",
+      gamesRule: "Binnen een game geldt de padeltelling (15, 30, 40). Voer per duo het aantal gewonnen games in, bijvoorbeeld 4–3.",
+      tossRules: "Toss draait om gezelligheid en kennismaken. Het schema bepaalt de baan en de koppels per ronde. De spelers spreken zelf een telling af, bijvoorbeeld de gebruikelijke padeltelling met 15, 30 en 40. Uitslagen bijhouden is niet nodig.",
+      splitRules: "Iedereen speelt binnen de eigen niveaugroep. Het schema bepaalt de baan en de koppels per ronde. Bij groepen met score-invoer telt de eindstand mee voor het klassement van die groep.",
+      americanoRules: "De partners wisselen per ronde. De eindstand van elke wedstrijd telt mee voor het individuele klassement.",
+      kocRules: "Winnaars gaan één baan omhoog en verliezers één baan omlaag. Winnaars op de hoogste baan blijven staan. Verliezers op baan 1 blijven staan of wisselen met het wachtduo, als dat meedoet. Op elke baan worden nieuwe koppels gevormd.",
+      kocServiceIntro: "Een Spaanse toss bepaalt welk duo als eerste serveert. Elke rally telt als één punt. Per servicebeurt serveert één speler vier rally’s.",
+      kocServiceA: "Eerste speler van het duo dat de Spaanse toss won.",
+      kocServiceB: "Eerste speler van het andere duo.",
+      kocServiceC: "Tweede speler van het duo dat de Spaanse toss won.",
+      kocServiceD: "Tweede speler van het andere duo.",
+      kocServiceRepeat: "Herhaal de servicevolgorde. Bij een gelijke stand na afloop van de speeltijd volgt één beslissend punt.",
       timerOption: "Rondeklok gebruiken",
       timerSettingsTitle: "Rondeklok",
       timerOn: "Aan",
@@ -1753,17 +1738,17 @@
       homeTitle: 'Wat gaan we spelen?', homeSub: 'Kies je speelvorm en maak je indeling.',
       backToModes: '← Speelvormen',
       chosenFormat: 'Gekozen speelvorm',
-      homeTossDesc: 'Steeds een andere partner.', homeTossAction: 'Kies Toss',
+      homeTossDesc: 'Recreatief spelen met wisselende partners.', homeTossAction: 'Kies Toss',
       homeAmericanoName: 'Americano / Competitieve Toss', homeSplitTossName: 'Gesplitste Toss',
       homeKocDesc: 'Win je potje. Klim een baan omhoog.', homeKocAction: 'Kies KOC',
       homeAmericanoDesc: 'Eén groep met scores en een klassement.', homeAmericanoAction: 'Kies Americano',
       homeSplitTossDesc: 'Twee of drie niveaugroepen, met of zonder scores per groep.', homeSplitTossAction: 'Kies Gesplitste Toss',
       changeIllustrations: 'Nieuwe baanillustraties, marineblauw/lime en een puntenscore van 26–6.',
       p1Title: 'Instellingen',
-      p1Sub: 'Geef aan hoeveel banen je hebt en hoeveel spelers er komen. Er spelen maar 4 tegelijk per baan — wie niet speelt, wacht tot de volgende ronde.',
-      p1PlayersHeading: 'Hoeveel spelers?',
+      p1Sub: "Per baan spelen vier spelers. De overige spelers wachten tot de volgende ronde.",
+      p1PlayersHeading: "Aantal spelers",
       p1PlayersUnit: 'spelers',
-      p1CourtsHeading: 'Hoeveel banen heb je?',
+      p1CourtsHeading: "Aantal banen",
       courtUnitSingular: 'baan',
       courtsMoreLabel: 'Meer banen (5\u201312)',
       courtsMorePlaceholder: 'Kies aantal\u2026',
@@ -1948,7 +1933,7 @@
       formatAmericanoDesc: 'Met score, klassement en optioneel een winnaars/verliezers-schema',
       formatKoc: 'King of the Court',
       formatKocDesc: 'Eén startindeling, daarna zelf doorschuiven',
-      kocSub: 'Vul spelers in en maak een startindeling. Daarna bepalen de resultaten het doorschuiven.',
+      kocSub: "Kies het aantal banen, de speelwijze en de deelnemers.",
       kocCourts: 'Aantal banen',
       kocWaitingAdd: '+ Wachtduo toevoegen',
       kocWaitingRemove: 'Wachtduo verwijderen',
@@ -1957,8 +1942,8 @@
       kocWaitingTitle: 'Wachtduo bij de start',
       kocWaitingRule: 'Na elke ronde wisselt het verliezende duo op baan 1 met het wachtende duo.',
       kocWaitingPairNeeded: 'Er is één speler extra. Vink één speler uit of laat nog één speler meedoen voor een wachtduo.',
-      kocNames: 'Wie spelen er mee?',
-      kocNamesHint: 'Pas namen aan of vink afwezige spelers uit. Je kunt met minder spelers beginnen.',
+      kocNames: "Deelnemers",
+      kocNamesHint: "De vinkjes geven aan wie aanwezig is.",
       kocEntryMode: 'Voorkeur voor baan 1',
       kocEntryPlayer: 'Baan 1',
       kocAttendanceLabel: 'Aanwezig: speler {n}',
@@ -1971,7 +1956,7 @@
       kocMin: 'Er zijn minimaal vier aanwezige spelers nodig.',
       kocTooMany: 'Er kunnen maximaal vier spelers per baan meedoen.',
       kocDup: 'Namen moeten uniek zijn; controleer de aanwezige spelers.',
-      kocGenerated: 'Startindeling gemaakt. De onderste baan kan minder dan vier spelers hebben.',
+      kocGenerated: "Startindeling gemaakt.",
       kocChanged: 'De deelnemers zijn gewijzigd. Genereer opnieuw om de baanindeling te actualiseren.',
       kocCopied: 'Indeling gekopieerd. Plak hem in WhatsApp.',
       kocCopyFail: 'Kopiëren is niet gelukt. Selecteer de indeling om die te delen.',
@@ -1998,7 +1983,7 @@
       courtsReshuffle: 'Indeling en banen worden elke ronde willekeurig opnieuw bepaald.',
       sitOutTurnTitle: '{level} is deze ronde vrij.',
       sitOutTurnBody: 'Met {courts} voor {levels} niveaus kan niet elk niveau tegelijk spelen; ze wisselen elkaar af zodat iedereen over alle rondes ongeveer evenveel potjes speelt.',
-      levelZeroHint: 'Niveaus worden van links naar rechts gevuld: Zilver eerst, dan Goud, dan Platina. Zet een niveau op 0 als je het niet gebruikt \u2014 je hebt er minimaal twee nodig. Wil je met \u00e9\u00e9n groep spelen, kies dan Toss (zonder uitslagen) of Americano / Competitieve toss (met klassement).',
+      levelZeroHint: 'Vul eerst Zilver en Goud in. Platina is optioneel. Voor één groep is Toss of Americano beschikbaar.',
       levelCountError: 'Vul per niveau 0 of 4\u201396 spelers in. Gebruik minstens twee niveaus, en vul ze van links naar rechts: Platina kan alleen als Goud gevuld is.',
       beginnerPlayersHeading: 'Aantal in Zilver',
       ervarenPlayersHeading: 'Aantal in Goud',
@@ -2050,15 +2035,15 @@
       scoringGames: "Padel games",
       pointsRule: "Count each point won as 1, 2, 3… A final score could be 21–17.",
       gamesRule: "Count 15, 30 and 40 within a game. When entering scores, report games won, for example 4–3.",
-      tossRules: "Play the matches in the schedule. Follow the next lineup after each round.",
-      splitRules: "Play within your level group and follow the court schedule. If your group tracks scores, enter the final score.",
-      americanoRules: "Play with rotating partners. Enter each match’s final score for the individual standings.",
+      tossRules: "Toss is a social format for meeting other players. The schedule sets the court and pairings for each round. Players agree how to count the score. Standard padel scoring (15, 30, 40) is a good option. There are no scores to submit.",
+      splitRules: "Players compete within their own level group. The schedule sets the court and pairings for each round. If score entry is enabled, the final score counts towards that group’s standings.",
+      americanoRules: "Partners rotate each round. The final score of each match counts towards the individual standings.",
       kocRules: "Winners move up one court and losers move down one. The winners stay on the top court. On court 1, the losing pair stays or swaps with the waiting pair if one is in use. Each court gets new pairings.",
-      kocServiceIntro: "Start with a Spanish toss to decide which pair serves first. Then count every rally as one point.",
-      kocServiceA: "The first player of the pair that won the Spanish toss serves four points.",
-      kocServiceB: "The first player of the other pair serves four points.",
-      kocServiceC: "The second player of the pair that won the Spanish toss serves four points.",
-      kocServiceD: "The second player of the other pair serves four points.",
+      kocServiceIntro: "A Spanish toss decides which pair serves first. Each rally is worth one point. Each player serves four rallies on their turn.",
+      kocServiceA: "First player from the pair that won the Spanish toss.",
+      kocServiceB: "First player from the other pair.",
+      kocServiceC: "Second player from the pair that won the Spanish toss.",
+      kocServiceD: "Second player from the other pair.",
       kocServiceRepeat: "Then repeat this order. If tied when time runs out, play one more point to decide the match.",
       timerOption: "Use a round clock",
       timerSettingsTitle: "Round clock",
@@ -2098,17 +2083,17 @@
       homeTitle: 'What shall we play?', homeSub: 'Choose your format and create your lineup.',
       backToModes: '← Formats',
       chosenFormat: 'Selected format',
-      homeTossDesc: 'A different partner each round.', homeTossAction: 'Choose Toss',
+      homeTossDesc: 'Social play with rotating partners.', homeTossAction: 'Choose Toss',
       homeAmericanoName: 'Americano / Competitive Toss', homeSplitTossName: 'Split Toss',
       homeKocDesc: 'Win your match. Move up a court.', homeKocAction: 'Choose KOC',
       homeAmericanoDesc: 'One group with scores and a leaderboard.', homeAmericanoAction: 'Choose Americano',
       homeSplitTossDesc: 'Two or three level groups, with optional scores for each group.', homeSplitTossAction: 'Choose Split Toss',
       changeIllustrations: 'New court illustrations, navy/lime and a 26–6 point score.',
       p1Title: 'Settings',
-      p1Sub: 'Set how many courts and players you have. Only 4 play on a court at once — whoever isn\'t playing waits for the next round.',
-      p1PlayersHeading: 'How many players?',
+      p1Sub: "Four players play on each court. The remaining players wait until the next round.",
+      p1PlayersHeading: "Number of players",
       p1PlayersUnit: 'players',
-      p1CourtsHeading: 'How many courts do you have?',
+      p1CourtsHeading: "Number of courts",
       courtUnitSingular: 'court',
       courtsMoreLabel: 'More courts (5\u201312)',
       courtsMorePlaceholder: 'Choose\u2026',
@@ -2293,7 +2278,7 @@
       formatAmericanoDesc: 'With scores, a leaderboard, and an optional winners/losers schedule',
       formatKoc: 'King of the Court',
       formatKocDesc: 'One starting lineup, then move courts based on results',
-      kocSub: 'Enter players and generate a starting lineup. Results decide movement after that.',
+      kocSub: "Select the number of courts, the play mode and the players.",
       kocCourts: 'Number of courts',
       kocWaitingAdd: '+ Add a waiting pair',
       kocWaitingRemove: 'Remove waiting pair',
@@ -2316,7 +2301,7 @@
       kocMin: 'At least four attending players are required.',
       kocTooMany: 'At most four players per court can participate.',
       kocDup: 'Player names must be unique. Check the attending players.',
-      kocGenerated: 'Starting lineup created. The lowest court may have fewer than four players.',
+      kocGenerated: "Starting lineup created.",
       kocChanged: 'The roster changed. Regenerate to update the court assignments.',
       kocCopied: 'Lineup copied. Paste it into WhatsApp.',
       kocCopyFail: 'Copying failed. Select the lineup to share it.',
@@ -6889,7 +6874,7 @@
       clockCard.append(clockHeader,clockFields);
       clockBox.append(liveElement('h3','',t('timerSettingsTitle')),clockCard);
       root.appendChild(clockBox);
-    } else {
+    } else if (state.format !== 'toss'){
       var scoring = addRoundOption(root,'Score','scoringChoice','select',
         [['points','scoringPoints'],['games','scoringGames']],function(input){
           state.scoreMode = input.value;
@@ -6940,21 +6925,25 @@
     var rules = {toss:'tossRules',splitToss:'splitRules',americano:'americanoRules',koc:'kocRules'};
     var key = rules[state.format] || 'tossRules';
     var title = state.format === 'koc' && state.koc.guided ? 'kocPlannerRulesTitle' : key+'Title';
-    document.querySelectorAll('[data-round-rules]').forEach(function(details){
-      details.replaceChildren(liveElement('summary','',t(title)),liveElement('p','',t(key)));
-      if (state.format === 'koc'){
-        if (state.koc.guided){
-          details.appendChild(liveElement('p','',t('kocPlannerHint')));
-          if (state.koc.crossed === true) details.appendChild(liveElement('p','',t('kocPairingCrossedHint')));
-        }
-        details.appendChild(liveElement('p','',t('kocServiceIntro')));
-        var order = liveElement('ol','');
-        ['kocServiceA','kocServiceB','kocServiceC','kocServiceD'].forEach(function(key){
-          order.appendChild(liveElement('li','',t(key)));
-        });
-        details.append(order,liveElement('p','',t('kocServiceRepeat')));
-      } else details.appendChild(liveElement('p','',t(scoreMode() === 'games' ? 'gamesRule' : 'pointsRule')));
-    });
+    var details = document.getElementById('playRules');
+    details.hidden = state.step === 0;
+    if (details.dataset.format !== state.format) details.open = false;
+    details.dataset.format = state.format;
+    details.replaceChildren(liveElement('summary','',t(title)),liveElement('p','',t(key)));
+    if (state.format === 'koc'){
+      if (state.koc.guided){
+        details.appendChild(liveElement('p','',t('kocPlannerHint')));
+        if (state.koc.crossed === true) details.appendChild(liveElement('p','',t('kocPairingCrossedHint')));
+      }
+      details.appendChild(liveElement('p','',t('kocServiceIntro')));
+      var order = liveElement('ol','');
+      ['kocServiceA','kocServiceB','kocServiceC','kocServiceD'].forEach(function(key){
+        order.appendChild(liveElement('li','',t(key)));
+      });
+      details.append(order,liveElement('p','',t('kocServiceRepeat')));
+    } else if (state.format !== 'toss'){
+      details.appendChild(liveElement('p','',t(scoreMode() === 'games' ? 'gamesRule' : 'pointsRule')));
+    }
   }
 
   function clockText(seconds){
