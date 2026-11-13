@@ -225,7 +225,7 @@
   .koc-choice-card input{margin:3px 0 0;accent-color:var(--teal-900);}
   .koc-choice-card small{grid-column:2;font-size:var(--fs-sm);line-height:1.4;color:var(--ink-soft);}
   .koc-clock-card{padding:10px 12px;border:1.5px solid var(--line);border-radius:10px;background:var(--mist);}
-  .koc-clock-card header{display:flex;justify-content:flex-end;}
+  .koc-clock-card header{display:flex;justify-content:space-between;align-items:center;gap:8px;}
   .koc-clock-settings .round-option-checkbox{position:relative;min-height:36px;}
   .koc-clock-settings input[role="switch"]{
     appearance:none;position:relative;margin:0;inline-size:40px;block-size:24px;border-radius:20px;
@@ -246,6 +246,7 @@
     .koc-choice-group{grid-column:1;}
     .koc-choice-group + .koc-choice-group{margin-top:4px;}
     .koc-clock-settings{grid-column:2;grid-row:1/span 2;}
+    .koc-clock-card{grid-row:2;}
   }
   @media(max-width:540px){.koc-choice-list{grid-template-columns:1fr;}}
   .masthead:has(+ .round-rules:not([hidden])){margin-bottom:14px;padding-bottom:12px;}
@@ -1183,7 +1184,10 @@
       <button class="format-btn" type="button" data-format="toss">
         <span class="mode-copy">
           <span class="fb-name" data-i18n="formatToss">Toss</span>
-          <span class="fb-desc" data-i18n="homeTossDesc">Recreatief spelen en kennismaken met wisselende partners. Uitslagen worden niet bijgehouden.</span>
+          <span class="fb-desc">
+            <span data-i18n="homeTossDesc">Recreatief spelen en kennismaken met wisselende partners.</span>
+            <span data-i18n="homeTossDescDetail">Uitslagen worden niet bijgehouden.</span>
+          </span>
           <span class="mode-link"><span data-i18n="homeTossAction">Kies Toss</span><span class="arrow" aria-hidden="true">→</span></span>
         </span>
         <img class="mode-illustration" src="./assets/mode-toss.svg" width="420" height="355" alt="" aria-hidden="true" decoding="async">
@@ -1191,7 +1195,10 @@
       <button class="format-btn" type="button" data-format="koc">
         <span class="mode-copy">
           <span class="fb-name" data-i18n="formatKoc">King of the Court</span>
-          <span class="fb-desc" data-i18n="homeKocDesc">Winnaars schuiven een baan omhoog, verliezers een baan omlaag. Op de hoogste baan verdedigen de winnaars hun plek.</span>
+          <span class="fb-desc">
+            <span data-i18n="homeKocDesc">Winnaars schuiven een baan omhoog, verliezers een baan omlaag.</span>
+            <span data-i18n="homeKocDescDetail">Op de hoogste baan verdedigen de winnaars hun plek.</span>
+          </span>
           <span class="mode-link"><span data-i18n="homeKocAction">Kies King of the Court</span><span class="arrow" aria-hidden="true">→</span></span>
         </span>
         <img class="mode-illustration" src="./assets/mode-koc.svg" width="420" height="355" alt="" aria-hidden="true" decoding="async">
@@ -1199,7 +1206,10 @@
       <button class="format-btn" type="button" data-format="americano">
         <span class="mode-copy">
           <span class="fb-name" data-i18n="homeAmericanoName">Americano / Competitieve Toss</span>
-          <span class="fb-desc" data-i18n="homeAmericanoDesc">Speel met wisselende partners. Vul de uitslagen in voor een individueel klassement.</span>
+          <span class="fb-desc">
+            <span data-i18n="homeAmericanoDesc">Speel met wisselende partners.</span>
+            <span data-i18n="homeAmericanoDescDetail">Vul de uitslagen in voor een individueel klassement.</span>
+          </span>
           <span class="mode-link"><span data-i18n="homeAmericanoAction">Kies Americano</span><span class="arrow" aria-hidden="true">→</span></span>
         </span>
         <img class="mode-illustration" src="./assets/mode-americano.svg" width="420" height="355" alt="" aria-hidden="true" decoding="async">
@@ -1207,7 +1217,10 @@
       <button class="format-btn" type="button" data-format="splitToss">
         <span class="mode-copy">
           <span class="fb-name" data-i18n="homeSplitTossName">Gesplitste Toss</span>
-          <span class="fb-desc" data-i18n="homeSplitTossDesc">Speel in Zilver of Goud. Voeg eventueel Platina toe. Uitslagen bijhouden kan per groep.</span>
+          <span class="fb-desc">
+            <span data-i18n="homeSplitTossDesc">Speel in Zilver of Goud. Voeg eventueel Platina toe.</span>
+            <span data-i18n="homeSplitTossDescDetail">Uitslagen bijhouden kan per groep.</span>
+          </span>
           <span class="mode-link"><span data-i18n="homeSplitTossAction">Kies Gesplitste Toss</span><span class="arrow" aria-hidden="true">→</span></span>
         </span>
         <img class="mode-illustration" id="splitTossIllustration" src="./assets/mode-split.svg" width="420" height="355" alt="" aria-hidden="true" decoding="async">
@@ -1525,7 +1538,7 @@
   </section>
 
   <footer class="app-footer">
-    <span id="appVersion">v2.6.7</span>
+    <span id="appVersion">v2.6.8</span>
     <details><summary data-i18n="whatsNew">Wat is nieuw?</summary>
       <ul>
         <li data-i18n="changeIllustrations">Nieuwe baanillustraties, marineblauw/lime en een puntenscore van 26–6.</li>
@@ -1730,11 +1743,11 @@
       homeTitle: 'Wat gaan we spelen?', homeSub: 'Kies je speelvorm en maak je indeling.',
       backToModes: '← Speelvormen',
       chosenFormat: 'Gekozen speelvorm',
-      homeTossDesc: 'Recreatief spelen en kennismaken met wisselende partners. Uitslagen worden niet bijgehouden.', homeTossAction: 'Kies Toss',
+      homeTossDesc: 'Recreatief spelen en kennismaken met wisselende partners.', homeTossDescDetail: 'Uitslagen worden niet bijgehouden.', homeTossAction: 'Kies Toss',
       homeAmericanoName: 'Americano / Competitieve Toss', homeSplitTossName: 'Gesplitste Toss',
-      homeKocDesc: 'Winnaars schuiven een baan omhoog, verliezers een baan omlaag. Op de hoogste baan verdedigen de winnaars hun plek.', homeKocAction: 'Kies King of the Court',
-      homeAmericanoDesc: 'Speel met wisselende partners. Vul de uitslagen in voor een individueel klassement.', homeAmericanoAction: 'Kies Americano',
-      homeSplitTossDesc: 'Speel in Zilver of Goud. Voeg eventueel Platina toe. Uitslagen bijhouden kan per groep.', homeSplitTossAction: 'Kies Gesplitste Toss',
+      homeKocDesc: 'Winnaars schuiven een baan omhoog, verliezers een baan omlaag.', homeKocDescDetail: 'Op de hoogste baan verdedigen de winnaars hun plek.', homeKocAction: 'Kies King of the Court',
+      homeAmericanoDesc: 'Speel met wisselende partners.', homeAmericanoDescDetail: 'Vul de uitslagen in voor een individueel klassement.', homeAmericanoAction: 'Kies Americano',
+      homeSplitTossDesc: 'Speel in Zilver of Goud. Voeg eventueel Platina toe.', homeSplitTossDescDetail: 'Uitslagen bijhouden kan per groep.', homeSplitTossAction: 'Kies Gesplitste Toss',
       changeIllustrations: 'Nieuwe baanillustraties, marineblauw/lime en een puntenscore van 26–6.',
       p1Title: 'Instellingen',
       p1Sub: "Per baan spelen vier spelers. De overige spelers wachten tot de volgende ronde.",
@@ -2069,11 +2082,11 @@
       homeTitle: 'What shall we play?', homeSub: 'Choose your format and create your lineup.',
       backToModes: '← Formats',
       chosenFormat: 'Selected format',
-      homeTossDesc: 'Play socially and meet other players. Partners rotate and scores are not recorded.', homeTossAction: 'Choose Toss',
+      homeTossDesc: 'Play socially and meet other players with rotating partners.', homeTossDescDetail: 'Scores are not recorded.', homeTossAction: 'Choose Toss',
       homeAmericanoName: 'Americano / Competitive Toss', homeSplitTossName: 'Split Toss',
-      homeKocDesc: 'Winners move up a court and losers move down. Winners on the top court defend their place.', homeKocAction: 'Choose King of the Court',
-      homeAmericanoDesc: 'Play with rotating partners. Enter match scores for the individual standings.', homeAmericanoAction: 'Choose Americano',
-      homeSplitTossDesc: 'Play in Silver or Gold. Add Platinum if needed. Each group can track its own scores.', homeSplitTossAction: 'Choose Split Toss',
+      homeKocDesc: 'Winners move up a court and losers move down.', homeKocDescDetail: 'Winners on the top court defend their place.', homeKocAction: 'Choose King of the Court',
+      homeAmericanoDesc: 'Play with rotating partners.', homeAmericanoDescDetail: 'Enter match scores for the individual standings.', homeAmericanoAction: 'Choose Americano',
+      homeSplitTossDesc: 'Play in Silver or Gold. Add Platinum if needed.', homeSplitTossDescDetail: 'Each group can track its own scores.', homeSplitTossAction: 'Choose Split Toss',
       changeIllustrations: 'New court illustrations, navy/lime and a 26–6 point score.',
       p1Title: 'Settings',
       p1Sub: "Four players play on each court. The remaining players wait until the next round.",
@@ -6862,8 +6875,11 @@
       var clockCard = liveElement('div','koc-clock-card');
       clockHeader = liveElement('header','');
       clockFields = liveElement('div','koc-clock-fields');
+      var clockTitle = liveElement('h3','',t('timerSettingsTitle'));
+      clockTitle.id = 'kocClockSettingsTitle';
+      clockHeader.appendChild(clockTitle);
       clockCard.append(clockHeader,clockFields);
-      clockBox.append(liveElement('h3','',t('timerSettingsTitle')),clockCard);
+      clockBox.appendChild(clockCard);
       root.appendChild(clockBox);
     } else if (state.format !== 'toss'){
       var scoring = addRoundOption(root,'Score','scoringChoice','select',
@@ -6885,7 +6901,7 @@
     },clockHeader);
     if (koc){
       clockSwitch.setAttribute('role','switch');
-      clockSwitch.setAttribute('aria-label',t('timerSettingsTitle'));
+      clockSwitch.setAttribute('aria-labelledby','kocClockSettingsTitle');
       clockFields.inert = !timer.enabled;
     }
     if (koc || timer.enabled){

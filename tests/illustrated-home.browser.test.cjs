@@ -19,7 +19,7 @@ test('illustrated home: keyboard, all formats, EN/mobile, offline assets and exi
     if(!file.startsWith(root+path.sep))return res.writeHead(403).end();
     try{
       let body;
-      if(pathname==='/sw.js')body=legacy?worker.replace('v267','v230'):worker;
+      if(pathname==='/sw.js')body=legacy?worker.replace('v268','v230'):worker;
       else if(pathname==='/assets/mode-koc.svg'&&legacy)body=legacyArtwork;
       else body=fs.readFileSync(file);
       res.writeHead(200,{'Content-Type':mime[path.extname(file)]||'application/octet-stream','Cache-Control':'no-store'}).end(body);
@@ -50,7 +50,7 @@ test('illustrated home: keyboard, all formats, EN/mobile, offline assets and exi
   const art=await (await ctx.request.get(origin+'/assets/mode-americano.svg')).text();
   assert.ok(art.includes('26–6'),'illustrated score is a point score, never a clock');
   assert.equal(await page.locator('[data-i18n="homeAmericanoName"]').innerText(),'Americano / Competitieve Toss');
-  assert.match(await page.locator('[data-i18n="homeAmericanoDesc"]').innerText(),/individueel klassement/);
+  assert.match(await page.locator('[data-i18n="homeAmericanoDescDetail"]').innerText(),/individueel klassement/);
   assert.match(await page.locator('[data-i18n="homeSplitTossDesc"]').innerText(),/Voeg eventueel Platina toe/);
   const splitNl=await (await ctx.request.get(origin+'/assets/mode-split.svg')).text();
   const splitEn=await (await ctx.request.get(origin+'/assets/mode-split-en.svg')).text();
@@ -81,7 +81,7 @@ test('illustrated home: keyboard, all formats, EN/mobile, offline assets and exi
   assert.equal(await page.locator('[data-i18n="homeAmericanoAction"]').innerText(),'Choose Americano');
   assert.equal(await page.locator('#splitTossIllustration').getAttribute('src'),'./assets/mode-split-en.svg');
   assert.equal(await page.locator('[data-i18n="homeAmericanoName"]').innerText(),'Americano / Competitive Toss');
-  assert.match(await page.locator('[data-i18n="homeAmericanoDesc"]').innerText(),/individual standings/);
+  assert.match(await page.locator('[data-i18n="homeAmericanoDescDetail"]').innerText(),/individual standings/);
   assert.match(await page.locator('[data-i18n="homeSplitTossDesc"]').innerText(),/Add Platinum if needed/);
   const splitCard=page.locator('.format-btn[data-format="splitToss"]');
   await splitCard.click();
@@ -100,6 +100,14 @@ test('illustrated home: keyboard, all formats, EN/mobile, offline assets and exi
       const height=img.clientHeight-parseFloat(style.paddingTop)-parseFloat(style.paddingBottom);
       return Math.min(width/590,height/530);
     });
+    if (width >= 681) {
+      const descriptions = await page.locator('.mode-home .fb-desc').evaluateAll(nodes =>
+        nodes.map(node => ({ top: node.getBoundingClientRect().top, width: node.clientWidth })));
+      for (const [left, right] of [[0, 1], [2, 3]]) {
+        assert.ok(Math.abs(descriptions[left].top - descriptions[right].top) < 1);
+        assert.equal(descriptions[left].width, descriptions[right].width);
+      }
+    }
     assert.ok(54*artworkScale>=10,'group names stay at least 10 CSS px at '+width+'px');
     assert.ok(45*artworkScale>=9,'the optional label stays at least 9 CSS px at '+width+'px');
     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,'home fits '+width+'px');
@@ -126,10 +134,10 @@ test('illustrated home: keyboard, all formats, EN/mobile, offline assets and exi
     },{once:true}));
     await reg.update();await activated;
   });
-  await page.waitForFunction(async()=>{const keys=await caches.keys();return keys.includes('padel-toss-americano-v267')&&!keys.includes('padel-toss-americano-v230');});
+  await page.waitForFunction(async()=>{const keys=await caches.keys();return keys.includes('padel-toss-americano-v268')&&!keys.includes('padel-toss-americano-v230');});
   assert.equal(await page.evaluate(()=>localStorage.getItem('visual-upgrade-check')),'keep-this-session');
   console.log('Illustrated home: existing-client cache upgrade preserved local storage.');
-  const shell=await page.evaluate(async()=>{const c=await caches.open('padel-toss-americano-v267');return (await c.keys()).map(r=>new URL(r.url).pathname);});
+  const shell=await page.evaluate(async()=>{const c=await caches.open('padel-toss-americano-v268');return (await c.keys()).map(r=>new URL(r.url).pathname);});
   console.log('Updated offline cache paths:',JSON.stringify(shell));
   for(const file of ['visual-theme.css','assets/mode-toss.svg','assets/mode-koc.svg','assets/mode-americano.svg','assets/mode-split.svg','assets/mode-split-en.svg'])assert.ok(shell.includes('/'+file),file+' is ready before client takeover');
   await ctx.setOffline(true);

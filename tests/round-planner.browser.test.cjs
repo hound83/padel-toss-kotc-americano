@@ -182,6 +182,10 @@ test('round planner, clock, rules and scoring options work in the browser',async
   const clockCard=desktop.locator('.koc-clock-card');
   await clockToggle.scrollIntoViewIfNeeded();
   const off=await Promise.all([clockToggle.boundingBox(),rosterHeading.boundingBox(),clockCard.boundingBox()]);
+  const clockTitle=await clockCard.getByRole('heading',{name:'Rondeklok'}).boundingBox();
+  assert.ok(clockTitle.x>=off[2].x && clockTitle.x+clockTitle.width<=off[0].x);
+  assert.ok(clockTitle.y>=off[2].y && clockTitle.y+clockTitle.height<=off[2].y+off[2].height);
+  assert.ok(Math.abs(clockTitle.y+clockTitle.height/2-off[0].y-off[0].height/2)<1);
   const choiceCard=await desktop.locator('.koc-choice-card').last().boundingBox();
   assert.ok(off[2].x>=choiceCard.x+choiceCard.width);
   assert.equal(off[2].y,choiceCard.y);

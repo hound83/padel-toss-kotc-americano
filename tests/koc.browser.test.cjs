@@ -313,7 +313,7 @@ test('real browser: KOC setup, entrants, absence, language, reload and mobile la
     if(!('serviceWorker' in navigator))return false;
     await navigator.serviceWorker.ready;
     const keys = await caches.keys();
-    return keys.includes('padel-toss-americano-v267') &&
+    return keys.includes('padel-toss-americano-v268') &&
       !keys.includes('padel-toss-americano-v202');
   });
 });

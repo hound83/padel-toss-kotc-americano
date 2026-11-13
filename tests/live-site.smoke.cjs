@@ -8,6 +8,7 @@ const assert=require('node:assert/strict');
   if(!url)throw new Error('PADEL_SITE_URL is required');
   const expectedWorker=fs.readFileSync(path.join(__dirname,'../sw.js'),'utf8');
   const expectedPage=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');
+  const expectedTheme=fs.readFileSync(path.join(__dirname,'../visual-theme.css'),'utf8');
   const expectedRounds=fs.readFileSync(path.join(__dirname,'../round-planner.js'),'utf8');
   const artworkFiles=['mode-koc.svg','mode-split.svg','mode-split-en.svg'];
   const expectedArtwork=artworkFiles.map(file=>fs.readFileSync(path.join(__dirname,'../assets',file),'utf8'));
@@ -18,23 +19,24 @@ const assert=require('node:assert/strict');
     page.on('pageerror',error=>errors.push(error.message));
     let published=false;
     for(let attempt=0;attempt<36;attempt++){
-      const [worker,document,rounds,...artwork]=await Promise.all([
+      const [worker,document,rounds,theme,...artwork]=await Promise.all([
         ctx.request.get(new URL('./sw.js',url).href),
         ctx.request.get(url),
         ctx.request.get(new URL('./round-planner.js',url).href),
+        ctx.request.get(new URL('./visual-theme.css',url).href),
         ...artworkFiles.map(file=>ctx.request.get(new URL('./assets/'+file,url).href))
       ]);
       const assetsMatch=await Promise.all(artwork.map(async (response,index)=>response.ok()&&await response.text()===expectedArtwork[index]));
       if(worker.ok()&&document.ok()&&rounds.ok()&&await rounds.text()===expectedRounds&&await worker.text()===expectedWorker&&
-        await document.text()===expectedPage&&assetsMatch.every(Boolean)){
+        await document.text()===expectedPage&&theme.ok()&&await theme.text()===expectedTheme&&assetsMatch.every(Boolean)){
         published=true;
         break;
       }
       await new Promise(resolve=>setTimeout(resolve,5000));
     }
-    assert.ok(published,'GitHub Pages must serve the current page, worker and mode artwork');
+    assert.ok(published,'GitHub Pages must serve the current page, worker, stylesheet and mode artwork');
     await page.goto(url,{waitUntil:'networkidle'});
-    assert.equal(await page.locator('#appVersion').textContent(),'v2.6.7');
+    assert.equal(await page.locator('#appVersion').textContent(),'v2.6.8');
     await page.waitForFunction(()=>document.querySelectorAll('.mode-illustration').length===4&&[...document.querySelectorAll('.mode-illustration')].every(img=>img.complete&&img.naturalWidth>0));
     assert.equal(await page.evaluate(()=>getComputedStyle(document.documentElement).getPropertyValue('--teal-900').trim()),'#193B57');
     await page.evaluate(()=>navigator.serviceWorker.ready);
@@ -61,6 +63,6 @@ const assert=require('node:assert/strict');
     assert.equal(await page.locator('.format-btn').first().evaluate(el=>getComputedStyle(el).display),'grid');
     assert.equal(await page.evaluate(()=>typeof PadelRounds.nextKocRound),'function');
     assert.deepEqual(errors,[]);
-    console.log(JSON.stringify({url,version:'v2.6.7',modes:4,desktop:true,mobile:true,score:'26-6',freshInstall:true,offline:true}));
+    console.log(JSON.stringify({url,version:'v2.6.8',modes:4,desktop:true,mobile:true,score:'26-6',freshInstall:true,offline:true}));
   }finally{await browser.close();}
 })().catch(error=>{console.error(error);process.exitCode=1;});

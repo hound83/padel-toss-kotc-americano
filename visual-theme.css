@@ -3,12 +3,14 @@
 .mode-home h2{font-size:clamp(30px,4.3vw,48px);letter-spacing:-.035em;line-height:1.15;}
 .mode-home > p{font-size:clamp(15px,2vw,20px);margin:-6px 0 10px;}
 .mode-home .format-select{gap:20px;}
-.mode-home .format-btn{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.08fr);min-width:0;min-height:242px;padding:0;gap:0;text-align:left;align-items:stretch;border-width:1px;border-radius:14px;overflow:hidden;background:var(--surface);}
+.mode-home .format-btn{display:grid;grid-template-columns:minmax(0,1.18fr) minmax(0,1fr);min-width:0;min-height:242px;padding:0;gap:0;text-align:left;align-items:stretch;border-width:1px;border-radius:14px;overflow:hidden;background:var(--surface);}
 .mode-home .format-btn:hover{border-color:var(--teal-900);box-shadow:0 3px 12px #193b5710;transform:translateY(-2px);}
 .mode-home .format-btn.active{background:var(--surface);border-color:var(--teal-900);}
-.mode-copy{display:flex;flex-direction:column;justify-content:center;align-items:flex-start;gap:12px;padding:24px 0 24px 24px;min-width:0;}
+.mode-copy{display:flex;flex-direction:column;align-items:flex-start;gap:12px;padding:24px 0 24px 24px;min-width:0;}
 .mode-home .format-btn .fb-name{font-size:clamp(20px,2.1vw,26px);font-weight:800;letter-spacing:-.025em;text-transform:none;color:var(--teal-900);margin:0;line-height:1.13;}
-.mode-home .format-btn .fb-desc{font-size:var(--fs-sm);line-height:1.5;color:var(--ink);max-width:24ch;}
+.mode-home .format-btn .fb-desc{font-size:var(--fs-sm);line-height:1.5;color:var(--ink);max-width:none;}
+.mode-home .fb-desc > span{display:block;}
+.mode-home .fb-desc > span + span{margin-top:.35em;}
 .mode-link{display:flex;align-items:center;gap:9px;margin-top:auto;padding-top:12px;font-size:var(--fs-base);font-weight:750;color:var(--teal-900);}
 .mode-link .arrow{font-size:24px;line-height:1;}
 .mode-illustration{display:block;width:100%;height:100%;min-height:226px;padding:10px 8px 8px 0;object-fit:contain;}
@@ -23,6 +25,11 @@
 .brand-eyebrow{margin-bottom:4px;}
 .lang-btn{border-color:transparent;background:transparent;padding:7px 9px;border-radius:6px;}
 .lang-btn.active{color:var(--teal-900);background:var(--surface);border-color:var(--line);}
+@media(min-width:681px){
+  .mode-home .format-btn{grid-row:span 3;grid-template-rows:subgrid;row-gap:10px;}
+  .mode-copy{display:grid;grid-row:1/-1;grid-template-rows:subgrid;row-gap:10px;}
+  .mode-illustration{grid-column:2;grid-row:1/-1;}
+}
 @media(max-width:860px){
   .mode-home .format-select{gap:14px;}
   .mode-home .format-btn{min-height:220px;grid-template-columns:minmax(0,1fr) minmax(0,.9fr);}
