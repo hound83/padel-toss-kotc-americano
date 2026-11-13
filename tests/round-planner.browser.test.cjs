@@ -50,7 +50,7 @@ test('round planner, clock, rules and scoring options work in the browser',async
   await koc.locator('#kocRoundSettingsBreak').fill('2');
   await koc.locator('#kocRoundSettingsBreak').press('Tab');
   const setupRules=koc.locator('#playRules');
-  assert.match(await setupRules.locator('summary').textContent(),/King of the Court met de Rondeplanner/);
+  assert.equal(await setupRules.locator('summary').textContent(),'Spelregels voor King of the Court met Rondeplanner');
   await setupRules.locator('summary').tap();
   const serve=await setupRules.locator('ol li').allTextContents();
   assert.equal(serve.length,4);
