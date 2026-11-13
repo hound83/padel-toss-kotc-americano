@@ -52,14 +52,14 @@ test('real browser: KOC setup, entrants, absence, language, reload and mobile la
   assert.ok(cards[0].includes('Speler 1'));
   assert.ok(cards[1].includes('Speler 2'));
   for (let i=13;i<=16;i++) assert.ok(cards[3].includes('Speler '+i));
-  assert.ok(cards.every(court=>!court.includes('Voorkeur voor baan 1')), 'incoming markers are private setup-only labels');
+  assert.ok(cards.every(court=>!court.includes('Indelen op baan 1')), 'incoming markers are private setup-only labels');
 
   await context.grantPermissions(['clipboard-read','clipboard-write'],{origin});
   await page.locator('#kocCopy').click();
   const copied = await page.evaluate(() => navigator.clipboard.readText());
   assert.match(copied,/King of the Court/);
   assert.match(copied,/Baan 4/);
-  assert.ok(!copied.includes('Voorkeur voor baan 1'),'copying for WhatsApp never reveals incoming markers');
+  assert.ok(!copied.includes('Indelen op baan 1'),'copying for WhatsApp never reveals incoming markers');
 
   const downloadEvent = page.waitForEvent('download');
   await page.locator('#kocSave').click();
@@ -96,7 +96,7 @@ test('real browser: KOC setup, entrants, absence, language, reload and mobile la
   await page.locator('#resumeContinue').click();
   assert.equal(await page.locator('.koc-entry-marker[aria-pressed=true]').count(),4);
   assert.equal(await page.locator('#kocRoster .koc-player.absent').count(),1);
-  assert.equal(await page.locator('#kocLowestHeading').innerText(),'Voorkeur voor baan 1');
+  assert.equal(await page.locator('#kocLowestHeading').innerText(),'Indelen op baan 1');
 
   for(const marker of await page.locator('.koc-entry-marker').all()) await marker.click();
   assert.equal(await page.locator('.koc-entry-marker[aria-pressed=true]').count(),0);
@@ -117,7 +117,7 @@ test('real browser: KOC setup, entrants, absence, language, reload and mobile la
   await englishPage.goto(origin);
   await englishPage.locator('#langSwitch .lang-btn[data-lang="en"]').click();
   await englishPage.locator('.format-btn[data-format="koc"]').click();
-  assert.equal(await englishPage.locator('#kocLowestHeading').innerText(),'Court 1 preference');
+  assert.equal(await englishPage.locator('#kocLowestHeading').innerText(),'Assign to court 1');
   assert.equal(await englishPage.getByRole('radio',{name:'Starting lineup'}).isChecked(),true);
   assert.equal(await englishPage.getByRole('button',{name:'+ Add a waiting pair'}).isVisible(),true);
   assert.equal(await englishPage.locator('.koc-entry-marker').count(),4);
@@ -313,7 +313,7 @@ test('real browser: KOC setup, entrants, absence, language, reload and mobile la
     if(!('serviceWorker' in navigator))return false;
     await navigator.serviceWorker.ready;
     const keys = await caches.keys();
-    return keys.includes('padel-toss-americano-v266') &&
+    return keys.includes('padel-toss-americano-v267') &&
       !keys.includes('padel-toss-americano-v202');
   });
 });

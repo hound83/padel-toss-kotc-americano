@@ -63,13 +63,16 @@ steps+=`<g transform="translate(416 16) scale(.8)">${crown}</g><g fill="none" st
 save('mode-koc','10 0 520 405',steps,'Three identical padel courts climb towards a crown.');
 save('mode-americano','25 0 420 405',use('translate(0 45)')+`<rect x="169" y="13" width="173" height="53" rx="8" fill="${navy}"/><text x="255.5" y="49" text-anchor="middle" fill="${lime}" font-family="ui-monospace,Consolas,monospace" font-weight="800" font-size="31">26–6</text>`,'Padel court with a 26 to 6 point score, 32 points in total. This is a score, not a clock.');
 function splitGroupLabel(center, group, name, color){
-  return `<rect x="${center-122}" y="18" width="244" height="105" rx="24" fill="${color}"/><text x="${center}" y="56" font-size="34">${group}</text><text x="${center}" y="107" font-size="54" font-weight="800">${name}</text>`;
+  return `<rect x="${center-122}" y="18" width="244" height="86" rx="20" fill="${color}"/><text x="${center}" y="47" font-size="29">${group}</text><text x="${center}" y="90" font-size="54" font-weight="800">${name}</text>`;
 }
-const splitCourts=use('translate(-8 132) scale(.71)')+use('translate(275 132) scale(.71)');
-function saveSplit(name, group, silver, gold, description){
-  const labels=splitGroupLabel(145,group,silver,'#DDE5EE')+splitGroupLabel(428,group,gold,'#F9D878');
-  save(name,'10 0 590 400',splitCourts+`<g font-family="system-ui,sans-serif" font-weight="700" text-anchor="middle" fill="${navy}">${labels}</g>`,description);
+const splitCourts=use('translate(0 96) scale(.67)')+use('translate(275 96) scale(.67)');
+function saveSplit(name, group, silver, gold, platinum, optional, description){
+  const labels=splitGroupLabel(154,group,silver,'#DDE5EE')+splitGroupLabel(429,group,gold,'#F9D878');
+  const optionalGroup=`<rect x="45" y="332" width="494" height="183" rx="22" fill="#EEF2F6" stroke="#637B92" stroke-width="4" stroke-dasharray="10 7"/>`
+    + use('translate(268 332) scale(.54)')
+    + `<g font-family="system-ui,sans-serif" text-anchor="middle" fill="${navy}"><text x="183" y="424" font-size="54" font-weight="800">${platinum}</text><text x="183" y="470" font-size="45" font-weight="700">${optional}</text></g>`;
+  save(name,'0 0 590 530',splitCourts+`<g font-family="system-ui,sans-serif" font-weight="700" text-anchor="middle" fill="${navy}">${labels}</g>`+optionalGroup,description);
 }
-saveSplit('mode-split','Groep','Zilver','Goud','Twee aparte padelbanen voor de niveaugroepen Zilver en Goud.');
-saveSplit('mode-split-en','Group','Silver','Gold','Two separate padel courts for the Silver and Gold level groups.');
+saveSplit('mode-split','Groep','Zilver','Goud','Platina','Optioneel','Drie aparte padelbanen voor Zilver, Goud en de optionele groep Platina.');
+saveSplit('mode-split-en','Group','Silver','Gold','Platinum','Optional','Three separate padel courts for Silver, Gold and the optional Platinum group.');
 console.log('Built four matching court illustrations with a 26–6 point score.');
