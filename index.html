@@ -250,9 +250,24 @@
     .koc-clock-settings{grid-column:2;grid-row:1/span 2;}
   }
   @media(max-width:540px){.koc-choice-list{grid-template-columns:1fr;}}
-  .round-rules{margin:12px 0 16px;padding:10px 14px;border:1px solid var(--line);border-radius:10px;background:var(--surface);}
+  .round-rules{inline-size:fit-content;max-inline-size:min(100%,64ch);margin:0 0 16px;padding:10px 14px;border:1px solid var(--line);border-radius:10px;background:var(--surface);}
   .round-rules summary,.koc-round-history summary{cursor:pointer;font-weight:750;color:var(--teal-900);}
+  .round-rules summary{min-block-size:24px;line-height:1.5;}
   .round-rules p,.round-rules ol{margin:8px 0;font-size:var(--fs-sm);line-height:1.5;}
+  .koc-side-rules{display:none;}
+  @media (min-width:801px){
+    #panelKoc:has(.koc-round-tools > .round-clock:not([hidden])) > .round-rules{display:none;}
+    .koc-round-tools:has(> .round-clock:not([hidden])){
+      display:grid;grid-template-columns:minmax(0,1fr) minmax(0,min(48%,31rem));gap:16px;margin-bottom:12px;
+    }
+    .koc-round-tools:has(> .round-clock:not([hidden])) > .koc-side-rules{
+      display:block;contain:size;overflow:auto;scrollbar-gutter:stable;
+    }
+    .koc-side-rules:has(details[open]){max-inline-size:64ch;border:1px solid var(--line);border-radius:10px;background:var(--surface);}
+    .koc-side-rules .round-rules{margin:0;}
+    .koc-side-rules .round-rules[open]{inline-size:100%;border:0;background:transparent;}
+    #panelKoc .koc-round-tools > .round-clock{margin-bottom:0;}
+  }
   .round-clock{
     --clock-panel:#203850;
     --clock-face:#172a3f;
@@ -1215,6 +1230,7 @@
   <section class="panel" id="panel1">
     <h2 class="panel-title" data-i18n="p1Title">Instellingen</h2>
     <p class="panel-sub" data-i18n="p1Sub">Hoeveel banen zijn er en hoeveel spelers doen mee?</p>
+    <details class="round-rules" data-round-rules></details>
 
     <p class="sub-heading" data-i18n="p1CourtsHeading">Hoeveel banen heb je?</p>
     <div class="courts-select" id="courtsSelect">
@@ -1297,7 +1313,6 @@
     <p class="error-msg" id="loadError"></p>
 
     <div class="round-options" id="roundSettings"></div>
-    <details class="round-rules" data-round-rules></details>
     <div class="actions-row" style="margin-top:22px;">
       <button class="btn btn-ghost" id="backToModes" type="button" data-i18n="backToModes">← Speelvormen</button>
       <button class="btn btn-ghost" id="cancelToScheduleBtn1" type="button" data-i18n="cancelToScheduleBtn" style="display:none;">← Terug naar schema</button>
@@ -1310,6 +1325,7 @@
   <section class="panel" id="panelKoc">
     <h2 class="panel-title" data-i18n="formatKoc">King of the Court</h2>
     <p class="panel-sub" data-i18n="kocSub">Vul de spelers in, kies je banen en maak een startindeling. Daarna wijzen de uitslagen zichzelf.</p>
+    <details class="round-rules" data-round-rules></details>
     <div class="koc-setup" id="kocSetup">
       <p class="sub-heading" data-i18n="kocCourts">Aantal banen</p>
       <div class="courts-select" id="kocCourtButtons" aria-label="KOC court selection"></div>
@@ -1343,8 +1359,10 @@
     </div>
     <p class="koc-help" id="kocStatus" aria-live="polite"></p>
 
-    <details class="round-rules" data-round-rules></details>
-    <div class="round-clock" data-round-clock hidden></div>
+    <div class="koc-round-tools">
+      <div class="koc-side-rules"><details class="round-rules" data-round-rules></details></div>
+      <div class="round-clock" data-round-clock hidden></div>
+    </div>
     <section id="kocRoundPlan" hidden>
       <h3 id="kocRoundHeading" tabindex="-1"></h3>
       <p class="score-unit" data-i18n="kocScoreHint"></p>
@@ -1433,6 +1451,7 @@
 
   <!-- STEP 3 -->
   <section class="panel" id="panel3">
+    <details class="round-rules" data-round-rules></details>
     <div class="schedule-actions">
       <button class="btn btn-ghost" id="backToSettingsBtn" data-i18n="backToSettingsBtn">← Instellingen wijzigen</button>
       <button class="btn btn-ghost" id="editPlayersBtn" data-i18n="editPlayersBtn">✎ Spelers wijzigen</button>
@@ -1442,7 +1461,6 @@
       <button class="btn btn-ghost" id="presentBtn" data-i18n="presentBtn">Presentatiemodus</button>
     </div>
 
-    <details class="round-rules" data-round-rules></details>
     <p class="score-unit" id="scheduleScoreUnit"></p>
     <div class="round-clock" data-round-clock hidden></div>
     <div class="playcount-wrap">
@@ -1524,7 +1542,7 @@
   </section>
 
   <footer class="app-footer">
-    <span id="appVersion">v2.6.4</span>
+    <span id="appVersion">v2.6.5</span>
     <details><summary data-i18n="whatsNew">Wat is nieuw?</summary>
       <ul>
         <li data-i18n="changeIllustrations">Nieuwe baanillustraties, marineblauw/lime en een puntenscore van 26–6.</li>
@@ -1677,7 +1695,11 @@
       kocRoundTitle: "Ronde {n}",
       kocResetRounds: "Nieuwe startindeling",
       kocResetRoundsText: "Een nieuwe startindeling maken? De uitslagen en rondes van deze KOC worden dan gewist. Je spelerslijst blijft bewaard.",
-      howToPlay: "Hoe speel je dit?",
+      tossRulesTitle: "Hoe speel je Toss?",
+      splitRulesTitle: "Hoe speel je Gesplitste toss?",
+      americanoRulesTitle: "Hoe speel je Americano?",
+      kocRulesTitle: "Hoe speel je King of the Court?",
+      kocPlannerRulesTitle: "Hoe speel je King of the Court met de Rondeplanner?",
       scoringChoice: "Telling",
       scoringPoints: "Elk punt telt",
       scoringGames: "Padeltelling in games",
@@ -2018,7 +2040,11 @@
       kocRoundTitle: "Round {n}",
       kocResetRounds: "New starting lineup",
       kocResetRoundsText: "Create a new starting lineup? This clears the KOC rounds and scores while keeping the roster.",
-      howToPlay: "How to play",
+      tossRulesTitle: "How to play Toss",
+      splitRulesTitle: "How to play Split Toss",
+      americanoRulesTitle: "How to play Americano",
+      kocRulesTitle: "How to play King of the Court",
+      kocPlannerRulesTitle: "How to play King of the Court with the Round Planner",
       scoringChoice: "Scoring",
       scoringPoints: "Count every point",
       scoringGames: "Padel games",
@@ -6911,10 +6937,11 @@
   }
 
   function renderRoundRules(){
+    var rules = {toss:'tossRules',splitToss:'splitRules',americano:'americanoRules',koc:'kocRules'};
+    var key = rules[state.format] || 'tossRules';
+    var title = state.format === 'koc' && state.koc.guided ? 'kocPlannerRulesTitle' : key+'Title';
     document.querySelectorAll('[data-round-rules]').forEach(function(details){
-      details.replaceChildren(liveElement('summary','',t('howToPlay')));
-      var rules = {toss:'tossRules',splitToss:'splitRules',americano:'americanoRules',koc:'kocRules'};
-      details.appendChild(liveElement('p','',t(rules[state.format] || 'tossRules')));
+      details.replaceChildren(liveElement('summary','',t(title)),liveElement('p','',t(key)));
       if (state.format === 'koc'){
         if (state.koc.guided){
           details.appendChild(liveElement('p','',t('kocPlannerHint')));
