@@ -237,9 +237,7 @@
   .koc-clock-settings input[role="switch"]:checked{background:var(--teal-900);}
   .koc-clock-settings input[role="switch"]:checked::before{inset-inline-start:19px;background:var(--ball);}
   .koc-clock-settings .round-option-checkbox label{inline-size:3em;cursor:pointer;}
-  .koc-clock-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 8px;margin-top:8px;}
-  .koc-clock-fields .round-option-field{grid-row:span 3;grid-template-rows:subgrid;}
-  .koc-clock-fields label{align-self:end;}
+  .koc-clock-fields{margin-top:8px;}
   .koc-clock-fields[inert]{visibility:hidden;}
   .koc-clock-fields input[type=number]{width:100%;}
   @media(min-width:781px){
@@ -1185,7 +1183,7 @@
       <button class="format-btn" type="button" data-format="toss">
         <span class="mode-copy">
           <span class="fb-name" data-i18n="formatToss">Toss</span>
-          <span class="fb-desc" data-i18n="homeTossDesc">Steeds een andere partner.</span>
+          <span class="fb-desc" data-i18n="homeTossDesc">Recreatief spelen en kennismaken met wisselende partners. Uitslagen worden niet bijgehouden.</span>
           <span class="mode-link"><span data-i18n="homeTossAction">Kies Toss</span><span class="arrow" aria-hidden="true">→</span></span>
         </span>
         <img class="mode-illustration" src="./assets/mode-toss.svg" width="420" height="355" alt="" aria-hidden="true" decoding="async">
@@ -1193,15 +1191,15 @@
       <button class="format-btn" type="button" data-format="koc">
         <span class="mode-copy">
           <span class="fb-name" data-i18n="formatKoc">King of the Court</span>
-          <span class="fb-desc" data-i18n="homeKocDesc">Win je potje. Klim een baan omhoog.</span>
-          <span class="mode-link"><span data-i18n="homeKocAction">Kies KOC</span><span class="arrow" aria-hidden="true">→</span></span>
+          <span class="fb-desc" data-i18n="homeKocDesc">Winnaars schuiven een baan omhoog, verliezers een baan omlaag. Op de hoogste baan verdedigen de winnaars hun plek.</span>
+          <span class="mode-link"><span data-i18n="homeKocAction">Kies King of the Court</span><span class="arrow" aria-hidden="true">→</span></span>
         </span>
         <img class="mode-illustration" src="./assets/mode-koc.svg" width="420" height="355" alt="" aria-hidden="true" decoding="async">
       </button>
       <button class="format-btn" type="button" data-format="americano">
         <span class="mode-copy">
           <span class="fb-name" data-i18n="homeAmericanoName">Americano / Competitieve Toss</span>
-          <span class="fb-desc" data-i18n="homeAmericanoDesc">Eén groep met scores en een klassement.</span>
+          <span class="fb-desc" data-i18n="homeAmericanoDesc">Speel met wisselende partners. Vul de uitslagen in voor een individueel klassement.</span>
           <span class="mode-link"><span data-i18n="homeAmericanoAction">Kies Americano</span><span class="arrow" aria-hidden="true">→</span></span>
         </span>
         <img class="mode-illustration" src="./assets/mode-americano.svg" width="420" height="355" alt="" aria-hidden="true" decoding="async">
@@ -1209,7 +1207,7 @@
       <button class="format-btn" type="button" data-format="splitToss">
         <span class="mode-copy">
           <span class="fb-name" data-i18n="homeSplitTossName">Gesplitste Toss</span>
-          <span class="fb-desc" data-i18n="homeSplitTossDesc">Twee of drie niveaugroepen, met of zonder scores per groep.</span>
+          <span class="fb-desc" data-i18n="homeSplitTossDesc">Speel in Zilver of Goud. Voeg eventueel Platina toe. Uitslagen bijhouden kan per groep.</span>
           <span class="mode-link"><span data-i18n="homeSplitTossAction">Kies Gesplitste Toss</span><span class="arrow" aria-hidden="true">→</span></span>
         </span>
         <img class="mode-illustration" id="splitTossIllustration" src="./assets/mode-split.svg" width="420" height="355" alt="" aria-hidden="true" decoding="async">
@@ -1325,7 +1323,7 @@
         <button class="koc-waiting-action" type="button" id="kocWaitingToggle" aria-controls="kocWaitingFields"></button>
         <div class="koc-roster" id="kocRoster">
           <div class="koc-roster-group" id="kocLowestFields" role="group" aria-labelledby="kocLowestHeading" hidden>
-            <h3 id="kocLowestHeading" data-i18n="kocEntryMode">Voorkeur voor baan 1</h3>
+            <h3 id="kocLowestHeading" data-i18n="kocEntryMode">Indelen op baan 1</h3>
           </div>
           <div class="koc-roster-group koc-waiting-fields" id="kocWaitingFields" role="group" aria-labelledby="kocWaitingHeading" hidden>
             <h3 id="kocWaitingHeading" data-i18n="kocWaitingHeading">Wachten in ronde 1</h3>
@@ -1527,7 +1525,7 @@
   </section>
 
   <footer class="app-footer">
-    <span id="appVersion">v2.6.6</span>
+    <span id="appVersion">v2.6.7</span>
     <details><summary data-i18n="whatsNew">Wat is nieuw?</summary>
       <ul>
         <li data-i18n="changeIllustrations">Nieuwe baanillustraties, marineblauw/lime en een puntenscore van 26–6.</li>
@@ -1670,7 +1668,7 @@
       kocPairingBalancedDescription: "Alle combinaties op de baan zijn mogelijk.",
       kocPairingCrossed: "Gekruist met balans",
       kocPairingCrossedDescription: "Iedereen krijgt een nieuwe partner. De app kiest de beste kruising.",
-      kocPairingCrossedHint: "Bij gekruist koppelen bestaat elk nieuw duo uit één speler van elk aankomend duo. De planner kiest de kruising op basis van de uitslagen. Een voorkeur voor baan 1 bij precies twee spelers telt tijdelijk mee.",
+      kocPairingCrossedHint: "Bij gekruist koppelen bestaat elk nieuw duo uit één speler van elk aankomend duo. De planner kiest de kruising op basis van de uitslagen. Worden precies twee spelers ingedeeld op baan 1, dan telt die keuze tijdelijk mee.",
       kocPlannerHint: "De Rondeplanner gebruikt de eindstanden om de banen en koppels voor de volgende ronde te bepalen.",
       kocPlannerFull: "Voor de Rondeplanner zijn vier spelers per baan nodig, eventueel met twee wachtspelers.",
       kocNextRound: "Volgende ronde maken",
@@ -1705,12 +1703,8 @@
       timerOn: "Aan",
       timerOff: "Uit",
       timerKocPlay: "Rondeduur (min)",
-      timerKocBreak: "Wisseltijd (min)",
-      timerKocBreakHint: "Optioneel · 0 = uit",
       timerPlay: "Speeltijd (minuten)",
-      timerBreak: "Wisseltijd (minuten, 0 = uit)",
       timerHeading: "Rondeklok · ronde {n}",
-      timerChangeHeading: "Wisselklok · ronde {n}",
       timerDuration: "Tijd (mm:ss)",
       timerStart: "Start",
       timerPause: "Pauze",
@@ -1719,8 +1713,6 @@
       timerMinus: "−1 min",
       timerPlus: "+1 min",
       timerNext: "Klok klaarzetten voor volgende ronde",
-      timerShowPlay: "Speelklok",
-      timerShowBreak: "Wisselklok",
       timerExpired: "Tijd om",
       timerInvalid: "Gebruik mm:ss, bijvoorbeeld 08:30.",
       qualityRest: "Langste opeenvolgende rustbeurten",
@@ -1738,11 +1730,11 @@
       homeTitle: 'Wat gaan we spelen?', homeSub: 'Kies je speelvorm en maak je indeling.',
       backToModes: '← Speelvormen',
       chosenFormat: 'Gekozen speelvorm',
-      homeTossDesc: 'Recreatief spelen met wisselende partners.', homeTossAction: 'Kies Toss',
+      homeTossDesc: 'Recreatief spelen en kennismaken met wisselende partners. Uitslagen worden niet bijgehouden.', homeTossAction: 'Kies Toss',
       homeAmericanoName: 'Americano / Competitieve Toss', homeSplitTossName: 'Gesplitste Toss',
-      homeKocDesc: 'Win je potje. Klim een baan omhoog.', homeKocAction: 'Kies KOC',
-      homeAmericanoDesc: 'Eén groep met scores en een klassement.', homeAmericanoAction: 'Kies Americano',
-      homeSplitTossDesc: 'Twee of drie niveaugroepen, met of zonder scores per groep.', homeSplitTossAction: 'Kies Gesplitste Toss',
+      homeKocDesc: 'Winnaars schuiven een baan omhoog, verliezers een baan omlaag. Op de hoogste baan verdedigen de winnaars hun plek.', homeKocAction: 'Kies King of the Court',
+      homeAmericanoDesc: 'Speel met wisselende partners. Vul de uitslagen in voor een individueel klassement.', homeAmericanoAction: 'Kies Americano',
+      homeSplitTossDesc: 'Speel in Zilver of Goud. Voeg eventueel Platina toe. Uitslagen bijhouden kan per groep.', homeSplitTossAction: 'Kies Gesplitste Toss',
       changeIllustrations: 'Nieuwe baanillustraties, marineblauw/lime en een puntenscore van 26–6.',
       p1Title: 'Instellingen',
       p1Sub: "Per baan spelen vier spelers. De overige spelers wachten tot de volgende ronde.",
@@ -1944,10 +1936,10 @@
       kocWaitingPairNeeded: 'Er is één speler extra. Vink één speler uit of laat nog één speler meedoen voor een wachtduo.',
       kocNames: "Deelnemers",
       kocNamesHint: "De vinkjes geven aan wie aanwezig is.",
-      kocEntryMode: 'Voorkeur voor baan 1',
+      kocEntryMode: 'Indelen op baan 1',
       kocEntryPlayer: 'Baan 1',
       kocAttendanceLabel: 'Aanwezig: speler {n}',
-      kocEntryAria: 'Voorkeur voor baan 1: speler {n}',
+      kocEntryAria: 'Indelen op baan 1: speler {n}',
       kocCount: '{active} van {total} spelers aanwezig',
       kocRoll: '🎲 Genereer startindeling',
       kocReroll: '🎲 Opnieuw gooien',
@@ -2015,7 +2007,7 @@
       kocPairingBalancedDescription: "All pairings on the court are possible.",
       kocPairingCrossed: "Crossed pairing with balance",
       kocPairingCrossedDescription: "Everyone gets a new partner. The app picks the most balanced split.",
-      kocPairingCrossedHint: "After moving courts, the planner balances the new teams by splitting the two arriving pairs. Setting a court 1 preference for exactly two players gives the planner a temporary pairing hint.",
+      kocPairingCrossedHint: "After moving courts, the planner balances the new teams by splitting the two arriving pairs. Assigning exactly two players to court 1 gives the planner a temporary pairing hint.",
       kocPlannerHint: "Enter the final score for each court to generate the next round.",
       kocPlannerFull: "The round planner needs four players on each court, with an optional pair waiting.",
       kocNextRound: "Generate next round",
@@ -2050,12 +2042,8 @@
       timerOn: "On",
       timerOff: "Off",
       timerKocPlay: "Round length (min)",
-      timerKocBreak: "Changeover (min)",
-      timerKocBreakHint: "Optional · 0 = off",
       timerPlay: "Playing time (minutes)",
-      timerBreak: "Changeover time (minutes, 0 = off)",
       timerHeading: "Round clock · round {n}",
-      timerChangeHeading: "Changeover clock · round {n}",
       timerDuration: "Time (mm:ss)",
       timerStart: "Start",
       timerPause: "Pause",
@@ -2064,8 +2052,6 @@
       timerMinus: "−1 min",
       timerPlus: "+1 min",
       timerNext: "Prepare clock for next round",
-      timerShowPlay: "Playing clock",
-      timerShowBreak: "Changeover clock",
       timerExpired: "Time up",
       timerInvalid: "Use mm:ss, for example 08:30.",
       qualityRest: "Longest consecutive breaks",
@@ -2083,11 +2069,11 @@
       homeTitle: 'What shall we play?', homeSub: 'Choose your format and create your lineup.',
       backToModes: '← Formats',
       chosenFormat: 'Selected format',
-      homeTossDesc: 'Social play with rotating partners.', homeTossAction: 'Choose Toss',
+      homeTossDesc: 'Play socially and meet other players. Partners rotate and scores are not recorded.', homeTossAction: 'Choose Toss',
       homeAmericanoName: 'Americano / Competitive Toss', homeSplitTossName: 'Split Toss',
-      homeKocDesc: 'Win your match. Move up a court.', homeKocAction: 'Choose KOC',
-      homeAmericanoDesc: 'One group with scores and a leaderboard.', homeAmericanoAction: 'Choose Americano',
-      homeSplitTossDesc: 'Two or three level groups, with optional scores for each group.', homeSplitTossAction: 'Choose Split Toss',
+      homeKocDesc: 'Winners move up a court and losers move down. Winners on the top court defend their place.', homeKocAction: 'Choose King of the Court',
+      homeAmericanoDesc: 'Play with rotating partners. Enter match scores for the individual standings.', homeAmericanoAction: 'Choose Americano',
+      homeSplitTossDesc: 'Play in Silver or Gold. Add Platinum if needed. Each group can track its own scores.', homeSplitTossAction: 'Choose Split Toss',
       changeIllustrations: 'New court illustrations, navy/lime and a 26–6 point score.',
       p1Title: 'Settings',
       p1Sub: "Four players play on each court. The remaining players wait until the next round.",
@@ -2289,10 +2275,10 @@
       kocWaitingPairNeeded: 'There is one extra player. Mark one player absent or add one more player to make a waiting pair.',
       kocNames: 'Who is playing?',
       kocNamesHint: 'Edit names or untick absent players. You can start with fewer players.',
-      kocEntryMode: 'Court 1 preference',
+      kocEntryMode: 'Assign to court 1',
       kocEntryPlayer: 'Court 1',
       kocAttendanceLabel: 'Attending: player {n}',
-      kocEntryAria: 'Court 1 preference: player {n}',
+      kocEntryAria: 'Assign to court 1: player {n}',
       kocCount: '{active} of {total} players attending',
       kocRoll: '🎲 Generate starting lineup',
       kocReroll: '🎲 Reroll',
@@ -6760,13 +6746,18 @@
     var saved = owner.roundTimer;
     var play = isKoc ? 20 : 12;
     if (!saved || !saved.clock || !Number.isInteger(saved.play) || saved.play < 1 || saved.play > 99 ||
-        !Number.isInteger(saved.change) || saved.change < 0 || saved.change > 99 || !Number.isInteger(saved.round) || saved.round < 1 ||
-        !['play','change'].includes(saved.phase) || !Number.isInteger(saved.clock.initial) || saved.clock.initial < 1 ||
+        !Number.isInteger(saved.round) || saved.round < 1 ||
+        !Number.isInteger(saved.clock.initial) || saved.clock.initial < 1 ||
         !Number.isFinite(saved.clock.remaining) || saved.clock.remaining < 0 ||
         (saved.clock.deadline !== null && !Number.isFinite(saved.clock.deadline))) owner.roundTimer = {
-      enabled:false,play:play,change:0,round:1,phase:'play',clock:PadelRounds.createClock(play*60)
+      enabled:false,play:play,round:1,clock:PadelRounds.createClock(play*60)
     };
-    return owner.roundTimer;
+    var timer = owner.roundTimer;
+    // Saved sessions may still contain the retired changeover clock.
+    if (timer.phase === 'change') timer.clock = PadelRounds.createClock(timer.play*60);
+    delete timer.phase;
+    delete timer.change;
+    return timer;
   }
 
   function toolButton(key, action){
@@ -6792,7 +6783,7 @@
       if (type === 'checkbox') input.checked = value;
       else {
         input.value = value;
-        input.min = name === 'Play' ? '1' : '0';
+        input.min = '1';
         input.max = '99';
       }
     }
@@ -6898,26 +6889,12 @@
       clockFields.inert = !timer.enabled;
     }
     if (koc || timer.enabled){
-      ['play','change'].forEach(function(phase){
-        var key = phase === 'play' ? (koc ? 'timerKocPlay' : 'timerPlay') : (koc ? 'timerKocBreak' : 'timerBreak');
-        var field = addRoundOption(root,phase === 'play' ? 'Play' : 'Break',key,
-          'number',timer[phase],function(input){
-            if (!input.value || !input.checkValidity()) {input.value = timer[phase];return;}
-            timer[phase] = Number(input.value);
-            if (phase === 'change' && !timer.change && timer.phase === 'change'){
-              switchClockPhase(timer,'play');
-            } else if (timer.phase === phase && !timer.clock.started){
-              timer.clock = PadelRounds.createClock(timer[phase]*60);
-            }
-            paintRoundClocks(true);
-          },clockFields);
-        if (koc && phase === 'change'){
-          var hint = liveElement('small','',t('timerKocBreakHint'));
-          hint.id = field.id+'Hint';
-          field.setAttribute('aria-describedby',hint.id);
-          field.parentNode.appendChild(hint);
-        }
-      });
+      addRoundOption(root,'Play',koc ? 'timerKocPlay' : 'timerPlay','number',timer.play,function(input){
+        if (!input.value || !input.checkValidity()) {input.value = timer.play;return;}
+        timer.play = Number(input.value);
+        if (!timer.clock.started) timer.clock = PadelRounds.createClock(timer.play*60);
+        paintRoundClocks(true);
+      },clockFields);
     }
   }
 
@@ -6950,18 +6927,13 @@
     return String(Math.floor(seconds/60)).padStart(2,'0') + ':' + String(seconds%60).padStart(2,'0');
   }
 
-  function switchClockPhase(timer,phase){
-    timer.phase = phase;
-    timer.clock = PadelRounds.createClock(timer[phase]*60);
-  }
-
   function prepareRoundClock(round,force){
     var timer = roundTimer();
     if (!timer.enabled || !Number.isInteger(round) || round < 1) return;
     var running = timer.clock.deadline !== null && PadelRounds.remainingMillis(timer.clock,Date.now()) > 0;
     if (!force && (timer.round === round || running)) return;
     timer.round = round;
-    switchClockPhase(timer,'play');
+    timer.clock = PadelRounds.createClock(timer.play*60);
     paintRoundClocks(true);
   }
 
@@ -6996,7 +6968,7 @@
     duration.addEventListener('change',function(){if (setDuration()) {paintRoundClocks(true);scheduleAutosave();}});
     var actions = liveElement('div','round-clock-actions');
     var controls = {start:'timerStart',pause:'timerPause',minus:'timerMinus',plus:'timerPlus',
-      reset:'timerReset',next:'timerNext',phase:'timerShowBreak'};
+      reset:'timerReset',next:'timerNext'};
     Object.keys(controls).forEach(function(action){actions.appendChild(toolButton(controls[action],action));});
     var alert = liveElement('span','round-clock-expired');
     alert.setAttribute('role','status');
@@ -7011,7 +6983,6 @@
       if (!action) return;
       var timer = roundTimer();
       if (action === 'next'){prepareRoundClock(clockTargetRound(),true);}
-      else if (action === 'phase'){switchClockPhase(timer,timer.phase === 'play' ? 'change' : 'play');}
       else if (action === 'plus' || action === 'minus'){
         timer.clock = PadelRounds.changeClock(timer.clock,'adjust',Date.now(),action === 'plus' ? 60 : -60);
       } else {
@@ -7033,7 +7004,7 @@
       if (root.hidden) return;
       if (root.dataset.clockLang !== state.lang) {buildClockView(root);syncDuration = true;}
       var title = root.querySelector('.round-clock-title');
-      var heading = tf(timer.phase === 'play' ? 'timerHeading' : 'timerChangeHeading',{n:timer.round});
+      var heading = tf('timerHeading',{n:timer.round});
       if (title.textContent !== heading) title.textContent = heading;
       var reading = root.querySelector('.round-clock-reading');
       var text = clockText(Math.ceil(remaining/1000));
@@ -7051,12 +7022,11 @@
       if (status.textContent !== message) status.textContent = message;
       var target = clockTargetRound();
       var visibility = {start:!running && remaining>0,pause:running,minus:clock.started && remaining>0,
-        plus:clock.started,reset:clock.started && !running,next:!running && target>timer.round,phase:!running && timer.change>0 && (!clock.started || !remaining)};
+        plus:clock.started,reset:clock.started && !running,next:!running && target>timer.round};
       root.querySelectorAll('[data-clock-action]').forEach(function(button){
         var action = button.dataset.clockAction;
         button.hidden = !visibility[action];
         if (action === 'start') button.textContent = t(clock.started ? 'timerResume' : 'timerStart');
-        if (action === 'phase') button.textContent = t(timer.phase === 'play' ? 'timerShowBreak' : 'timerShowPlay');
       });
     });
   }

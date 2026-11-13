@@ -89,7 +89,7 @@ Als de baanindeling groter is dan het scherm, verdeelt de presentatie de kaarten
 
 - Bij gewone Toss spreken spelers de telling zelf af. De gebruikelijke padeltelling is een optie. Gesplitste Toss en Americano bieden een instelling voor de score-invoer. Het schema toont de gekozen eenheid bij wedstrijden met score-invoer.
 - Open **Speelverdeling bekijken** boven het schema voor het aantal wedstrijden per speler, opeenvolgende rustbeurten en terugkerende duo’s.
-- Zet de **Rondeklok** aan en kies de standaard speeltijd en optioneel de wisseltijd. Een nieuwe KOC-klok staat op 20 minuten. Start elke klok handmatig. De ring loopt terug met de resterende tijd. In de KOC-presentatie staat de klok rechts onder de kop, boven de banen. Op smalle schermen neemt hij daar de beschikbare breedte in. Op nul kleurt het klokpaneel rood en verschijnt **Tijd om**. Tijdens het lopen kun je één minuut aftrekken of bijtellen. Reset zet de tijd terug op de begintijd van die ronde. De volgende ronde begint met de standaardduur en een stilstaande klok.
+- Zet de **Rondeklok** aan en kies de rondeduur. Een nieuwe KOC-klok staat op 20 minuten. Start elke klok handmatig. De ring loopt terug met de resterende tijd. In de KOC-presentatie staat de klok rechts onder de kop, boven de banen. Op smalle schermen neemt hij daar de beschikbare breedte in. Op nul kleurt het klokpaneel rood en verschijnt **Tijd om**. Tijdens het lopen kun je één minuut aftrekken of bijtellen. Reset zet de tijd terug op de begintijd van die ronde. De volgende ronde begint met de standaardduur en een stilstaande klok.
 
 ## Speciaal voor KOC
 

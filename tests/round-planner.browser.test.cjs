@@ -45,10 +45,9 @@ test('round planner, clock, rules and scoring options work in the browser',async
   assert.equal(await koc.locator('#kocRoundSettingsPlay').isVisible(),false);
   await koc.getByRole('switch',{name:'Rondeklok'}).check();
   assert.equal(await koc.locator('#kocRoundSettingsPlay').inputValue(),'20');
-  assert.equal(await koc.locator('#kocRoundSettingsBreak').inputValue(),'0');
+  assert.equal(await koc.locator('#kocRoundSettingsBreak').count(),0);
   await koc.locator('#kocRoundSettingsPlay').fill('10');
-  await koc.locator('#kocRoundSettingsBreak').fill('2');
-  await koc.locator('#kocRoundSettingsBreak').press('Tab');
+  await koc.locator('#kocRoundSettingsPlay').press('Tab');
   const setupRules=koc.locator('#playRules');
   assert.equal(await setupRules.locator('summary').textContent(),'Spelregels voor King of the Court met Rondeplanner');
   await setupRules.locator('summary').tap();
@@ -97,9 +96,7 @@ test('round planner, clock, rules and scoring options work in the browser',async
   assert.equal(await clock.locator('[data-clock-action=pause]').isVisible(),false);
   await clock.locator('[data-clock-action=reset]').tap();
   assert.equal(await duration.inputValue(),'00:03');
-  await clock.locator('[data-clock-action=phase]').tap();
-  assert.equal(await duration.inputValue(),'02:00');
-  await clock.locator('[data-clock-action=phase]').tap();
+  assert.equal(await clock.locator('[data-clock-action=phase]').count(),0);
 
   const cards=koc.locator('#kocRoundCards');
   const teams=cards.locator('.koc-round-team ul');
@@ -155,6 +152,9 @@ test('round planner, clock, rules and scoring options work in the browser',async
   const legacySave=await koc.evaluate(()=>JSON.parse(localStorage.getItem('padel-toss-americano-session-v2')));
   delete legacySave.state.koc.crossed;
   legacySave.state.roundTimer=legacySave.state.koc.roundTimer;
+  Object.assign(legacySave.state.roundTimer,{
+    phase:'change',change:2,clock:{initial:120,remaining:45000,started:true,deadline:null}
+  });
   delete legacySave.state.koc.roundTimer;
   const legacyContext=await browser.newContext();
   t.after(()=>legacyContext.close());
@@ -166,6 +166,7 @@ test('round planner, clock, rules and scoring options work in the browser',async
   await legacy.locator('#resumeContinue').click();
   assert.equal(await legacy.locator('#kocPairing-balanced').isChecked(),true);
   assert.equal(await legacy.locator('#kocRoundSettingsPlay').inputValue(),'10');
+  assert.equal(await legacy.locator('#panelKoc .round-clock-duration').inputValue(),'10:00');
   const legacyTeams=await legacy.locator('#kocRoundCards .koc-round-team ul').all();
   assert.deepEqual(await Promise.all(legacyTeams.map(team=>team.locator('li').allTextContents())),savedTeams);
 
@@ -188,10 +189,7 @@ test('round planner, clock, rules and scoring options work in the browser',async
   await clockToggle.press('Space');
   assert.deepEqual(await Promise.all([clockToggle.boundingBox(),rosterHeading.boundingBox(),clockCard.boundingBox()]),off);
   assert.equal(await desktop.locator('#kocRoundSettingsPlay').inputValue(),'20');
-  const play=await desktop.locator('#kocRoundSettingsPlay').boundingBox();
-  const change=await desktop.locator('#kocRoundSettingsBreak').boundingBox();
-  assert.equal(play.y,change.y);
-  assert.ok(change.x>play.x);
+  assert.equal(await desktop.locator('#kocRoundSettingsBreak').count(),0);
   if(process.env.PADEL_SCREENSHOT_DIR){
     await desktop.locator('#kocSetup').screenshot({path:path.join(process.env.PADEL_SCREENSHOT_DIR,'koc-setup-desktop.png')});
   }
