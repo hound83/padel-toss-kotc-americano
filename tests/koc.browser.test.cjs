@@ -275,7 +275,13 @@ test('real browser: KOC setup, entrants, absence, language, reload and mobile la
         grid:bounds(grid),waiting:bounds(waiting),
         cards:[...grid.children].filter(card=>!card.hidden).map(bounds),
         waitingNames:[...waiting.querySelectorAll('li')].map(bounds),
-        namesFit:[...root.querySelectorAll('li')].every(li=>li.scrollWidth<=li.clientWidth+1)
+        namesFit:[...root.querySelectorAll('li')].every(li=>{
+          const rect=li.getBoundingClientRect(),card=li.closest('article').getBoundingClientRect();
+          if(rect.left<card.left-1 || rect.right>card.right+1)return false;
+          if(li.scrollWidth<=li.clientWidth+1)return true;
+          const style=getComputedStyle(li);
+          return style.textOverflow==='ellipsis' && style.overflowX==='hidden' && li.title===li.textContent;
+        })
       };
     });
     const close=(a,b)=>Math.abs(a-b)<=1;

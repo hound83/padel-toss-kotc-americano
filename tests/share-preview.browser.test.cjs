@@ -139,3 +139,32 @@ test('Stable layout and isolated preview share one organizer-signed schedule acr
   assert.equal(await viewer.getByText('638–393',{exact:true}).count()>0,true);
   assert.deepEqual(errors,[]);
 });
+
+test('Viewer keeps both teams in place for small and large results',async t=>{
+  const browser=await chromium.launch();
+  t.after(()=>browser.close());
+  const page=await browser.newPage();
+  const root=path.join(__dirname,'..');
+  await page.route('https://viewer.test/**',route=>{
+    const file=path.basename(new URL(route.request().url()).pathname);
+    return route.fulfill({path:path.join(root,file),contentType:file.endsWith('html')?'text/html':file.endsWith('js')?'text/javascript':'image/svg+xml'});
+  });
+  await page.goto('https://viewer.test/kijken.html');
+  const url=await page.evaluate(async()=>{
+    const teams=[['Jan-Bart-Willem','Marjolein'],['Alexander','Annabel']];
+    const rounds=[null,[99,99],[969,350]].map((score,i)=>({n:i+1,rows:[{label:'Baan 1',teams,score}]}));
+    return TossShare.link(await TossShare.create({title:'Toss',at:Date.now(),rounds,boards:[]}));
+  });
+  await page.route('https://ntfy.sh/**',route=>route.abort());
+  await page.goto(url);
+  await page.locator('.match').first().waitFor();
+  for(const width of [320,390,1280]){
+    await page.setViewportSize({width,height:800});
+    const columns=await page.locator('.match').evaluateAll(rows=>rows.map(row=>
+      [...row.querySelectorAll('.names')].map(col=>[col.offsetWidth,col.getBoundingClientRect().x])));
+    assert.deepEqual(columns[0],columns[1]);
+    assert.deepEqual(columns[1],columns[2]);
+    assert.equal(await page.locator('article').nth(1).locator('.head-score').isVisible(),width<500);
+    assert.equal(await page.locator('article').nth(2).locator('.head-score').isVisible(),true);
+  }
+});
