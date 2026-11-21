@@ -1132,8 +1132,7 @@
   @container(max-width:519px){
     .teams-row{align-items:stretch;}
     .teams-row .team{display:flex;flex-direction:column;align-items:stretch;}
-    .teams-row .team .team-score{align-self:flex-start;}
-    .teams-row .team-right .team-score{align-self:flex-end;}
+    .teams-row .team .team-score{align-self:center;}
   }
   @container(min-width:520px) and (max-width:720px){
     .teams-row .team{gap:4px;grid-template-columns:minmax(0,1fr) 48px;}
@@ -6287,9 +6286,7 @@
   });
 
   document.getElementById('editCancelBtn').addEventListener('click', function(){
-    panelEdit.classList.remove('visible');
-    document.getElementById('panel3').classList.add('visible');
-    renderStepNavigation();
+    goToStep(3);
   });
 
   // Reads a roster-list element's rows into {originalName, value} objects
@@ -6590,9 +6587,7 @@
     renderMeta();
     renderSchedule();
     renderLeaderboard();
-    panelEdit.classList.remove('visible');
-    document.getElementById('panel3').classList.add('visible');
-    renderStepNavigation();
+    goToStep(3);
   });
 
   var confirmOverlay = document.getElementById('confirmOverlay');

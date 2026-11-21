@@ -101,12 +101,12 @@ test('v2.2: clean navigation and live KOC, Toss, Americano and split Toss', asyn
         const field=team.querySelector('input');
         const bounds=field.getBoundingClientRect();
         const lastName=names.at(-1).getBoundingClientRect();
-        const edge=side===0?'left':'right';
+        const center=rect=>rect.left+rect.width/2;
         const nameBlock=inline?team.querySelector('.team-names').getBoundingClientRect():lastName;
         const beside=side===0?bounds.left>=nameBlock.right:bounds.right<=nameBlock.left;
         return {
           positioned:inline?beside&&bounds.top<nameBlock.bottom&&bounds.bottom>nameBlock.top:
-            bounds.top>=lastName.bottom&&Math.abs(bounds[edge]-lastName[edge])<1,
+            bounds.top>=lastName.bottom&&Math.abs(center(bounds)-center(lastName))<1,
           usable:bounds.width>=44&&bounds.height>=44,
           label:field.getAttribute('aria-label'),
           team:names.map(name=>name.textContent).join(' & ')
