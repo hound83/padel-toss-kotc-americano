@@ -155,6 +155,7 @@ test('Viewer keeps both teams in place for small and large results',async t=>{
     const rounds=[null,[99,99],[969,350]].map((score,i)=>({n:i+1,rows:[{label:'Baan 1',teams,score}]}));
     return TossShare.link(await TossShare.create({title:'Toss',at:Date.now(),rounds,boards:[]}));
   });
+  await page.goto('about:blank');
   await page.route('https://ntfy.sh/**',route=>route.abort());
   await page.goto(url);
   await page.locator('.match').first().waitFor();
