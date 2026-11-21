@@ -30,7 +30,12 @@ test('Toss times and court numbers appear in schedule, print and presentation an
   await options.locator('summary').click();
   assert.equal(await page.locator('#tossStartTime').inputValue(),'');
   assert.equal(await page.locator('#tossRoundMinutes').inputValue(),'20');
-  await page.locator('#tossStartTime').fill('11:00');
+  for(const time of ['11:', '24:00', '11:60', '', '11:00']){
+    await page.locator('#tossStartTime').fill(time);
+    const invalid=['11:', '24:00', '11:60'].includes(time);
+    assert.equal(await page.locator('#generateBtn').isDisabled(),invalid);
+    assert.equal(await page.locator('#startTimeHint').isVisible(),invalid);
+  }
   await page.locator('#tossCourtNumber0').fill('2');
   assert.equal(await page.locator('#generateBtn').isDisabled(),true);
   await page.locator('#tossCourtNumber1').fill('3');

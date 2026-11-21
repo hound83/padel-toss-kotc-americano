@@ -370,7 +370,7 @@
   .round-tools button[aria-pressed="true"]:enabled{border-color:var(--teal-900);background:var(--teal-900);color:var(--ball);}
   .round-tools button[data-round-action]{min-width:44px;}
   .round-tools-label{font-weight:800;color:var(--teal-900);min-width:92px;text-align:center;white-space:nowrap;}
-  .live-page-tools{margin:0 0 12px;}
+  .live-page-tools{margin:0 0 12px;} #liveCountdown{margin-inline-start:auto;font-weight:700;font-variant-numeric:tabular-nums;color:var(--teal-700);}
   .live-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(300px,.43fr);gap:18px;align-items:start;}
   .live-layout.no-board{grid-template-columns:minmax(0,1fr);}
   .live-rounds{display:flex;flex-direction:column;gap:18px;min-width:0;}
@@ -918,12 +918,12 @@
 
   .toss-start-options{margin:16px 0;padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:var(--surface);}
   .toss-plan-fields{display:flex;flex-wrap:wrap;align-items:flex-start;gap:14px;margin:14px 0;}
-  .toss-plan-fields>.field-group{flex:1 1 140px;}
+  .toss-plan-fields>.field-group{flex:0 1 12rem;min-width:0;margin:0;}
   .toss-plan-fields input{min-width:0;width:100%;padding:9px;border:1px solid var(--line);border-radius:7px;font:inherit;background:var(--surface);color:var(--ink);}
   .toss-court-numbers{flex:2 1 260px;min-width:0;margin:0;padding:0;border:0;}
   .toss-court-numbers legend{padding:0;margin-bottom:8px;font-size:var(--fs-xs);font-weight:600;color:var(--teal-900);text-transform:uppercase;letter-spacing:.04em;}
-  .toss-court-fields{display:flex;flex-wrap:wrap;gap:8px;}
-  .toss-court-fields .field-group{flex:1 1 9rem;max-width:16rem;min-width:0;margin:0;}
+  .toss-court-fields{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,9rem),1fr));gap:8px;}
+  .toss-court-fields .field-group{min-width:0;margin:0;}
   .toss-court-fields label{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;}
   .round-time{font-family:var(--font-mono);font-size:var(--fs-sm);font-weight:650;white-space:nowrap;}
   .round-head{flex-wrap:wrap;}
@@ -1723,6 +1723,7 @@
     <input id="shareUrl" type="url" readonly hidden data-i18n-aria-label="viewLink">
     <div><button id="sharePublish" class="btn btn-primary" type="button" data-i18n="makeLink"></button>
     <button id="shareCopy" class="btn btn-primary" type="button" data-i18n="copyLink" hidden></button>
+    <button id="shareEnd" class="btn btn-ghost" type="button" data-i18n="endShare" hidden></button>
     <button id="shareClose" class="btn btn-ghost" type="button" data-i18n="closeShare"></button></div>
   </dialog>
   <footer class="app-footer">
@@ -1764,6 +1765,7 @@
       <span class="round-tools-label" id="livePageLabel"></span>
       <button type="button" id="livePageNext" data-i18n-aria-label="liveScreenNext">&rarr;</button>
       <button type="button" id="livePagePause" data-i18n="liveScreenPause" aria-pressed="false"></button>
+      <span id="liveCountdown" role="timer" aria-live="off"></span>
     </div>
     <p class="score-unit" id="liveScoreUnit"></p>
     <div id="liveRoundClock" class="round-clock" data-round-clock hidden></div>
@@ -1898,7 +1900,7 @@
       prefNeutral:"Geen aanduiding",prefBeginner:"Beginner",prefStrong:"Sterk",
       tossStartRest:"Laatste vrij",tossStartRestAria:"Laatste vrij voor {name}, indien mogelijk",
       pdfBtn:"PDF downloaden",rerollBtn:"Opnieuw loten",rerollDone:"Opnieuw geloot vanaf ronde {n}.",rerollNone:"Alle rondes zijn al gespeeld of bevatten een uitslag.", printRest:"Rust",
-      tossStartTimeError: "Vul een geldige starttijd in of laat de starttijd leeg.",
+      tossStartTimeError: "Vul uren en minuten in, bijvoorbeeld 11:00, of laat het veld leeg.",
       tossRoundMinutesError: "Kies een rondeduur van 1 tot en met 240 minuten.",
       tossCourtNumbersError: "Geef elke baan een unieke naam of een uniek nummer (maximaal 40 tekens).",
       tossStartTitle: "Extra instellingen voor Toss",
@@ -2094,7 +2096,7 @@
       liveScreenPrevious: 'Vorig scherm',
       liveScreenNext: 'Volgend scherm',
       liveScreenLabel: 'Scherm {n} / {max}',
-      liveScreenPause: 'Pauze',
+      liveScreenPause: 'Pauze', screenCountdown:'Volgend scherm over {n} s', screenStopped:'Schermwissel gepauzeerd',
       qualificationArchive: 'Kwalificatie · eindstand bekijken',
       qualificationTitle: 'Kwalificatie · fase 1',
       finalPhaseHeading: 'FASE 2 · GOUD & ZILVER · NIEUW KLASSEMENT',
@@ -2183,7 +2185,7 @@
       changeKocEntry: 'KOC: vaste startbanen voor spelers 1 en 2 en optionele plaatsing op de laagste baan.',
       changeKocNames: 'KOC: dubbele namen direct herkennen en blokkeren.',
       changeKocRandom: 'KOC: meer variatie op de onderste banen en in de spelersvolgorde.',
-      moreOptions:'Meer opties', shareAction:'Schema delen', viewLink:'Kijklink', makeLink:'Kijklink maken',copyLink:'Kijklink kopiëren',closeShare:'Sluiten',previewLink:'Probeer de 3.0-preview',stableLink:'Terug naar versie 2.8.0',
+      moreOptions:'Meer opties', shareAction:'Schema delen', viewLink:'Kijklink', makeLink:'Kijklink maken',copyLink:'Kijklink kopiëren',closeShare:'Sluiten',endShare:'Kijksessie beëindigen',previewLink:'Probeer de 3.0-preview',stableLink:'Terug naar versie 2.8.0',
       changeAutosave: 'Automatisch bewaren en hervatten.', changePwa: 'Installeerbaar, offline en presentatiemodus.',
       updateAvailable: 'Er staat een nieuwe versie klaar.', updateReload: 'Vernieuwen',
       beginnerLabel: 'Zilver',
@@ -2256,7 +2258,7 @@
       prefNeutral:"Unspecified",prefBeginner:"Beginner",prefStrong:"Strong",
       tossStartRest:"Final round off",tossStartRestAria:"Final round off for {name}, if possible",
       pdfBtn:"Download PDF",rerollBtn:"Redraw schedule",rerollDone:"Redrawn from round {n}.",rerollNone:"All rounds have been played or have a score.", printRest:"Rest",
-      tossStartTimeError: "Enter a valid start time or leave it empty.",
+      tossStartTimeError: "Enter hours and minutes, for example 11:00, or leave this field empty.",
       tossRoundMinutesError: "Choose a round duration between 1 and 240 minutes.",
       tossCourtNumbersError: "Give each court a unique name or number (up to 40 characters).",
       tossStartTitle: "Extra settings for Toss",
@@ -2452,7 +2454,7 @@
       liveScreenPrevious: 'Previous screen',
       liveScreenNext: 'Next screen',
       liveScreenLabel: 'Screen {n} / {max}',
-      liveScreenPause: 'Pause',
+      liveScreenPause: 'Pause', screenCountdown:'Next screen in {n} s', screenStopped:'Screen rotation paused',
       qualificationArchive: 'Qualification · view final standings',
       qualificationTitle: 'Qualification · phase 1',
       finalPhaseHeading: 'PHASE 2 · GOLD & SILVER · NEW LEADERBOARD',
@@ -2541,7 +2543,7 @@
       changeKocEntry: 'KOC: fixed start courts for players 1 and 2, with optional placement on the lowest court.',
       changeKocNames: 'KOC: spot and block duplicate player names immediately.',
       changeKocRandom: 'KOC: more variation across lower courts and player display order.',
-      moreOptions:'More options', shareAction:'Share schedule',viewLink:'View link',makeLink:'Create view link',copyLink:'Copy view link',closeShare:'Close',previewLink:'Try the 3.0 preview',stableLink:'Back to version 2.8.0',
+      moreOptions:'More options', shareAction:'Share schedule',viewLink:'View link',makeLink:'Create view link',copyLink:'Copy view link',closeShare:'Close',endShare:'End viewing session',previewLink:'Try the 3.0 preview',stableLink:'Back to version 2.8.0',
       changeAutosave: 'Automatic saving and session recovery.', changePwa: 'Installable, offline, and presentation mode.',
       updateAvailable: 'A new version is available.', updateReload: 'Refresh',
       beginnerLabel: 'Silver',
@@ -3597,6 +3599,9 @@
   });
 
   function goToStep(n){
+    if(n===3 && state.step===2 && tossSessionError()){
+      document.getElementById('tossStartOptions').open=true;validateTossStart();return;
+    }
     if (state.step !== n) clearBulkUndo();
     state.step = n;
     renderAppTitle();
@@ -4240,7 +4245,22 @@
       return input;
     }
     if (!koc) {
-    field('tossStartTime',t('tossStartTime'),'time',plan.startTime,function(input){plan.startTime=input.value;});
+    var startTime = field('tossStartTime',t('tossStartTime'),'text',plan.startTime,function(input){
+      plan.startTime=input.value.trim();
+      checkTime();
+    });
+    startTime.placeholder='11:00';
+    var timeHint=liveElement('small','toss-start-error');
+    timeHint.id='startTimeHint';
+    startTime.after(timeHint);
+    startTime.setAttribute('aria-describedby',timeHint.id);
+    function checkTime(){
+      var invalid=tossSessionError()==='tossStartTimeError';
+      startTime.setAttribute('aria-invalid',String(invalid));
+      timeHint.hidden=!invalid;
+      timeHint.textContent=invalid?t('tossStartTimeError'):'';
+    }
+    checkTime();
     var duration = field('tossRoundMinutes',t('tossRoundMinutes'),'number',plan.roundMinutes,function(input){
       plan.roundMinutes = input.value === '' ? null : Number(input.value);
     });
@@ -7379,7 +7399,7 @@
     });
   }
   // Fit whole cards within the projector viewport, keeping the inputs in the DOM.
-  var liveScreenInterval = 12000;
+  var liveScreenInterval = 10000;
   var liveScreenPages = [], liveScreenItems = [], liveScreenIndex = 0;
   var liveScreenTimer, liveScreenResize, liveScreenPaused = false;
   var liveScreenResizePending = false;
@@ -7394,11 +7414,18 @@
   }
   function scheduleLiveScreen(){
     clearTimeout(liveScreenTimer);
+    var countdown=document.getElementById('liveCountdown');
+    countdown.textContent=t('screenStopped');
     if (!livePresentation.hidden && liveScreenPages.length > 1 && !liveScreenPaused &&
         !document.hidden && !livePageHasFocus()){
-      liveScreenTimer = setTimeout(function(){
-        if (!livePageHasFocus()) showLiveScreen(liveScreenIndex + 1);
-      },liveScreenInterval);
+      var deadline=Date.now()+liveScreenInterval;
+      function tick(){
+        var seconds=Math.ceil((deadline-Date.now())/1000);
+        if(seconds<=0){showLiveScreen(liveScreenIndex+1);return;}
+        countdown.textContent=tf('screenCountdown',{n:seconds});
+        liveScreenTimer=setTimeout(tick,deadline-Date.now()-(seconds-1)*1000);
+      }
+      tick();
     }
   }
   function displayLiveItems(items){
@@ -7460,9 +7487,11 @@
       livePageTools.hidden = false;
       room = availableHeight();
       liveScreenPages = [];
+      // Keep successive rounds on separate pages when the complete overview overflows.
+      var pageSections = liveScreenItems.map(function(item){return koc ? area : item.closest('.live-current,.live-upcoming,.live-standings');});
       for (var start = 0; start < liveScreenItems.length;){
         var end = start + 1;
-        while (end < liveScreenItems.length){
+        while (end < liveScreenItems.length && pageSections[end]===pageSections[start]){
           displayLiveItems(liveScreenItems.slice(start,end + 1));
           if (area.getBoundingClientRect().height > room + 1) break;
           end++;
@@ -8091,7 +8120,7 @@
   function viewSnapshot(){
     const en=state.lang==='en', koc=state.format==='koc';
     const rounds=[], boards=[];
-    function rest(names,label){return {label:(label||'')+t('printRest'),teams:[names]};}
+    function rest(names,label){return {rest:true,label:(label||'')+t('printRest'),teams:[names]};}
     if(koc){
       const k=state.koc;
       if(!k || !k.assignment)return null;
@@ -8137,7 +8166,8 @@
   function setupSharing(){
     const dlg=document.getElementById('shareDialog'),output=document.getElementById('shareUrl');
     const info=document.getElementById('shareInfo'),send=document.getElementById('sharePublish');
-    let active=null,lastSent='',running=false,retry;
+    const end=document.getElementById('shareEnd'),copy=document.getElementById('shareCopy');
+    let active=null,lastSent='',running=false,ending=false,retry;
     const say=(nl,en)=>state.lang==='en'?en:nl;
     const key=id=>'padel-view-owner-'+id;
     const sessionId=()=>state.previewChannel;
@@ -8150,14 +8180,14 @@
     }
     async function sync(){
       clearTimeout(retry);restore();
-      if(running || !active || !(state.step===3 || state.step===4))return;
+      if(running || ending || !active || !(state.step===3 || state.step===4))return;
       const snapshot=viewSnapshot();if(!snapshot)return;
       const data=JSON.stringify(snapshot),session=active;
       if(data===lastSent)return;
       running=true;let done=false;
       try{
         await TossShare.send(session,{...snapshot,at:Date.now()});
-        if(active===session){lastSent=data;info.textContent=say('Kijklink klaar. Wijzigingen worden tijdens het spelen gedeeld.','Link ready. Changes are shared during play.');}
+        if(active===session && !ending){lastSent=data;info.textContent=say('Kijklink klaar. Wijzigingen worden tijdens het spelen gedeeld.','Link ready. Changes are shared during play.');}
         done=true;
       }catch{info.textContent=say('De link toont de beginstand. Live bijwerken lukt nu niet. De app probeert het opnieuw.','The link shows the initial schedule. Live updates are unavailable. Retrying.');}
       finally{running=false;retry=setTimeout(sync,done?1500:30000);}
@@ -8167,7 +8197,7 @@
       const button=document.createElement('button');button.type='button';button.className='btn btn-ghost';button.dataset.i18n='shareAction';
       button.textContent=t('shareAction');document.getElementById(id).after(button);
       button.onclick=()=>{
-        restore();output.hidden=!active;output.value=active?TossShare.link(active):'';
+        restore();end.hidden=!active;output.hidden=!active;output.value=active?TossShare.link(active):'';
         document.getElementById('shareCopy').hidden=!active;send.hidden=!!active || !viewSnapshot();
         info.textContent=viewSnapshot()?say('Iedereen met de link kan het schema bekijken. Tijdens het spelen verstuurt de app wijzigingen versleuteld via ntfy.sh.','Anyone with the link can view the schedule. During play the app sends encrypted updates via ntfy.sh.'):say('Maak eerst een indeling.','Generate a schedule first.');
         dlg.showModal();
@@ -8179,11 +8209,34 @@
         const snapshot=viewSnapshot();if(!snapshot)return;
         active=await TossShare.create({...snapshot,at:Date.now()});remember();
         state.previewChannel=active.channel;writeAutosave();lastSent='';
-        output.value=TossShare.link(active);output.hidden=false;send.hidden=true;document.getElementById('shareCopy').hidden=false;
+        output.value=TossShare.link(active);output.hidden=false;send.hidden=true;end.hidden=false;copy.hidden=false;
         info.textContent=say('Kijklink klaar. Verbinding maken…','Link ready. Connecting…');sync();
       }catch{info.textContent=say('Delen lukt niet. Controleer of deze browser lokale opslag toestaat.','Sharing failed. Check whether local storage is available.');}
       finally{send.disabled=false;}
     };
+    end.onclick=async()=>{
+      const session=active,snapshot=viewSnapshot();
+      if(!session || !snapshot || ending)return;
+      if(!confirm(say('Kijksessie beëindigen voor alle kijkers? Het eindresultaat blijft zichtbaar.','End the session for all viewers? The final results will remain visible.')))return;
+      ending=true;end.disabled=true;clearTimeout(retry);
+      try{
+        await TossShare.send(session,{...snapshot,at:Date.now(),closed:true});
+        localStorage.removeItem(key(session.channel));
+        if(sessionId()===session.channel){
+          delete state.previewChannel;active=null;lastSent='';writeAutosave();
+          end.hidden=true;copy.hidden=true;output.hidden=true;output.value='';send.hidden=false;
+          info.textContent=say('Kijksessie gesloten. Met een nieuwe kijklink kun je opnieuw delen.','Viewing session closed. Create a new link to share again.');
+        }
+      }catch{info.textContent=say('Afsluiten is niet gelukt. Controleer de verbinding en probeer het opnieuw.','Could not close the session. Check the connection and try again.');}
+      finally{ending=false;end.disabled=false;}
+    };
+    window.addEventListener('storage',event=>{
+      if(active && event.key===key(active.channel) && !event.newValue){
+        active=null;lastSent='';clearTimeout(retry);
+        end.hidden=true;copy.hidden=true;output.hidden=true;send.hidden=false;
+        info.textContent=say('Kijksessie gesloten.','Viewing session closed.');
+      }
+    });
     document.getElementById('shareCopy').onclick=async()=>{try{await navigator.clipboard.writeText(output.value);info.textContent=say('Kijklink gekopieerd.','View link copied.');}catch{output.focus();output.select();}};
     document.getElementById('shareClose').onclick=()=>dlg.close();
     window.addEventListener('online',sync);
