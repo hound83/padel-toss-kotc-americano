@@ -29,6 +29,7 @@ test('Toss times and court numbers appear in schedule, print and presentation an
   assert.equal(await options.getAttribute('open'),null);
   await options.locator('summary').click();
   assert.equal(await page.locator('#tossStartTime').inputValue(),'');
+  assert.equal(await page.locator('#tossStartTime').getAttribute('placeholder'),'--:--');
   assert.equal(await page.locator('#tossRoundMinutes').inputValue(),'20');
   for(const time of ['11:', '24:00', '11:60', '', '11:00']){
     await page.locator('#tossStartTime').fill(time);
@@ -86,7 +87,7 @@ test('Toss times and court numbers appear in schedule, print and presentation an
   await page.locator('#stepsNav [data-step="2"]').click();
   if(!await options.getAttribute('open'))await options.locator('summary').click();
   await page.locator('#tossRoundMinutes').fill('15');
-  await page.getByRole('button',{name:'Terug naar schema',exact:false}).last().click();
+  await page.getByRole('button',{name:'Wijzigingen toepassen',exact:true}).last().click();
   assert.equal(await page.locator('#scheduleRound2 .round-time').innerText(),'11:15–11:30');
   assert.deepEqual((await save()).state.pools[0].rounds,saved.state.pools[0].rounds);
   await page.locator('#loadFileInput').setInputFiles({name:'plan.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(saved))});
@@ -103,5 +104,27 @@ test('Toss times and court numbers appear in schedule, print and presentation an
   await page.waitForFunction(()=>document.querySelectorAll('#roundsCol .round-time').length===0);
   assert.equal(await page.locator('#roundsCol .round-time').count(),0);
   assert.deepEqual(await page.locator('#scheduleRound1 .court-label').allTextContents(),['Baan 1','Baan 2']);
+  await page.locator('#stepsNav [data-step="2"]').click();
+  if(!await options.evaluate(el=>el.open))await options.locator('summary').click();
+  await page.locator('#tossStartTime').fill('09:');
+  assert.equal(await page.locator('#applySchedule2').isDisabled(),true);
+  await page.locator('#cancelToScheduleBtn2').click();
+  assert.equal(await page.locator('#roundsCol .round-time').count(),0);
+  await page.locator('#mastheadBack').click();
+  await page.locator('#confirmYesBtn').click();
+  await page.locator('.format-btn[data-format=splitToss]').click();
+  await page.locator('#continueTo2').click();
+  const first=page.locator('#namesSplitBlock .name-field input:visible').first();
+  await first.fill('Micheal');
+  await page.locator('#generateBtn').click();
+  const beforeSplit=(await save()).state;
+  await page.locator('#stepsNav [data-step="2"]').click();
+  assert.equal(await page.locator('#applySchedule2').isVisible(),false);
+  await first.fill('Michael');
+  await page.locator('#applySchedule2').click();
+  const corrected=(await save()).state;
+  const rename=(k,v)=>v==='Micheal'?'Michael':v;
+  assert.deepEqual(corrected.pools,JSON.parse(JSON.stringify(beforeSplit.pools,rename)));
+  assert.deepEqual(corrected.activeRosterLevels,JSON.parse(JSON.stringify(beforeSplit.activeRosterLevels,rename)));
   assert.deepEqual(errors,[]);
 });

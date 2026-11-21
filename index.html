@@ -1139,7 +1139,7 @@
   .action-menu:not([open]) .action-menu-items{display:none;}
   .action-menu-items .btn{display:block;width:100%;text-align:left;border:0;min-height:44px;padding:8px 14px;}
   .export-icon{vertical-align:middle;margin-inline-end:.5em;}
-  .action-menu-items [hidden],#editPlayersBtn[hidden]{display:none;}
+  #applySchedule1[hidden],#applySchedule2[hidden],.action-menu-items [hidden],#editPlayersBtn[hidden]{display:none;}
   #editPlayersBtn{margin-bottom:14px;}
   #rerollStatus:empty,.playcount-wrap:has(#playcountPanel[style*="none"]){display:none;}
   @media(max-width:960px){
@@ -1195,6 +1195,7 @@
   }
   .court-name-button{font:inherit;color:inherit;background:transparent;border:0;text-align:left;padding:0;cursor:pointer;min-width:0;}
   @container(max-width:519px){.match-card .court-label{padding-inline:3px;}.court-name-button{font-family:Arial,sans-serif;}.court-name-button span{overflow-wrap:normal;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;}}
+  @media screen{.player-label{display:block;min-width:0;max-width:100%;text-overflow:ellipsis;white-space:nowrap;overflow:hidden;cursor:pointer}}
   #courtNameDialog{max-width:min(32rem,94vw);color:var(--ink);border:1px solid var(--line);border-radius:12px;overflow-wrap:anywhere;}
   #shareDialog{width:min(32rem,94vw);padding:1.3rem;color:var(--ink);border:1px solid var(--line);border-radius:12px;}
   #shareDialog input{width:100%;padding:.55rem;margin-bottom:.75rem;font:inherit;}
@@ -1471,6 +1472,7 @@
     <div class="round-options" id="roundSettings"></div>
     <div class="actions-row" style="margin-top:22px;">
       <button class="btn btn-ghost" id="backToModes" type="button" data-i18n="backToModes">← Speelvormen</button>
+      <button class="btn btn-primary" type="button" id="applySchedule1" hidden></button>
       <button class="btn btn-ghost" id="cancelToScheduleBtn1" type="button" data-i18n="cancelToScheduleBtn" style="display:none;">← Terug naar schema</button>
       <button class="btn btn-primary" id="continueTo2" type="button" data-i18n="continueBtn">Doorgaan →</button>
       <button class="btn btn-ghost" id="loadBtn" type="button" data-i18n="loadBtn">📂 Opgeslagen schema laden</button>
@@ -1621,6 +1623,7 @@
 
     <div class="actions-row">
       <button class="btn btn-ghost" id="backTo1" data-i18n="backBtn">← Terug</button>
+      <button class="btn btn-primary" type="button" id="applySchedule2" hidden></button>
       <button class="btn btn-ghost" id="cancelToScheduleBtn2" type="button" data-i18n="cancelToScheduleBtn" style="display:none;">← Terug naar schema</button>
       <button class="btn btn-primary" id="generateBtn" data-i18n="generateBtn">Genereer schema →</button>
     </div>
@@ -1855,6 +1858,7 @@
 </dialog>
 
 <div id="printPages" hidden></div>
+<script src="./name-hint.js"></script>
 <script src="./schedule-document.js"></script>
 <script src="./round-planner.js"></script>
 <script>
@@ -2766,7 +2770,7 @@
     var card = liveElement('article', cardClass + ' koc-waiting-card');
     card.appendChild(liveElement('h3', '', t('kocWaitingTitle')));
     var list = liveElement('ul', '');
-    names.forEach(function(name){ list.appendChild(liveElement('li', '', name)); });
+    names.forEach(function(name){ list.appendChild(nameLabel('li','',name)); });
     card.appendChild(list);
     card.appendChild(liveElement('p', 'koc-waiting-note', t('kocWaitingRule')));
     root.appendChild(card);
@@ -2798,9 +2802,8 @@
       var list = document.createElement('ul');
       var here = k.displayOrder.filter(function(i){ return k.assignment[i] === b; });
       here.forEach(function(i,index){
-        var li = document.createElement('li');
-        if (index === 2 && here.length === 4 && k.roster.some(function(p){return p.level;})) li.className='next-team';
-        li.textContent = kocPlayerName(i);
+        var split = index === 2 && here.length === 4 && k.roster.some(function(p){return p.level;});
+        var li = nameLabel('li',split ? 'next-team' : '',kocPlayerName(i));
         list.appendChild(li);
       });
       for (var empty = here.length; empty < 4; empty++){
@@ -3604,9 +3607,48 @@
     });
   });
 
+  var nameFrame;
+  function queueNameMeasurements(){
+    if (nameFrame) return;
+    nameFrame = requestAnimationFrame(function(){
+      nameFrame = 0;
+      document.querySelectorAll('.player-label').forEach(function(el){
+        var clipped = el.clientWidth > 0 && el.scrollWidth > el.clientWidth;
+        el.tabIndex = clipped ? 0 : -1;
+      });
+    });
+  }
+  window.addEventListener('resize',queueNameMeasurements);
+  function nameLabel(tag,css,name){
+    var el = liveElement(tag,css+' player-label',name);
+    el.title = name;
+    el.tabIndex = -1;
+    queueNameMeasurements();
+    el.setAttribute('role','button');
+    function openName(){
+      var dialog=document.getElementById('courtNameDialog');
+      document.getElementById('courtNameFull').textContent=name;
+      dialog.showModal();
+    }
+    el.onclick=openName;
+    el.onkeydown=function(event){if (event.key==='Enter'||event.key===' '){event.preventDefault();openName();}};
+    return el;
+  }
+
   function goToStep(n){
-    if(n===3 && state.step===2 && tossSessionError()){
-      document.getElementById('tossStartOptions').open=true;validateTossStart();return;
+    if (editSession && n === 3){
+      if (editKind()){
+        showConfirmModal(editText('De wijzigingen verwerpen en het bestaande schema openen?', 'Discard the changes and open the existing schedule?'), editText('Terug zonder opslaan','Return without saving'), discardScheduleEdits);
+      } else discardScheduleEdits();
+      return;
+    }
+    if (state.step === 3 && (n === 1 || n === 2) && state.pools.length && !editSession){
+      writeAutosave();
+      var committed = state;
+      state = structuredClone(committed);
+      editSession = {committed:committed, automatic:presetCountsAutomatic};
+      editSession.structure = scheduleStructure();
+      editSession.details = scheduleDetails();
     }
     if (state.step !== n) clearBulkUndo();
     state.step = n;
@@ -3615,7 +3657,7 @@
     if (n === 1 || n === 4) renderRoundSettings();
     if (n === 2){
       document.getElementById('editPlayersBtn').hidden = !state.pools.length;
-      renderTossStartOptions();
+      if (editSession) buildNameInputs(); else renderTossStartOptions();
     }
     paintRoundClocks();
     if (n === 0){
@@ -3636,6 +3678,7 @@
     var c2 = document.getElementById('cancelToScheduleBtn2');
     if (c1) c1.style.display = hasSchedule ? '' : 'none';
     if (c2) c2.style.display = hasSchedule ? '' : 'none';
+    updateScheduleEditActions();
     document.getElementById('mastheadBack').hidden = n === 0;
     // The old home tiles used to stay visible because .mode-home set
     // display:flex unconditionally. Keep the selected format on a clean screen.
@@ -4255,7 +4298,7 @@
       plan.startTime=input.value.trim().replace(/^(\d):(\d{2})$/,'0$1:$2');
       checkTime();
     });
-    startTime.placeholder='11:00';
+    startTime.placeholder='--:--';
     startTime.addEventListener('blur',function(){startTime.value=plan.startTime;});
     var timeHint=liveElement('small','toss-start-error');
     timeHint.id='startTimeHint';
@@ -4605,11 +4648,85 @@
   });
 
   document.getElementById('backTo1').addEventListener('click', function(){ goToStep(1); });
-  document.getElementById('cancelToScheduleBtn1').addEventListener('click', function(){ goToStep(3); });
-  document.getElementById('cancelToScheduleBtn2').addEventListener('click', function(){ goToStep(3); });
+  var editSession;
+  function editText(nl,en){return state.lang === 'en' ? en : nl;}
+  function scheduleStructure(){
+    var split = state.format === 'splitToss';
+    var groups = split ? activeLevelIndexes() : [-1];
+    return JSON.stringify([state.courts,split ? readLevelCounts() : Number(playerCountInput.value),
+      state.rounds,state.regroupEnabled,state.regroupEnabled && state.splitRound,
+      split && state.levelResults,groups.map(function(group){return tossStartChoices(group);})]);
+  }
+  function scheduleDetails(){
+    var plan = tossSessionSettings(), clock = roundTimer();
+    return JSON.stringify([state.names,state.levelNames,plan.startTime,plan.roundMinutes,
+      plan.courtNumbers.slice(0,state.courts).map(String),scoreMode(),clock.enabled,clock.play]);
+  }
+  function editKind(){
+    if (!editSession) return '';
+    if (scheduleStructure() !== editSession.structure) return 'draw';
+    return scheduleDetails() !== editSession.details ? 'details' : '';
+  }
+  function updateScheduleEditActions(){
+    var kind = editKind();
+    [1,2].forEach(function(n){
+      var apply = document.getElementById('applySchedule'+n);
+      apply.hidden = kind !== 'details';
+      apply.disabled = kind === 'details' && !!tossSessionError();
+      apply.textContent = editText('Wijzigingen toepassen','Apply changes');
+      document.getElementById('cancelToScheduleBtn'+n).textContent = kind ? editText('Terug zonder opslaan','Return without saving') : t('cancelToScheduleBtn');
+    });
+    document.getElementById('generateBtn').textContent = editSession ? editText('Opnieuw indelen','Redraw schedule') : t('generateBtn');
+    document.getElementById('editPlayersBtn').disabled = !!kind;
+  }
+  function discardScheduleEdits(){
+    if (!editSession){goToStep(3);return;}
+    var original = editSession.committed, automatic = editSession.automatic;
+    original.lang = state.lang;
+    editSession = null;
+    applyLoadedState(original);
+    presetCountsAutomatic = automatic;
+    writeAutosave();
+  }
+  function applyScheduleEdits(){
+    if (editKind() !== 'details' || tossSessionError()) return;
+    var old = editSession.committed;
+    var renames = Object.create(null);
+    var groups = state.format === 'splitToss' ? activeLevelIndexes() : [-1];
+    groups.forEach(function(group){
+      var previous = group < 0 ? old.names : old.levelNames[group];
+      preferenceRoster(group).forEach(function(value,i){
+        if (value === previous[i]) return;
+        var before = preferenceName(previous[i],i,group);
+        // Placeholders in a saved schedule keep the language used at generation.
+        if (!String(previous[i] || '').trim() && !old.pools.some(p=>p.players.includes(before))){
+          var key = group < 0 ? 'namePlaceholder' : LEVELS[group].placeholderKey;
+          var fallback = (state.lang === 'en' ? STR.nl : STR.en)[key].replace('{n}',i+1);
+          if (old.pools.some(p=>p.players.includes(fallback))) before = fallback;
+        }
+        renames[before] = preferenceName(value,i,group);
+      });
+    });
+    var existing = new Set(old.pools.flatMap(p=>p.players));
+    var distinct = new Set(Array.from(existing,n=>(renames[n] || n).toLowerCase()));
+    if (distinct.size !== existing.size){
+      goToStep(2);step2DupError.classList.add('visible');step2DupError.scrollIntoView({block:'center'});return;
+    }
+    applyRenamesGlobally(renames,true);
+    editSession = null;
+    renderMeta();renderSchedule();renderLeaderboard();goToStep(3);writeAutosave();
+  }
+  [1,2].forEach(function(n){
+    document.getElementById('applySchedule'+n).onclick = applyScheduleEdits;
+    document.getElementById('cancelToScheduleBtn'+n).onclick = discardScheduleEdits;
+  });
+  ['input','change','click'].forEach(function(event){
+    document.addEventListener(event,function(){if (editSession) updateScheduleEditActions();});
+  });
 
   function runGenerate(){
     if (!validateTossStart()) return;
+    editSession = null;
     prepareRoundClock(1,true);
     if (state.format === 'splitToss'){
       var rosters = activeLevelIndexes().map(function(levelIdx){
@@ -4638,7 +4755,11 @@
   document.getElementById('generateBtn').addEventListener('click', function(){
     if (checkStep2Duplicates() || !validateTossStart()) return;
     if (state.pools.length > 0){
-      showConfirmModal(t('modalRegenerateText'), t('confirmRegenerateBtn'), runGenerate);
+      var scored = Object.values(state.scores).filter(s=>s && (Number.isInteger(s.t1)||Number.isInteger(s.t2))).length;
+      var rounds = state.totalRoundsPlanned || liveMaxRound();
+      var message = editText('Het huidige schema van '+rounds+' rondes wordt vervangen. Wedstrijden met een ingevulde score: '+scored+'. Die uitslagen vervallen.',
+        'The current '+rounds+'-round schedule will be replaced. Matches with an entered score: '+scored+'. Those scores will be cleared.');
+      showConfirmModal(message,t('confirmRegenerateBtn'),runGenerate);
     } else {
       runGenerate();
     }
@@ -4793,7 +4914,7 @@
     function team(names, side){
       var block = liveElement('div', side === 't1' ? 'team' : 'team team-right');
       var roster = liveElement('div', 'team-names');
-      names.forEach(function(name){ roster.appendChild(liveElement('div', 'players', name)); });
+      names.forEach(function(name){ roster.appendChild(nameLabel('div','players',name)); });
       block.appendChild(roster);
       if (!pool.resultsEnabled) return block;
 
@@ -6346,6 +6467,7 @@
   });
 
   document.getElementById('editPlayersBtn').addEventListener('click', function(){
+    if (editSession){state = editSession.committed;editSession = null;}
     var isSplit = state.format === 'splitToss';
     editSingleBlock.style.display = isSplit ? 'none' : '';
     editSplitBlockWrap.style.display = isSplit ? '' : 'none';
@@ -6412,9 +6534,16 @@
     return { renameMap: renameMap, newRoster: newRoster, addedNames: addedNames };
   }
 
-  function applyRenamesGlobally(renameMap){
+  function applyRenamesGlobally(renameMap,setupAlreadyEdited){
     if (!Object.keys(renameMap).length) return;
-    if (state.format !== 'splitToss') state.names = state.names.map(function(name,index){ return renameMap[tossSetupName(name,index)] || name; });
+    var renamed = n=>Object.hasOwn(renameMap,n) ? renameMap[n] : n;
+    state.activeRoster = state.activeRoster.map(renamed);
+    state.activeRosterLevels = state.activeRosterLevels.map(group=>group.map(renamed));
+    if (state.qualificationDraw){
+      for (var key of ['gold','silver']) if (Array.isArray(state.qualificationDraw[key])) state.qualificationDraw[key] = state.qualificationDraw[key].map(renamed);
+    }
+    if (state.viewerIds) state.viewerIds = Object.fromEntries(Object.entries(state.viewerIds).map(([name,id])=>[renamed(name),id]));
+    if (!setupAlreadyEdited && state.format !== 'splitToss') state.names = state.names.map(function(name,index){ return renameMap[tossSetupName(name,index)] || name; });
     state.pools.forEach(function(pool){
       pool.players = pool.players.map(function(n){ return renameMap[n] || n; });
       pool.rounds.forEach(function(rd){
@@ -6425,12 +6554,7 @@
         });
       });
     });
-    Object.keys(renameMap).forEach(function(oldName){
-      if (state.laterAdditions[oldName]){
-        delete state.laterAdditions[oldName];
-        state.laterAdditions[renameMap[oldName]] = true;
-      }
-    });
+    state.laterAdditions = Object.fromEntries(Object.keys(state.laterAdditions).filter(n=>state.laterAdditions[n]).map(n=>[renamed(n),true]));
   }
 
   // Regenerates a single pool's not-yet-played rounds given its removed/added names.
@@ -6771,6 +6895,7 @@
   }
 
   function applyLoadedState(st){
+    editSession = null;
     state = st;
     if (state.format === 'koc' && state.roundTimer && !state.koc.roundTimer){
       state.koc.roundTimer = state.roundTimer;
@@ -6883,6 +7008,7 @@
   });
 
   function doStartOver(){
+    editSession = null;
     var keepLang = state.lang;
     resetBulkNameTools();
     state = {
@@ -7034,7 +7160,7 @@
   }
   function writeAutosave(){
     clearTimeout(autosaveTimer);
-    if (autosaveSuspended || state.step === 0) return;
+    if (editSession || autosaveSuspended || state.step === 0) return;
     if (window.queueShareUpdate) window.queueShareUpdate();
     try {
       localStorage.setItem(AUTOSAVE_KEY, JSON.stringify({
@@ -7302,7 +7428,7 @@
     var body = liveElement('div','live-match-body'+(hasScores?' has-scores':''));
     function team(names,side){
       var block=liveElement('div','live-team'+(side === 't2'?' right':''));
-      names.forEach(function(name){block.appendChild(liveElement('span','',name));});
+      names.forEach(function(name){block.appendChild(nameLabel('span','',name));});
       if (hasScores){
         var score = liveElement('div','team-score');
         if (editable) score.appendChild(liveScoreField(pool,court,round,side));
@@ -7572,7 +7698,7 @@
             .filter(function(i){return schedule.assignment[i]===court;});
           players.forEach(function(i,index){
             var split = index === 2 && players.length === 4 && schedule.roster.some(function(p){return p.level;});
-            ul.appendChild(liveElement('li',split ? 'next-team' : '',kocPlayerName(i)));
+            ul.appendChild(nameLabel('li',split ? 'next-team' : '',kocPlayerName(i)));
           });
           for(var x=players.length;x<4;x++) ul.appendChild(liveElement('li','empty','—'));
           card.appendChild(ul);
@@ -8035,7 +8161,7 @@
         var box = liveElement('div','koc-round-team');
         var names = team.map(kocPlayerName);
         var list = liveElement('ul','');
-        names.forEach(function(name){list.appendChild(liveElement('li','',name));});
+        names.forEach(function(name){list.appendChild(nameLabel('li','',name));});
         var score = liveElement('input','koc-round-score');
         score.type = 'number';
         score.min = '0';
@@ -8064,7 +8190,7 @@
       var waiting = liveElement('article',(live ? 'live-koc-card' : 'koc-court') + ' koc-waiting-card');
       waiting.appendChild(liveElement('h3','',t('kocRoundWaiting')));
       var names = liveElement('ul','');
-      round.waiting.forEach(function(player){names.appendChild(liveElement('li','',kocPlayerName(player)));});
+      round.waiting.forEach(function(player){names.appendChild(nameLabel('li','',kocPlayerName(player)));});
       waiting.append(names,liveElement('p','koc-waiting-note',t('kocWaitingRule')));
       root.appendChild(waiting);
     }
@@ -8169,7 +8295,10 @@
       }
     }
     const titles={toss:'formatToss',splitToss:'formatSplitToss',americano:'formatAmericano',koc:'formatKoc'};
-    return {title:t(titles[state.format]),en,rounds,boards};
+    var names = new Set(rounds.flatMap(rd=>rd.rows.flatMap(row=>row.teams.flat())));
+    var previous = state.viewerIds || {};
+    state.viewerIds = Object.fromEntries(Array.from(names,name=>[name,Object.hasOwn(previous,name) ? previous[name] : crypto.randomUUID()]));
+    return {title:t(titles[state.format]),en,rounds,boards,playerIds:state.viewerIds};
   }
 
   function setupSharing(){

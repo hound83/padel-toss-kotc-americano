@@ -375,7 +375,7 @@ test('v2.2: clean navigation and live KOC, Toss, Americano and split Toss', asyn
     names.forEach((name,i)=>{name.textContent=originals[i];});
     return {heights,positions};
   });
-  assert.ok(aligned.heights[0]>aligned.heights[1],'one team wraps more than the other');
+  assert.equal(aligned.heights[0],aligned.heights[1],'long names stay on one line');
   assert.ok(Math.abs(aligned.positions[0]-aligned.positions[1])<=1,'mobile score boxes stay on the same line');
   if(screenshotDir)await firstRound.screenshot({path:path.join(screenshotDir,'schedule-four-courts-narrow.png')});
   await fourCourtAmericano.setViewportSize({width:1600,height:1000});
