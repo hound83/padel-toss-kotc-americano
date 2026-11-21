@@ -91,6 +91,12 @@ Als de baanindeling groter is dan het scherm, verdeelt de presentatie de kaarten
 - Open **Speelverdeling bekijken** boven het schema voor het aantal wedstrijden per speler, opeenvolgende rustbeurten en terugkerende duo’s.
 - Zet de **Rondeklok** aan en kies de rondeduur. Een nieuwe KOC-klok staat op 20 minuten. Start elke klok handmatig. De ring loopt terug met de resterende tijd. In de KOC-presentatie staat de klok rechts onder de kop, boven de banen. Op smalle schermen neemt hij daar de beschikbare breedte in. Op nul kleurt het klokpaneel rood en verschijnt **Tijd om**. Tijdens het lopen kun je één minuut aftrekken of bijtellen. Reset zet de tijd terug op de begintijd van die ronde. De volgende ronde begint met de standaardduur en een stilstaande klok.
 
+## Extra startkeuzes bij Toss
+
+Onder de namen staat **Extra instellingen voor ronde 1**, standaard ingeklapt. Met **Start** staat vast dat een speler in de eerste ronde speelt. Vink bij **Duo** twee spelers aan en kies **Startkoppel vastleggen** om hen de eerste ronde als partners te laten spelen. Er kunnen meerdere startkoppels worden vastgelegd. Deze keuzes blijven bewaard bij opslaan, hervatten en opnieuw genereren.
+
+Toss voorkomt twee opeenvolgende wachtrondes en verdeelt de speelbeurten zo gelijk mogelijk. Dit kan wanneer minstens de helft van de deelnemers per ronde speelt. Bij meer deelnemers toont de planner dat opeenvolgende wachtrondes onvermijdelijk zijn. Bij het aanpassen van deelnemers blijft de wachtverdeling van de al gespeelde rondes meetellen.
+
 ## Speciaal voor KOC
 
 - Kies **2 tot en met 4 banen** met dezelfde knoppen als bij de andere speelvormen, of **5 tot en met 12 banen** via de dropdown.
