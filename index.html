@@ -1129,7 +1129,7 @@
   @media(max-width:360px){.wrap:has(#panel3.visible){padding-inline:6px;}}
   @container(max-width:330px){
     .match-card{grid-template-columns:3.5rem minmax(0,1fr);}
-    .team .players{font-size:1rem;}
+    .team .players{font:700 1rem/1.26 Arial,sans-serif;}
     .teams-row .vs{font-size:0;width:1px;background:var(--line);align-self:stretch;}
     .teams-row .team{gap:3px;}
   }
@@ -1143,7 +1143,7 @@
     .live-board td,.live-board th{padding-block:2px;}
   }
   .court-name-button{font:inherit;color:inherit;background:transparent;border:0;text-align:left;padding:0;cursor:pointer;min-width:0;}
-  @container(max-width:519px){.court-name-button span{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;}}
+  @container(max-width:519px){.match-card .court-label{padding-inline:3px;}.court-name-button{font-family:Arial,sans-serif;}.court-name-button span{overflow-wrap:normal;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;}}
   #courtNameDialog{max-width:min(32rem,94vw);color:var(--ink);border:1px solid var(--line);border-radius:12px;overflow-wrap:anywhere;}
   #shareDialog{width:min(32rem,94vw);padding:1.3rem;color:var(--ink);border:1px solid var(--line);border-radius:12px;}
   #shareDialog input{width:100%;padding:.55rem;margin-bottom:.75rem;font:inherit;}
