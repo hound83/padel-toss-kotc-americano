@@ -224,9 +224,23 @@ article h3{display:flex;align-items:center;justify-content:space-between;gap:.55
  try{
    $('player').onchange=draw;$('everyone').onclick=()=>selectPlayer('',true);
    if(shortPath){
-     const timer=setInterval(()=>{if(!document.hidden)reload();},3500);stream={close:()=>clearInterval(timer)};
-     window.addEventListener('online',reload);document.addEventListener('visibilitychange',()=>{if(!document.hidden)reload();});
-     await reload();return;
+     const playerRefreshMs=30_000;
+     let timer;
+     function refreshIfVisible(){if(!document.hidden)reload();}
+     function visibilityChanged(){
+       clearInterval(timer);
+       if(document.hidden)return;
+       timer=setInterval(refreshIfVisible,playerRefreshMs);
+       reload();
+     }
+     stream={close(){
+       clearInterval(timer);
+       window.removeEventListener('online',refreshIfVisible);
+       document.removeEventListener('visibilitychange',visibilityChanged);
+     }};
+     window.addEventListener('online',refreshIfVisible);
+     document.addEventListener('visibilitychange',visibilityChanged);
+     visibilityChanged();return;
    }
    const session=TossShare.parse(location.hash);cacheKey='padel-view-final-'+session.channel;
    update(await TossShare.initial(session));

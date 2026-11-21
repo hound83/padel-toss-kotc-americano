@@ -173,6 +173,8 @@ Open de planner op de sessiesite, maak een indeling en kies **Schema delen** en 
 
 De kijklink en invullinks hebben de vorm `/s/7KDM-P4WX`. Hoofdletters en het streepje zijn optioneel. Bij Americano, scoregroepen van de Gesplitste Toss en de KOC-rondeplanner kan de organisator kiezen voor één invullink voor de hele groep of een link per speler. Met de groepslink kiest iedere speler zelf een naam. De eerste uitslag telt. De organisator kan deze aanpassen in de planner. Bij een overstap naar een andere invoeroptie vervallen de eerdere invullinks. De kijklink blijft beschikbaar. Gewone Toss en KOC-startindeling hebben alleen een kijklink.
 
+Op een kijk- of invullink wordt de stand direct opgehaald bij openen of terugkomen. Zolang de pagina zichtbaar is, controleert deze iedere 30 seconden op wijzigingen. Bij het versturen van een uitslag krijgt de speler direct een bevestiging.
+
 Zeven dagen na de laatste wijziging verlopen de online links. Bekijken verlengt de termijn niet. Na **Sessie beëindigen** sluit de invoer direct en is de eindstand nog zeven dagen beschikbaar. Verlopen sessies en codes worden elk uur opgeruimd. Een lokale JSON-export blijft bij de organisator.
 
 ### Sessiesite draaien

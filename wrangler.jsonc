@@ -1,5 +1,5 @@
 {
-  "name": "koriander-toss",
+  "name": "padel-toss-kotc-americano",
   "main": "sessions/worker.mjs",
   "compatibility_date": "2026-03-01",
   "workers_dev": true,

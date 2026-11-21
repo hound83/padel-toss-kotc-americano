@@ -49,7 +49,20 @@ test('an organizer can close the laptop, players score, and the organizer contin
   await laptop.ctx.close();
 
   const watcher=await device(true),visitor=await device(true),player=visitor.page;
-  await watcher.page.goto(viewLink);await watcher.page.locator('#rounds article').first().waitFor();
+  const watch=watcher.page;
+  const isScoreRead=req=>req.method()==='GET' && new URL(req.url()).pathname.startsWith('/api/s/');
+  let reads=0;
+  watch.on('request',req=>{if(isScoreRead(req))reads++;});
+  const start=new Date('2026-03-01T10:00:00Z');
+  await watch.clock.install({time:start});
+  await watch.clock.pauseAt(new Date(start.getTime()+1000));
+  const nextRead=()=>watch.waitForResponse(response=>isScoreRead(response.request()));
+  const setHidden=hidden=>watch.evaluate(value=>{
+    Object.defineProperty(document,'hidden',{configurable:true,value});
+    document.dispatchEvent(new Event('visibilitychange'));
+  },hidden);
+  await watch.goto(viewLink);await watch.locator('#rounds article').first().waitFor();
+  assert.equal(reads,1);
   await player.goto(entryLink.replace(/-([A-Z0-9]{4})$/,'$1').toLowerCase());
   const first=player.locator('article').first();const name=await first.locator('.person').first().textContent();
   await player.locator('#player').selectOption(name);
@@ -57,7 +70,12 @@ test('an organizer can close the laptop, players score, and the organizer contin
   await player.locator('#entryScore0').fill('21');await player.locator('#entryScore1').fill('17');
   await player.locator('#entrySend').tap();
   await player.getByText('Uitslag opgeslagen',{exact:false}).waitFor();
-  await watcher.page.waitForFunction(()=>document.querySelector('#rounds').textContent.includes('21–17'));
+  await watch.clock.runFor(29_999);
+  assert.equal(reads,1);
+  assert.equal((await watch.locator('#rounds').textContent()).includes('21–17'),false);
+  await Promise.all([nextRead(),watch.clock.runFor(1)]);
+  await watch.getByText('21–17',{exact:true}).first().waitFor();
+  assert.equal(reads,2);
   assert.equal(await watcher.page.getByRole('button',{name:'Uitslag invullen'}).count(),0);
   assert.ok(await watcher.page.locator('.board').textContent());
 
@@ -66,14 +84,27 @@ test('an organizer can close the laptop, players score, and the organizer contin
   await owner.locator('#panel3:visible .match-card input').first().waitFor();
   const input=owner.locator('.match-card input').first();
   assert.equal(await input.inputValue(),'21');
-  await input.fill('22');await input.press('Tab');
-  await watcher.page.waitForFunction(()=>document.querySelector('#rounds').textContent.includes('22–17'));
+  const saved=action=>owner.waitForResponse(response=>{
+    const req=response.request();
+    return new URL(req.url()).pathname==='/api/manage' && req.method()==='POST' &&
+      req.postDataJSON().action===action && response.ok();
+  });
+  await setHidden(true);
+  await Promise.all([saved('save'),(async()=>{await input.fill('22');await input.press('Tab');})()]);
+  await watch.clock.fastForward(90_000);
+  assert.equal(reads,2);
+  await Promise.all([nextRead(),setHidden(false)]);
+  await watch.getByText('22–17',{exact:true}).first().waitFor();
+  assert.equal(reads,3);
   await owner.route('**/api/manage',route=>route.abort('internetdisconnected'));
   await input.fill('23');await input.press('Tab');
   await owner.waitForFunction(()=>Object.keys(localStorage).some(k=>k.startsWith('padel-v31-pending-') && localStorage[k].includes('"t1":23')));
   await owner.reload();
+  const recovered=saved('save');
   await owner.unroute('**/api/manage');await owner.evaluate(()=>dispatchEvent(new Event('online')));
-  await watcher.page.waitForFunction(()=>document.querySelector('#rounds').textContent.includes('23–17'));
+  await recovered;
+  await Promise.all([nextRead(),watch.clock.fastForward(30_000)]);
+  await watch.getByText('23–17',{exact:true}).first().waitFor();
   await owner.getByRole('button',{name:'Schema delen'}).last().tap();
   const controls=await owner.locator('#shareEnd,#shareClose').evaluateAll(nodes=>nodes.map(el=>{const r=el.getBoundingClientRect();return {top:r.top,bottom:r.bottom};}));
   assert.ok(controls[1].top-controls[0].bottom>=8);
@@ -93,8 +124,13 @@ test('an organizer can close the laptop, players score, and the organizer contin
   await owner.reload();await owner.locator('#panel3:visible').waitFor();
   assert.equal(await owner.locator('.match-card input').first().inputValue(),'23');
   await owner.getByRole('button',{name:'Schema delen'}).last().tap();
-  owner.once('dialog',d=>d.accept());await owner.locator('#shareEnd').tap();
-  await watcher.page.getByText(/gesloten.*eindstand/i).waitFor();
+  owner.once('dialog',d=>d.accept());
+  await Promise.all([saved('close'),owner.locator('#shareEnd').tap()]);
+  await Promise.all([nextRead(),watch.clock.fastForward(30_000)]);
+  await watch.getByText(/gesloten.*eindstand/i).waitFor();
+  const finalReads=reads;
+  await watch.clock.fastForward(60_000);
+  assert.equal(reads,finalReads);
   assert.deepEqual(errors,[]);
 
   for(const [mode,guided,entry] of [['toss',false,false],['splitToss',false,true],['koc',false,false],['koc',true,true]]){
