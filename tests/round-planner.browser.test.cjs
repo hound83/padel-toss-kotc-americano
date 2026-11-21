@@ -252,6 +252,7 @@ test('round planner, clock, rules and scoring options work in the browser',async
   await toss.locator('#generateBtn').click();
   assert.equal(await toss.locator('#roundsCol input').count(),0);
   assert.equal(await toss.locator('#playcountPanel').isVisible(),false);
+  await toss.locator('.action-bar:visible summary').click();
   await toss.locator('#playcountToggleBtn').click();
   assert.match(await toss.locator('#playcountPanel').innerText(),/opeenvolgende rustbeurten/);
   assert.match(await toss.locator('#playcountPanel').innerText(),/Duo’s die vaker samen spelen/);
@@ -272,7 +273,7 @@ test('round planner, clock, rules and scoring options work in the browser',async
   await gameScores.nth(1).fill('3');
   assert.match(await gameScores.first().getAttribute('aria-label'),/^Games voor /);
   assert.match(await americano.locator('#boardCol thead').textContent(),/Games/);
-  await americano.locator('#backToSettingsBtn').click();
+  await americano.locator('#stepsNav [data-step="2"]').click();
   await americano.locator('#stepsNav [data-step="1"]').click();
   assert.equal(await americano.locator('#roundSettingsScore').isVisible(),true);
   assert.equal(await americano.locator('#roundSettingsScore').isEnabled(),false);

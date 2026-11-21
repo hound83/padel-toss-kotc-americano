@@ -41,6 +41,7 @@ test('v2.2: clean navigation and live KOC, Toss, Americano and split Toss', asyn
   }
   async function saveState(page,button='#saveBtn'){
     const event=page.waitForEvent('download');
+    await page.locator('.action-bar:visible summary').click();
     await page.locator(button).click();
     const download=await event;
     return JSON.parse(fs.readFileSync(await download.path(),'utf8')).state;
@@ -100,12 +101,12 @@ test('v2.2: clean navigation and live KOC, Toss, Americano and split Toss', asyn
         const field=team.querySelector('input');
         const bounds=field.getBoundingClientRect();
         const lastName=names.at(-1).getBoundingClientRect();
-        const edge=side===0?'left':'right';
+        const center=rect=>rect.left+rect.width/2;
         const nameBlock=inline?team.querySelector('.team-names').getBoundingClientRect():lastName;
         const beside=side===0?bounds.left>=nameBlock.right:bounds.right<=nameBlock.left;
         return {
           positioned:inline?beside&&bounds.top<nameBlock.bottom&&bounds.bottom>nameBlock.top:
-            bounds.top>=lastName.bottom&&Math.abs(bounds[edge]-lastName[edge])<1,
+            bounds.top>=lastName.bottom&&Math.abs(center(bounds)-center(lastName))<1,
           usable:bounds.width>=44&&bounds.height>=44,
           label:field.getAttribute('aria-label'),
           team:names.map(name=>name.textContent).join(' & ')
@@ -234,6 +235,18 @@ test('v2.2: clean navigation and live KOC, Toss, Americano and split Toss', asyn
   await splitMixed.locator('#generateBtn').click();
   const mixedFields=await splitMixed.locator('#scheduleRound1 .team-score input').all();
   assert.equal(mixedFields.length,2);
+  for(const width of [1280,390,320]){
+    await splitMixed.setViewportSize({width,height:900});
+    const rows=await splitMixed.locator('#scheduleRound1 .match-card').evaluateAll(cards=>cards.map(card=>{
+      const rect=el=>el.getBoundingClientRect();
+      const names=[...card.querySelectorAll('.team-names')].map(el=>rect(el).left+rect(el).width/2);
+      return {names,width:rect(card).width,scores:card.querySelectorAll('input').length};
+    }));
+    assert.deepEqual(rows.map(row=>row.scores).sort(),[0,2]);
+    assert.ok(rows[0].names.every((x,i)=>Math.abs(x-rows[1].names[i])<=1),'name columns stay fixed when score entry is enabled');
+    assert.ok(rows[0].names[1]-rows[0].names[0]>rows[0].width*.25,'each duo occupies its own half');
+  }
+  await splitMixed.setViewportSize({width:1280,height:900});
   await mixedFields[0].fill('11');
   await mixedFields[1].fill('5');
   await mixedFields[1].press('Tab');

@@ -162,6 +162,7 @@ test('court defaults and name-list drawer retain the ordinary player layout', as
     '48 player setup remains horizontally responsive at mobile width');
 
   const savedKoc = koc.waitForEvent('download');
+  await koc.locator('.action-bar:visible summary').click();
   await koc.locator('#kocSave').click();
   const file = await savedKoc;
   const savedFile = JSON.parse(fs.readFileSync(await file.path(),'utf8'));
