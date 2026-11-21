@@ -111,7 +111,7 @@ const assert=require('node:assert/strict');
     await watcher.locator('#rounds article').first().waitFor();
     await preview.locator('#shareClose').click();
     await preview.locator('.match-card input').first().fill('24');await preview.locator('.match-card input').nth(1).fill('16');
-    await watcher.getByText('24 – 16',{exact:true}).first().waitFor({timeout:45000});
+    await watcher.getByText('24–16',{exact:true}).first().waitFor({timeout:45000});
     console.log('Live preview and signed score update verified across two independent browser sessions.');
     await host.close();await guest.close();
     assert.deepEqual(errors,[]);

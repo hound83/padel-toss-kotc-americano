@@ -60,7 +60,7 @@ test('Stable layout and isolated preview share one organizer-signed schedule acr
   let score=false;
   for(let i=0;i<(real?160:30) && !score;i++){
     if(payload)await viewer.evaluate(({payload,channel})=>window.testStream.dispatchEvent(new MessageEvent('message',{data:JSON.stringify({event:'message',topic:channel,message:payload})})),{payload,channel});
-    score=await viewer.getByText('29 – 18',{exact:true}).count()>0;
+    score=await viewer.getByText('29–18',{exact:true}).count()>0;
     if(!score)await viewer.waitForTimeout(150);
   }
   assert.ok(score,'another phone sees the new score on the original URL');
