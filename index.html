@@ -890,16 +890,30 @@
   .toss-court-numbers{flex:2 1 260px;min-width:0;margin:0;padding:0;border:0;}
   .toss-court-numbers legend{padding:0;margin-bottom:8px;font-size:var(--fs-xs);font-weight:600;color:var(--teal-900);text-transform:uppercase;letter-spacing:.04em;}
   .toss-court-fields{display:flex;flex-wrap:wrap;gap:8px;}
-  .toss-court-fields .field-group{width:76px;margin:0;}
+  .toss-court-fields .field-group{flex:1 1 9rem;max-width:16rem;min-width:0;margin:0;}
   .toss-court-fields label{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;}
   .round-time{font-family:var(--font-mono);font-size:var(--fs-sm);font-weight:650;white-space:nowrap;}
   .round-head{flex-wrap:wrap;}
   .live-section-head .round-time{display:inline-block;margin-inline-start:12px;}
   .toss-start-options summary{cursor:pointer;font-weight:750;color:var(--teal-900);}
   .toss-start-options p{margin:10px 0;font-size:var(--fs-sm);line-height:1.5;}
-  .toss-start-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:8px;margin:12px 0;}
-  .toss-start-player{display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:10px;padding:10px;border:1px solid var(--line);border-radius:8px;}
-  .toss-start-player>span{overflow-wrap:anywhere;}
+  .toss-start-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,415px),1fr));gap:8px;margin:12px 0;}
+  .toss-start-player{display:grid;grid-template-columns:repeat(3,max-content) minmax(0,1fr);align-items:center;gap:8px;padding:12px;border:1px solid var(--line);border-radius:8px;}
+  .toss-start-player>span{grid-column:1/-1;font-weight:650;overflow-wrap:anywhere;}
+  .toss-start-options[open]{width:100%;max-width:none;}
+  .toss-start-player select,.koc-level select,#prefGroup{max-width:100%;min-width:0;padding:6px;border:1px solid var(--line);border-radius:6px;background:white;color:var(--ink);}
+  .koc-level{display:flex;align-items:center;justify-content:space-between;gap:10px;}
+  .next-team{border-top:2px solid var(--teal-900);}
+  #rerollStatus:empty{display:none;}
+  @media(max-width:500px){.toss-start-player{grid-template-columns:repeat(3,auto);}.toss-start-player select{grid-column:1/-1;}}
+  @page{size:A4 portrait;margin:0;}
+  @media print{
+    body.print-schedule{margin:0!important;padding:0!important;}
+    body.print-schedule > :not(#printPages){display:none!important;}
+    body.print-schedule #printPages{display:block!important;}
+    #printPages svg{display:block;width:210mm;height:296.8mm;break-after:page;}
+    #printPages svg:last-child{break-after:auto;}
+  }
   .toss-start-player label{display:flex;align-items:center;gap:5px;font-size:var(--fs-xs);cursor:pointer;}
   .toss-start-player input{width:18px;height:18px;margin:0;accent-color:var(--teal-900);}
   .toss-start-pairs{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;}
@@ -1355,7 +1369,12 @@
         <p class="sub-heading" data-i18n="kocNames">Wie spelen er mee?</p>
         <p class="koc-help" data-i18n="kocNamesHint">Pas namen aan of vink een afwezige speler uit. Je kunt met minder spelers beginnen.</p>
         <button class="koc-waiting-action" type="button" id="kocWaitingToggle" aria-controls="kocWaitingFields"></button>
-        <div class="koc-roster" id="kocRoster">
+        <details class="toss-start-options" id="kocExtras"><summary data-i18n="extraSettings">Extra instellingen</summary>
+        <div class="toss-plan-fields" id="kocSessionSettings"></div>
+        <p data-i18n="prefLevel"></p><div class="toss-start-grid" id="kocLevelGrid"></div>
+        <p id="kocCourtError" role="alert" hidden></p>
+      </details>
+      <div class="koc-roster" id="kocRoster">
           <div class="koc-roster-group" id="kocLowestFields" role="group" aria-labelledby="kocLowestHeading" hidden>
             <h3 id="kocLowestHeading" data-i18n="kocEntryMode">Indelen op baan 1</h3>
           </div>
@@ -1374,6 +1393,8 @@
       <button class="btn btn-primary" id="kocRoll" type="button" data-i18n="kocRoll">🎲 Genereer startindeling</button>
       <button class="btn btn-ghost" id="kocRoundReset" type="button" data-i18n="kocResetRounds" hidden></button>
       <button class="btn btn-ghost" id="kocCopy" type="button" data-i18n="kocCopy">Kopieer voor WhatsApp</button>
+      <button class="btn btn-ghost" type="button" id="kocPrint" data-i18n="printBtn"></button>
+      <button class="btn btn-ghost" type="button" id="kocPdf" data-i18n="pdfBtn"></button>
       <button class="btn btn-ghost" id="kocSave" type="button" data-i18n="saveBtn">💾 Speelschema opslaan</button>
       <button class="btn btn-ghost" id="kocLoad" type="button" data-i18n="loadBtn">📂 Opgeslagen schema laden</button>
       <button class="btn btn-ghost" id="kocPresent" type="button" data-i18n="presentBtn">Presentatiemodus</button>
@@ -1459,9 +1480,10 @@
     </div>
 
     <details class="toss-start-options" id="tossStartOptions" hidden>
-      <summary data-i18n="tossStartTitle">Extra instellingen voor Toss</summary>
+      <summary data-i18n="extraSettings">Extra instellingen</summary>
       <div class="toss-plan-fields" id="tossSessionSettings"></div>
-      <p data-i18n="tossStartHelp">Vink Start aan bij spelers die zeker in ronde 1 moeten spelen. Selecteer bij Duo twee spelers en leg het startkoppel vast. Deze spelers spelen automatisch in ronde 1.</p>
+      <label id="prefGroupLabel" hidden><span data-i18n="prefGroup"></span> <select id="prefGroup"></select></label>
+      <p data-i18n="tossStartHelp">Start garandeert een plek in ronde 1. Leg met Duo twee partners vast voor de eerste ronde. Daarna probeert de planner hun speel- en rustbeurten gelijk te houden. Liefst vrij geldt voor de laatste ronde.</p>
       <div class="toss-start-grid" id="tossStartGrid"></div>
       <button class="btn btn-ghost" id="tossAddPair" type="button" data-i18n="tossAddPair" disabled>Startkoppel vastleggen</button>
       <div class="toss-start-pairs" id="tossStartPairs"></div>
@@ -1485,11 +1507,14 @@
       <button class="btn btn-ghost" id="backToSettingsBtn" data-i18n="backToSettingsBtn">← Instellingen wijzigen</button>
       <button class="btn btn-ghost" id="editPlayersBtn" data-i18n="editPlayersBtn">✎ Spelers wijzigen</button>
       <button class="btn btn-ghost" id="startOverBtn" data-i18n="startOverBtn">↺ Opnieuw beginnen</button>
+      <button class="btn btn-primary" type="button" id="rerollBtn" data-i18n="rerollBtn">Opnieuw loten</button>
       <button class="btn btn-ghost" id="printBtn" data-i18n="printBtn">Schema afdrukken</button>
+      <button class="btn btn-ghost" type="button" id="pdfBtn" data-i18n="pdfBtn">PDF downloaden</button>
       <button class="btn btn-ghost" id="saveBtn" data-i18n="saveBtn">💾 Speelschema opslaan</button>
       <button class="btn btn-ghost" id="presentBtn" data-i18n="presentBtn">Presentatiemodus</button>
     </div>
 
+    <p id="rerollStatus" role="status"></p>
     <p class="score-unit" id="scheduleScoreUnit"></p>
     <div class="round-clock" data-round-clock hidden></div>
     <div class="playcount-wrap">
@@ -1572,7 +1597,7 @@
   </section>
 
   <footer class="app-footer">
-    <span id="appVersion">v2.7.1</span>
+    <span id="appVersion">v2.8.0</span>
     <details><summary data-i18n="whatsNew">Wat is nieuw?</summary>
       <ul>
         <li data-i18n="changeIllustrations">Nieuwe baanillustraties, marineblauw/lime en een puntenscore van 26–6.</li>
@@ -1691,6 +1716,8 @@
   </form>
 </dialog>
 
+<div id="printPages" hidden></div>
+<script src="./schedule-document.js"></script>
 <script src="./round-planner.js"></script>
 <script>
 (function(){
@@ -1737,10 +1764,13 @@
       gamesRule: "Binnen een game geldt de padeltelling (15, 30, 40). Voer per duo het aantal gewonnen games in, bijvoorbeeld 4–3.",
       tossStartTime: "Starttijd (optioneel)",
       tossRoundMinutes: "Rondeduur (min)",
-      tossCourtNumbers: "Baannummers",
+      tossCourtNumbers: "Baanaanduidingen", extraSettings:"Extra instellingen", prefGroup:"Groep", prefLevel:"Speelniveau",
+      prefNeutral:"Geen aanduiding",prefBeginner:"Beginner",prefStrong:"Sterk",
+      tossStartRest:"Liefst vrij",tossStartRestAria:"{name} liefst vrij in de laatste ronde",
+      pdfBtn:"PDF downloaden",rerollBtn:"Opnieuw loten",rerollDone:"Opnieuw geloot vanaf ronde {n}.",rerollNone:"Alle rondes zijn al gespeeld of bevatten een uitslag.", printRest:"Rust",
       tossStartTimeError: "Vul een geldige starttijd in of laat de starttijd leeg.",
       tossRoundMinutesError: "Kies een rondeduur van 1 tot en met 240 minuten.",
-      tossCourtNumbersError: "Gebruik voor elke baan een ander nummer van 1 tot en met 999.",
+      tossCourtNumbersError: "Geef elke baan een unieke naam of een uniek nummer (maximaal 40 tekens).",
       tossStartTitle: "Extra instellingen voor Toss",
       tossStartHelp: "Vink Start aan bij spelers die zeker in ronde 1 moeten spelen. Selecteer bij Duo twee spelers en leg het startkoppel vast. Deze spelers spelen automatisch in ronde 1.",
       tossStartPlay: "Start",
@@ -2093,12 +2123,15 @@
       gamesRule: "Count 15, 30 and 40 within a game. When entering scores, report games won, for example 4–3.",
       tossStartTime: "Start time (optional)",
       tossRoundMinutes: "Round duration (min)",
-      tossCourtNumbers: "Court numbers",
+      tossCourtNumbers: "Court names or numbers", extraSettings:"Extra settings", prefGroup:"Group", prefLevel:"Player level",
+      prefNeutral:"Unspecified",prefBeginner:"Beginner",prefStrong:"Strong",
+      tossStartRest:"Prefer rest",tossStartRestAria:"{name} prefers to rest in the final round",
+      pdfBtn:"Download PDF",rerollBtn:"Redraw schedule",rerollDone:"Redrawn from round {n}.",rerollNone:"All rounds have been played or have a score.", printRest:"Rest",
       tossStartTimeError: "Enter a valid start time or leave it empty.",
       tossRoundMinutesError: "Choose a round duration between 1 and 240 minutes.",
-      tossCourtNumbersError: "Use a different number from 1 to 999 for each court.",
+      tossCourtNumbersError: "Give each court a unique name or number (up to 40 characters).",
       tossStartTitle: "Extra settings for Toss",
-      tossStartHelp: "Tick Start for players who must play in round 1. Select two players under Pair and confirm the starting pair. These players automatically play in round 1.",
+      tossStartHelp: "Start guarantees a place in round 1. Confirm two players as a pair to start as partners. Later the planner tries to give them the same playing and resting rounds. Prefer rest applies to the final round.",
       tossStartPlay: "Start",
       tossStartPair: "Pair",
       tossStartPlayAria: "Must play in round 1: {name}",
@@ -2418,7 +2451,15 @@
     }
   };
 
-  function t(key){ return (STR[state.lang] && STR[state.lang][key] !== undefined) ? STR[state.lang][key] : key; }
+  function t(key){
+    var value = STR[state.lang]?.[key] ?? key;
+    if (state.format === 'koc' && state.tossPlan?.courtNumbers?.[0] &&
+        ['kocEntryMode','kocEntryPlayer','kocEntryAria','kocWaitingRule','kocRules','kocPairingCrossedHint'].includes(key)){
+      var first = String(state.tossPlan.courtNumbers[0]).trim();
+      return value.replace(/baan 1|court 1/i,function(original){return /^\d+$/.test(first) ? original.replace('1',first) : first;});
+    }
+    return value;
+  }
   function tf(key, vars){
     var s = t(key);
     Object.keys(vars || {}).forEach(function(k){ s = s.split('{' + k + '}').join(vars[k]); });
@@ -2596,6 +2637,7 @@
     var k = ensureKocRoster(), root = document.getElementById('kocResult');
     root.innerHTML = '';
     var round = currentKocRound();
+    ['kocPrint','kocPdf'].forEach(function(id){document.getElementById(id).disabled = !k.assignment || !!kocDuplicateIndices().length;});
     renderGuidedKoc(round);
     paintRoundClocks();
     if (round || !k.assignment || kocDuplicateIndices().length) return;
@@ -2612,12 +2654,13 @@
       var court = document.createElement('article');
       court.className = 'koc-court' + (b === k.courts ? ' crown' : '');
       var title = document.createElement('h3');
-      title.textContent = t('courtLabel') + ' ' + b + (b === k.courts ? ' 👑' : '');
+      title.textContent = courtName(b) + (b === k.courts ? ' 👑' : '');
       court.appendChild(title);
       var list = document.createElement('ul');
       var here = k.displayOrder.filter(function(i){ return k.assignment[i] === b; });
-      here.forEach(function(i){
+      here.forEach(function(i,index){
         var li = document.createElement('li');
+        if (index === 2 && here.length === 4 && k.roster.some(function(p){return p.level;})) li.className='next-team';
         li.textContent = kocPlayerName(i);
         list.appendChild(li);
       });
@@ -2631,6 +2674,27 @@
       courtGrid.appendChild(court);
     }
     appendKocWaitingCard(root, k, 'koc-court');
+  }
+
+  function levelSelect(name,value,update){
+    var select = document.createElement('select');
+    select.setAttribute('aria-label',t('prefLevel')+' · '+name);
+    ['prefNeutral','prefBeginner','prefStrong'].forEach(function(key,i){
+      var level = [0,-1,1][i]; select.add(new Option(t(key),level,false,level === value));
+    });
+    select.addEventListener('change',function(){ update(Number(select.value)); scheduleAutosave(); });
+    return select;
+  }
+
+  function renderKocExtras(k){
+    renderTossSessionSettings(true);
+    var root = document.getElementById('kocLevelGrid');
+    root.replaceChildren();
+    k.roster.slice(0,kocCapacity(k)).forEach(function(person,i){
+      var name = kocPlayerName(i), label = liveElement('label','koc-level',name);
+      label.appendChild(levelSelect(name,person.level,function(value){ person.level = value; k.assignment = null; renderKocResult(); }));
+      root.appendChild(label);
+    });
   }
 
   function renderKoc(){
@@ -2704,6 +2768,7 @@
     more.appendChild(moreLabel);
     more.appendChild(select);
     buttons.appendChild(more);
+    renderKocExtras(k);
     var roster = document.getElementById('kocRoster');
     roster.querySelectorAll('.koc-player').forEach(function(row){row.remove();});
     k.roster.slice(0, kocCapacity(k)).forEach(function(person, i){
@@ -2733,6 +2798,7 @@
       input.setAttribute('aria-label', tf('namePlaceholder', { n: i + 1 }));
       input.addEventListener('input', function(){
         person.name = input.value;
+        renderKocExtras(k);
         var hasDuplicates = renderKocCount();
         renderKocResult();
         document.getElementById('kocStatus').textContent =
@@ -2906,6 +2972,10 @@
     var status = document.getElementById('kocStatus');
     if (attendees.length < 4){ status.textContent = t('kocMin'); return; }
     if (kocIncompleteWaitingPair(k, attendees.length) || (k.guided && !kocGuidedReady(k,attendees.length))) return;
+    if (tossSessionError()){
+      document.getElementById('kocExtras').open = true;
+      status.textContent = t(tossSessionError()); return;
+    }
     if (kocDuplicateIndices().length){
       renderKocCount();
       status.textContent = t('kocDup');
@@ -2922,6 +2992,18 @@
     k.assignment = best;
     k.lastSignature = signature;
     k.displayOrder = shuffle(attendees);
+    if (!k.guided && k.roster.some(function(p){return p.level;})){
+      var order = [];
+      for (var c=1;c<=k.courts;c++){
+        var members = k.displayOrder.filter(function(i){return best[i] === c;});
+        if (members.length === 4){
+          members.sort(function(a,b){return (k.roster[a].level || 0)-(k.roster[b].level || 0);});
+          members = [members[0],members[3],members[1],members[2]];
+        }
+        order.push(...members);
+      }
+      k.displayOrder = order.concat(k.displayOrder.filter(function(i){return !best[i];}));
+    }
     if (k.guided) k.roundPlan = [PadelRounds.startKocRounds(best,k.courts,k.roster.length,fitAmericanoStrength,Math.random,kocPairingOptions(k))];
     prepareRoundClock(1,true);
     renderKocResult();
@@ -2942,13 +3024,13 @@
     for (var c = k.courts; c >= 1; c--){
       var names = (k.displayOrder || Object.keys(k.assignment).map(Number))
         .filter(function(i){return k.assignment[i] === c;}).map(kocPlayerName);
-      lines.push(t('courtLabel') + ' ' + c + (c === k.courts ? ' 👑' : '') + ': ' + (names.join(', ') || '—'));
+      lines.push(courtName(c) + (c === k.courts ? ' 👑' : '') + ': ' + (names.join(', ') || '—'));
     }
     var round = currentKocRound();
     if (round){
       lines = [lines[0],tf('kocRoundTitle',{n:round.number})];
       round.matches.slice().reverse().forEach(function(match){
-        lines.push(t('courtLabel') + ' ' + match.court + ': ' + match.teams.map(function(team){return team.map(kocPlayerName).join(' & ');}).join(' vs '));
+        lines.push(courtName(match.court) + ': ' + match.teams.map(function(team){return team.map(kocPlayerName).join(' & ');}).join(' vs '));
       });
     }
     var waiting = round ? round.waiting.map(kocPlayerName) : kocWaitingNames(k);
@@ -3023,21 +3105,55 @@
     });
     if (Array.from(guaranteed).some(function(name){ return players.indexOf(name) < 0; }) ||
         guaranteed.size > perRoundCourts[0]*4) throw new RangeError("Too many starting players");
+    var wishes = new Set(options.lastRest || []);
+    var finalRound = options.finalRound || roundOffset + rounds;
+    var partners = new Map();
+    (options.firstRoundPairs || []).forEach(function(pair){
+      var a = players.indexOf(pair[0]), b = players.indexOf(pair[1]);
+      if (a >= 0 && b >= 0){ partners.set(a,b); partners.set(b,a); }
+    });
+    var strength = players.map(function(name){ return Number(options.levels && Object.hasOwn(options.levels,name) && options.levels[name]) || 0; });
     var previousRest = new Set(seed && seed.previousRest || []);
     var out = [];
     for (var r = 0; r < rounds; r++){
       var activeCourts = perRoundCourts[r];
       var slots = activeCourts * 4;
       var indices = shuffle(Array.from({ length: n }, function(_, i){ return i; }));
-      indices.sort(function(a, b){
+      var untilLast = finalRound - (roundOffset + r + 1);
+      // At half capacity the opening draw determines which half sits out last.
+      var wishWeight = untilLast === 0 ? 1.01 : untilLast === 1 ? -1.01 :
+        n === slots*2 && untilLast > 0 ? (untilLast % 2 ? -.25 : .25) : 0;
+      function priority(index){ return playCount[index] + (wishes.has(players[index]) ? wishWeight : 0); }
+      function comparePriority(a,b){
         if (r === 0 && guaranteed.has(players[a]) !== guaranteed.has(players[b])){
           return guaranteed.has(players[a]) ? -1 : 1;
         }
         if (options.avoidConsecutiveRest && previousRest.has(players[a]) !== previousRest.has(players[b])){
           return previousRest.has(players[a]) ? -1 : 1;
         }
-        return playCount[a] - playCount[b];
-      });
+        return priority(a) - priority(b);
+      }
+      indices.sort(comparePriority);
+      // Only exchange equally eligible players across the cutoff. Keep pairs
+      // already on the same side intact, even when two split pairs can swap.
+      if (slots && slots < n && partners.size){
+        var left = indices.slice(0,slots), right = indices.slice(slots);
+        left.forEach(function(a,i){
+          var j = right.indexOf(partners.get(a));
+          if (j < 0) return;
+          var k = left.findIndex(function(other){
+            return other !== a && comparePriority(other,right[j]) === 0 && !left.includes(partners.get(other));
+          });
+          if (k >= 0){ var temp = left[k]; left[k] = right[j]; right[j] = temp; }
+          else {
+            k = right.findIndex(function(other){
+              return other !== right[j] && comparePriority(other,a) === 0 && !right.includes(partners.get(other));
+            });
+            if (k >= 0){ var temp = right[k]; right[k] = a; left[i] = temp; }
+          }
+        });
+        indices = left.concat(right);
+      }
       var playing = shuffle(indices.slice(0, slots));
       // Keep fixed duos in whole two-player blocks so no court boundary splits a pair.
       if (r === 0 && fixedPairs.length){
@@ -3067,7 +3183,8 @@
           var p1 = opt.team1[0], p2 = opt.team1[1], p3 = opt.team2[0], p4 = opt.team2[1];
           var partnerScore = partnerCount[p1][p2] + partnerCount[p3][p4];
           var opponentScore = opponentCount[p1][p3] + opponentCount[p1][p4] + opponentCount[p2][p3] + opponentCount[p2][p4];
-          var score = partnerScore * 100 + opponentScore;
+          var gap = Math.abs(strength[p1]+strength[p2]-strength[p3]-strength[p4]);
+          var score = partnerScore * 100 + opponentScore + gap * 55;
           if (score < bestScore){ bestScore = score; best = opt; }
         });
         var t1 = best.team1, t2 = best.team2;
@@ -3820,7 +3937,10 @@
     gridEl.innerHTML = '';
     var existing = state.levelNames[levelIdx];
     var preserve = Array.isArray(existing) && existing.length === count;
-    if (!preserve) state.levelNames[levelIdx] = new Array(count).fill('');
+    if (!preserve){
+      state.levelNames[levelIdx] = new Array(count).fill('');
+      if (state.groupChoices) state.groupChoices[levelIdx] = {};
+    }
     for (var i = 0; i < count; i++){
       var field = document.createElement('div');
       field.className = 'name-field';
@@ -3836,6 +3956,7 @@
       input.addEventListener('input', function(e){
         var i2 = parseInt(e.target.getAttribute('data-i'), 10);
         state.levelNames[levelIdx][i2] = e.target.value;
+        renderTossStartOptions();
         checkStep2Duplicates();
       });
       field.appendChild(idx);
@@ -3884,15 +4005,16 @@
 
 
   function tossSessionSettings(){
+    var courtCount = state.format === 'koc' ? state.koc.courts : state.courts;
     if (!state.tossPlan || typeof state.tossPlan !== 'object' || Array.isArray(state.tossPlan)) state.tossPlan = {};
     var plan = state.tossPlan;
     if (plan.startTime === undefined) plan.startTime = '';
     if (plan.roundMinutes === undefined) plan.roundMinutes = 20;
     if (!Array.isArray(plan.courtNumbers)) plan.courtNumbers = [];
-    for (var index = 0; index < state.courts; index++){
+    for (var index = 0; index < courtCount; index++){
       if (plan.courtNumbers[index] === undefined){
         var number = index+1;
-        while (plan.courtNumbers.indexOf(number) >= 0) number++;
+        while (plan.courtNumbers.some(function(label){return String(label).trim() === String(number);})) number++;
         plan.courtNumbers[index] = number;
       }
     }
@@ -3903,20 +4025,24 @@
     var plan = tossSessionSettings();
     if (typeof plan.startTime !== 'string' || (plan.startTime !== '' && !/^([01]\d|2[0-3]):[0-5]\d$/.test(plan.startTime))) return 'tossStartTimeError';
     if (!Number.isInteger(plan.roundMinutes) || plan.roundMinutes < 1 || plan.roundMinutes > 240) return 'tossRoundMinutesError';
-    var numbers = plan.courtNumbers.slice(0,state.courts);
-    if (numbers.some(function(number){return !Number.isInteger(number) || number < 1 || number > 999;}) ||
+    var count = state.format === 'koc' ? state.koc.courts : state.courts;
+    var numbers = plan.courtNumbers.slice(0,count).map(function(value){return String(value ?? '').trim().toLowerCase();});
+    if (numbers.some(function(label){return !label || label.length > 40;}) ||
         new Set(numbers).size !== numbers.length) return 'tossCourtNumbersError';
     return '';
   }
 
   function displayedCourtNumber(index){
-    if (state.format !== 'toss') return index;
     var number = tossSessionSettings().courtNumbers[index-1];
-    return Number.isInteger(number) && number >= 1 && number <= 999 ? number : index;
+    return String(number ?? '').trim() ? (typeof number === 'number' ? number : number.toString().trim()) : index;
+  }
+
+  function courtName(index){
+    var label = displayedCourtNumber(index);
+    return /^\d+$/.test(label) ? t('courtLabel')+' '+label : String(label);
   }
 
   function roundTimeText(round){
-    if (state.format !== 'toss') return '';
     var plan = tossSessionSettings();
     if (tossSessionError() || !plan.startTime) return '';
     var parts = plan.startTime.split(':').map(Number);
@@ -3929,9 +4055,9 @@
     return clock(start)+'\u2013'+clock(start+plan.roundMinutes);
   }
 
-  function renderTossSessionSettings(){
+  function renderTossSessionSettings(koc){
     var plan = tossSessionSettings();
-    var root = document.getElementById('tossSessionSettings');
+    var root = document.getElementById(koc ? 'kocSessionSettings' : 'tossSessionSettings');
     root.replaceChildren();
     function field(id,key,type,value,update,parent){
       var group = liveElement('div','field-group');
@@ -3945,12 +4071,20 @@
       (parent || root).appendChild(group);
       input.addEventListener('input',function(){
         update(input);
-        validateTossStart();
-        if (state.pools.length) renderSchedule();
+        if (koc){
+          var message = tossSessionError();
+          var error = document.getElementById('kocCourtError');
+          error.hidden = !message; error.textContent = message ? t(message) : '';
+          renderKocCount(); renderKocResult(); renderRoundRules();
+          document.getElementById('kocLowestHeading').textContent = t('kocEntryMode');
+          document.querySelectorAll('.koc-entry-marker').forEach(function(marker){marker.textContent=courtName(1);});
+        }
+        else { validateTossStart(); if (state.pools.length) renderSchedule(); }
         scheduleAutosave();
       });
       return input;
     }
+    if (!koc) {
     field('tossStartTime',t('tossStartTime'),'time',plan.startTime,function(input){plan.startTime=input.value;});
     var duration = field('tossRoundMinutes',t('tossRoundMinutes'),'number',plan.roundMinutes,function(input){
       plan.roundMinutes = input.value === '' ? null : Number(input.value);
@@ -3958,19 +4092,18 @@
     duration.min = '1';
     duration.max = '240';
     duration.step = '1';
+    }
     var courtGroup = liveElement('fieldset','toss-court-numbers');
     courtGroup.appendChild(liveElement('legend','',t('tossCourtNumbers')));
     var courts = liveElement('div','toss-court-fields');
     courtGroup.appendChild(courts);
     root.appendChild(courtGroup);
-    for (var index = 0; index < state.courts; index++){
+    for (var index = 0; index < (koc ? state.koc.courts : state.courts); index++){
       (function(index){
-        var input = field('tossCourtNumber'+index,t('courtLabel')+' '+(index+1),'number',plan.courtNumbers[index],function(input){
-          plan.courtNumbers[index] = input.value === '' ? null : Number(input.value);
+        var input = field((koc ? 'kocCourtNumber' : 'tossCourtNumber')+index,t('courtLabel')+' '+(index+1),'text',plan.courtNumbers[index],function(input){
+          plan.courtNumbers[index] = input.value;
         },courts);
-        input.min = '1';
-        input.max = '999';
-        input.step = '1';
+        input.maxLength = 40;
       })(index);
     }
   }
@@ -3979,9 +4112,22 @@
     return String(value || '').trim() || tf('namePlaceholder',{n:index+1});
   }
 
-  function tossStartChoices(){
-    var saved = state.tossStart || {};
-    var size = (state.names || []).length;
+  function selectedPreferenceGroup(){
+    if (state.format !== 'splitToss') return -1;
+    var current = Number(document.getElementById('prefGroup').value);
+    return activeLevelIndexes().includes(current) ? current : activeLevelIndexes()[0];
+  }
+  function preferenceRoster(group){
+    return group >= 0 ? state.levelNames[group] || [] : state.names || [];
+  }
+  function preferenceName(value,index,group){
+    return String(value || '').trim() || tf(group >= 0 ? LEVELS[group].placeholderKey : 'namePlaceholder',{n:index+1});
+  }
+  function tossStartChoices(group){
+    if (group === undefined) group = selectedPreferenceGroup();
+    if (!Array.isArray(state.groupChoices)) state.groupChoices = [];
+    var saved = (group >= 0 ? state.groupChoices[group] : state.tossStart) || {};
+    var size = preferenceRoster(group).length;
     var valid = function(index){ return Number.isInteger(index) && index >= 0 && index < size; };
     var used = new Set();
     var pairs = (Array.isArray(saved.pairs) ? saved.pairs : []).filter(function(pair){
@@ -3991,18 +4137,42 @@
       return true;
     });
     var players = Array.from(new Set((Array.isArray(saved.players) ? saved.players : []).filter(valid)));
-    state.tossStart = {players:players,pairs:pairs};
-    return state.tossStart;
+    var choices = {players:players,pairs:pairs,
+      lastRest:(Array.isArray(saved.lastRest) ? saved.lastRest : []).filter(valid),
+      levels:Array.from({length:size},function(_,i){ return [-1,1].includes(saved.levels?.[i]) ? saved.levels[i] : 0; })};
+    if (group >= 0) state.groupChoices[group] = choices;
+    else state.tossStart = choices;
+    return choices;
   }
 
-  function tossScheduleOptions(names){
-    if (state.format !== 'toss') return {};
-    var choices = tossStartChoices();
+  function tossScheduleOptions(names,group){
+    var choices = tossStartChoices(group);
     return {
       avoidConsecutiveRest:true,
+      finalRound:state.totalRoundsPlanned || state.rounds,
+      lastRest:choices.lastRest.map(function(i){return names[i];}),
+      levels:Object.fromEntries(names.map(function(name,i){return [name,choices.levels[i]];})),
       firstRoundPlayers:choices.players.map(function(index){return names[index];}),
       firstRoundPairs:choices.pairs.map(function(pair){return pair.map(function(index){return names[index];});})
     };
+  }
+
+  function poolOptions(roster,group){
+    var names = preferenceRoster(group).map(function(name,i){return preferenceName(name,i,group);});
+    var options = tossScheduleOptions(names,group);
+    options.firstRoundPlayers = options.firstRoundPlayers.filter(function(name){return roster.includes(name);});
+    options.firstRoundPairs = options.firstRoundPairs.filter(function(pair){return pair.every(function(name){return roster.includes(name);});});
+    return options;
+  }
+
+  function remapPreferences(start,roster,renames){
+    var nameIndex = function(name){return roster.indexOf(Object.hasOwn(renames,name) ? renames[name] : name);};
+    var levels = new Array(roster.length).fill(0);
+    Object.entries(start.levels).forEach(function(entry){
+      var i = nameIndex(entry[0]); if (i >= 0) levels[i] = entry[1];
+    });
+    return {players:start.firstRoundPlayers.map(nameIndex),pairs:start.firstRoundPairs.map(function(pair){return pair.map(nameIndex);}),
+      lastRest:start.lastRest.map(nameIndex),levels:levels};
   }
 
   function validateTossStart(){
@@ -4011,15 +4181,23 @@
     error.hidden = true;
     warning.hidden = true;
     document.getElementById('generateBtn').disabled = false;
-    if (state.format !== 'toss') return true;
-    var choices = tossStartChoices();
-    var selected = new Set(choices.players.concat(choices.pairs.flat()));
-    var n = (state.names || []).length;
-    var slots = usableCourts(n,state.courts)*4;
+    if (!['toss','americano','splitToss'].includes(state.format)) return true;
+    var groups = state.format === 'splitToss' ? activeLevelIndexes() : [-1];
+    var allocations = state.format === 'splitToss' ? allocateCourtsPerRound(state.courts,groups.map(function(i){return state.levelCounts[i];}),state.rounds) : null;
+    var selectedGroup = selectedPreferenceGroup();
+    var checks = groups.map(function(group,k){
+      var choices = tossStartChoices(group);
+      var n = preferenceRoster(group).length, slots = allocations ? allocations[k][0]*4 : usableCourts(n,state.courts)*4;
+      return {group:group,n:n,slots:slots,count:new Set(choices.players.concat(choices.pairs.flat())).size};
+    });
+    var active = checks.find(function(c){return c.group === selectedGroup;}) || checks[0];
+    var failed = checks.find(function(c){return c.count > c.slots;});
+    if (!active) return false;
+    var n = active.n, slots = active.slots;
     var settingsError = tossSessionError();
-    var valid = selected.size <= slots && !settingsError;
-    document.getElementById('tossStartStatus').textContent = tf('tossStartCount',{n:selected.size,slots:slots});
-    error.textContent = settingsError ? t(settingsError) : valid ? '' : tf('tossStartTooMany',{n:selected.size,slots:slots});
+    var valid = !failed && !settingsError;
+    document.getElementById('tossStartStatus').textContent = tf('tossStartCount',{n:active.count,slots:slots});
+    error.textContent = settingsError ? t(settingsError) : valid ? '' : (failed.group >= 0 ? t(LEVELS[failed.group].labelKey)+' · ' : '')+tf('tossStartTooMany',{n:failed.count,slots:failed.slots});
     error.hidden = valid;
     warning.textContent = tf('tossWaitImpossible',{n:n,slots:slots});
     warning.hidden = n <= slots*2;
@@ -4029,12 +4207,18 @@
 
   function renderTossStartOptions(){
     var details = document.getElementById('tossStartOptions');
-    details.hidden = state.format !== 'toss';
-    if (state.format !== 'toss'){
+    details.hidden = !['toss','americano','splitToss'].includes(state.format);
+    if (details.hidden){
       validateTossStart();
       return;
     }
     renderTossSessionSettings();
+    var group = selectedPreferenceGroup();
+    var select = document.getElementById('prefGroup');
+    document.getElementById('prefGroupLabel').hidden = group < 0;
+    if (group >= 0){
+      select.replaceChildren(...activeLevelIndexes().map(function(i){ return new Option(t(LEVELS[i].labelKey),i,false,i === group); }));
+    }
     var choices = tossStartChoices();
     var paired = new Set(choices.pairs.flat());
     var grid = document.getElementById('tossStartGrid');
@@ -4043,22 +4227,28 @@
     grid.replaceChildren();
     pairList.replaceChildren();
     add.disabled = true;
-    (state.names || []).forEach(function(value,index){
-      var name = tossSetupName(value,index);
+    preferenceRoster(group).forEach(function(value,index){
+      var name = preferenceName(value,index,group);
       var row = liveElement('div','toss-start-player');
       row.appendChild(liveElement('span','',name));
-      ['Play','Pair'].forEach(function(kind){
+      ['Play','Pair','Rest'].forEach(function(kind){
         var label = liveElement('label','');
         var input = document.createElement('input');
         input.type = 'checkbox';
         input.dataset.player = index;
         input.dataset.choice = kind;
         input.setAttribute('aria-label',tf('tossStart'+kind+'Aria',{name:name}));
-        input.disabled = paired.has(index);
+        input.disabled = kind !== 'Rest' && paired.has(index);
+        if (kind === 'Rest') input.checked = choices.lastRest.includes(index);
         if (kind === 'Play') input.checked = paired.has(index) || choices.players.indexOf(index) >= 0;
         label.append(input,liveElement('span','',t('tossStart'+kind)));
         input.addEventListener('change',function(){
-          if (kind === 'Play'){
+          if (kind === 'Rest'){
+            var current = tossStartChoices();
+            current.lastRest = current.lastRest.filter(function(i){return i !== index;});
+            if (input.checked) current.lastRest.push(index);
+            scheduleAutosave();
+          } else if (kind === 'Play'){
             var current = tossStartChoices();
             current.players = current.players.filter(function(i){return i !== index;});
             if (input.checked) current.players.push(index);
@@ -4073,10 +4263,11 @@
         });
         row.appendChild(label);
       });
+      row.appendChild(levelSelect(name,choices.levels[index],function(value){tossStartChoices().levels[index]=value;}));
       grid.appendChild(row);
     });
     choices.pairs.forEach(function(pair){
-      var names = pair.map(function(index){return tossSetupName(state.names[index],index);}).join(' & ');
+      var names = pair.map(function(index){return preferenceName(preferenceRoster(group)[index],index,group);}).join(' & ');
       var remove = liveElement('button','btn btn-ghost',names+' ×');
       remove.type = 'button';
       remove.setAttribute('aria-label',tf('tossRemovePair',{names:names}));
@@ -4092,6 +4283,7 @@
     validateTossStart();
   }
 
+  document.getElementById('prefGroup').addEventListener('change',renderTossStartOptions);
   document.getElementById('tossAddPair').addEventListener('click',function(){
     var selected = Array.from(document.querySelectorAll('#tossStartGrid [data-choice="Pair"]:checked'))
       .map(function(input){return Number(input.dataset.player);});
@@ -4150,6 +4342,7 @@
 
       regroupField.classList.add('collapsed');
       splitRoundField.classList.add('collapsed');
+      renderTossStartOptions();
       return;
     }
 
@@ -4314,7 +4507,7 @@
         levelIdx: r.levelIdx,
         pool: pool,
         courts: alloc[k],
-        rounds: generateGlobalSchedule(pool, totalRounds, 0, alloc[k])
+        rounds: generateGlobalSchedule(pool, totalRounds, 0, alloc[k],null,tossScheduleOptions(r.names,r.levelIdx))
       };
     });
 
@@ -4395,7 +4588,7 @@
 
     var label = document.createElement('div');
     label.className = 'court-label';
-    label.textContent = t('courtLabel') + ' ' + displayedCourtNumber(court.courtIndex);
+    label.textContent = courtName(court.courtIndex);
     card.appendChild(label);
 
     var body = document.createElement('div');
@@ -4473,6 +4666,7 @@
     warning.hidden = state.format !== 'toss' || rosterSize <= slots*2;
     warning.textContent = tf('tossWaitImpossible',{n:rosterSize,slots:slots});
     var col = document.getElementById('roundsCol');
+    document.getElementById('rerollStatus').textContent = '';
     col.innerHTML = '';
 
     var maxRound = liveMaxRound();
@@ -4540,7 +4734,7 @@
           var resting = document.createElement('div');
           resting.className = 'resting-line';
           var prefix = pool.label ? poolDisplayLabel(pool) + t('restingPoolSuffix') : t('restingPrefix');
-          resting.innerHTML = prefix + '<b>' + rd.resting.join(', ') + '</b>';
+          resting.append(prefix,liveElement('b','',rd.resting.join(', ')));
           block.appendChild(resting);
         }
       });
@@ -4571,6 +4765,53 @@
     document.getElementById('testScoreTools').hidden = !rehearsalMode || !anyResults;
     document.getElementById('testScoreStatus').textContent = '';
     updateRoundControls(document.getElementById('scheduleRoundTools'), liveCurrentRound());
+  }
+
+  function rerollSchedule(){
+    // Freeze the entire session through its latest entered (even partial)
+    // score, including other pools on the same courts at that time.
+    var frozen = Math.max(0,liveCurrentRound()-1,state.splitDone ? state.splitRoundStored : 0);
+    state.pools.forEach(function(pool){
+      frozen = Math.max(frozen,pool.frozenThrough || 0);
+      pool.rounds.forEach(function(rd){
+        if (rd.courts.some(function(c){
+          var score = state.scores[scoreKey(pool.id,c.courtIndex,rd.round)];
+          return score && (typeof score.t1 === 'number' || typeof score.t2 === 'number');
+        })) frozen = Math.max(frozen,rd.round);
+      });
+    });
+    var changed = false;
+    state.pools.forEach(function(pool){
+      var offset = pool.rounds.findIndex(function(rd){return rd.round > frozen;});
+      if (offset < 0) return;
+      var history = pool.id === 'top' || pool.id === 'bottom' ? state.pools[0].rounds.slice() : [];
+      history.push(...pool.rounds.slice(0,offset));
+      while (offset < pool.rounds.length){
+        // Derive the roster from the actual fixture, including historical edits.
+        var rosterOf = function(rd){return rd.courts.flatMap(function(c){return c.team1.concat(c.team2);}).concat(rd.resting).sort();};
+        var remaining = pool.rounds.slice(offset), roster = rosterOf(remaining[0]);
+        var signature = JSON.stringify(roster);
+        var end = remaining.findIndex(function(rd){return JSON.stringify(rosterOf(rd)) !== signature;});
+        var segment = end < 0 ? remaining : remaining.slice(0,end);
+        var opts = poolOptions(roster,levelIndexById(pool.id));
+        var rounds = generateGlobalSchedule(roster,segment.length,segment[0].round-1,segment.map(function(rd){return rd.courts.length;}),
+          computeHistorySeed(history,roster),opts);
+        rounds.forEach(function(rd,i){
+          rd.courts.forEach(function(c,j){c.courtIndex = segment[i].courts[j].courtIndex;});
+          pool.rounds[offset+i] = rd;
+        });
+        history.push(...rounds);
+        offset += segment.length;
+        changed = true;
+      }
+    });
+    if (changed){
+      renderSchedule(); renderLeaderboard();
+      if (playcountVisible) renderPlayCounts();
+      scheduleAutosave();
+    }
+    document.getElementById('rerollStatus').textContent = changed ?
+      tf('rerollDone',{n:frozen+1}) : t('rerollNone');
   }
 
   function activeRosterForPool(poolId){
@@ -5343,8 +5584,8 @@
     var topSeed = computeHistorySeed(main.rounds, topPool);
     var bottomSeed = computeHistorySeed(main.rounds, bottomPool);
 
-    var topRounds = generateGlobalSchedule(topPool, remainingRounds, state.splitRoundStored, topCourtsCount, topSeed);
-    var bottomRounds = generateGlobalSchedule(bottomPool, remainingRounds, state.splitRoundStored, bottomCourtsCount, bottomSeed);
+    var topRounds = generateGlobalSchedule(topPool, remainingRounds, state.splitRoundStored, topCourtsCount, topSeed,poolOptions(topPool,-1));
+    var bottomRounds = generateGlobalSchedule(bottomPool, remainingRounds, state.splitRoundStored, bottomCourtsCount, bottomSeed,poolOptions(bottomPool,-1));
     // Top group's court count can vary per round, so offset per round.
     bottomRounds.forEach(function(rd, i){
       var offset = topCourtsCount[i] <= 0 ? 0 : usableCourts(topPool.length, topCourtsCount[i]);
@@ -5594,7 +5835,9 @@
       target[i] = name;
     });
     checkStep2Duplicates();
-    if (gridEl === namesGrid){ state.tossStart = {players:[],pairs:[]}; renderTossStartOptions(); }
+    if (gridEl === namesGrid) state.tossStart = {};
+    else if (state.groupChoices) state.groupChoices[levelNamesGrids.indexOf(gridEl)] = {};
+    renderTossStartOptions();
     scheduleAutosave();
     return null;
   }
@@ -5607,7 +5850,7 @@
       var newName = names[i] || '';
       // An incoming flag belongs to a person, not to a numbered slot.
       // Replacing that person must not silently transfer the flag.
-      if ((person.name || '').trim() !== newName) person.incoming = false;
+      if ((person.name || '').trim() !== newName){person.incoming = false; person.level = 0;}
       person.name = newName;
       person.active = i < names.length;
     });
@@ -5777,7 +6020,8 @@
     var oldCount = state.playerCount;
     var oldInputCount = playerCountInput.value;
     var oldNames = state.names.slice();
-    var oldTossStart = JSON.parse(JSON.stringify(tossStartChoices()));
+    var oldTossStart = structuredClone(state.tossStart || {});
+    var oldGroups = structuredClone(state.groupChoices || []);
     var oldLevelCounts = state.levelCounts.slice();
     var oldLevelInputs = levelCountInputs.map(function(inp){return inp.value;});
     var oldLevelNames = state.levelNames.map(function(group){return group.slice();});
@@ -5786,6 +6030,7 @@
       playerCountInput.value = oldInputCount;
       state.names = oldNames;
       state.tossStart = oldTossStart;
+      state.groupChoices = oldGroups;
       state.levelCounts = oldLevelCounts;
       levelCountInputs.forEach(function(inp, i){ inp.value = oldLevelInputs[i]; });
       state.levelNames = oldLevelNames;
@@ -5968,7 +6213,7 @@
 
   function applyRenamesGlobally(renameMap){
     if (!Object.keys(renameMap).length) return;
-    if (state.format === 'toss') state.names = state.names.map(function(name,index){ return renameMap[tossSetupName(name,index)] || name; });
+    if (state.format !== 'splitToss') state.names = state.names.map(function(name,index){ return renameMap[tossSetupName(name,index)] || name; });
     state.pools.forEach(function(pool){
       pool.players = pool.players.map(function(n){ return renameMap[n] || n; });
       pool.rounds.forEach(function(rd){
@@ -6044,13 +6289,8 @@
     var courtsForRegen = Array.isArray(pool.courts)
       ? pool.courts.slice(cutRound - pool.startRound)
       : pool.courts;
-    var startOptions = {avoidConsecutiveRest:state.format === 'toss'};
-    if (cutRound === 1 && state.format === 'toss'){
-      startOptions = tossScheduleOptions(state.names.map(tossSetupName));
-      startOptions.firstRoundPlayers = startOptions.firstRoundPlayers.filter(function(name){ return newRosterForPool.indexOf(name) >= 0; });
-      startOptions.firstRoundPairs = startOptions.firstRoundPairs.filter(function(pair){ return pair.every(function(name){ return newRosterForPool.indexOf(name) >= 0; }); });
-    }
-    var forcedCount = new Set((startOptions.firstRoundPlayers || []).concat((startOptions.firstRoundPairs || []).flat())).size;
+    var startOptions = poolOptions(newRosterForPool,levelIndexById(pool.id));
+    var forcedCount = cutRound === 1 ? new Set(startOptions.firstRoundPlayers.concat(startOptions.firstRoundPairs.flat())).size : 0;
     var startingCourts = Array.isArray(courtsForRegen) ? courtsForRegen[0] : courtsForRegen;
     var startingSlots = usableCourts(newRosterForPool.length,startingCourts)*4;
     if (forcedCount > startingSlots){
@@ -6076,6 +6316,16 @@
     }
 
     var newRounds = generated.slice(0, finalCount);
+    var actualEnd = cutRound + finalCount - 1;
+    if (startOptions.lastRest.length && actualEnd !== startOptions.finalRound && !(state.regroupEnabled && !state.splitDone && pool.id === 'main')){
+      // Keep the extension that earned equal playing time. Only redraw its final
+      // round with the now-known end date and the actual preceding waiting list.
+      var beforeLast = frozenRounds.concat(newRounds.slice(0,-1));
+      var last = newRounds[finalCount-1];
+      var finalOptions = Object.assign({},startOptions,{finalRound:actualEnd});
+      newRounds[finalCount-1] = generateGlobalSchedule(newRosterForPool,1,actualEnd-1,last.courts.length,computeHistorySeed(beforeLast,newRosterForPool),finalOptions)[0];
+    }
+    pool.frozenThrough = Math.max(pool.frozenThrough || 0,cutRound-1);
     pool.rounds = frozenRounds.concat(newRounds);
     pool.endRound = (cutRound - 1) + finalCount;
     state.totalRoundsPlanned = Math.max(state.totalRoundsPlanned, pool.endRound);
@@ -6097,7 +6347,7 @@
     rows.forEach(function(r){ if (r.originalName) seenOriginals[r.originalName] = true; });
     var removedNames = oldRoster.filter(function(n){ return !seenOriginals[n]; });
 
-    if (state.format === 'toss' && !editRoundsPlayedOverride.main){
+    if (!state.splitDone && !editRoundsPlayedOverride.main){
       var start = tossScheduleOptions(state.names.map(tossSetupName));
       var retained = function(name){return resolved.newRoster.indexOf(resolved.renameMap[name] || name) >= 0;};
       var chosen = new Set(start.firstRoundPlayers.filter(retained));
@@ -6119,13 +6369,9 @@
       if (!ok) return false;
     }
 
-    if (state.format === 'toss'){
+    {
       var start = tossScheduleOptions(state.names.map(tossSetupName));
-      var newIndex = function(name){return resolved.newRoster.indexOf(resolved.renameMap[name] || name);};
-      state.tossStart = {
-        players:start.firstRoundPlayers.map(newIndex),
-        pairs:start.firstRoundPairs.map(function(pair){return pair.map(newIndex);})
-      };
+      state.tossStart = remapPreferences(start,resolved.newRoster,resolved.renameMap);
       state.names = resolved.newRoster.slice();
       state.playerCount = state.names.length;
       playerCountInput.value = state.playerCount;
@@ -6183,13 +6429,21 @@
       return false;
     }
 
+    resolvedByGroup.forEach(function(gr){
+      var names = preferenceRoster(gr.levelIdx).map(function(name,i){return preferenceName(name,i,gr.levelIdx);});
+      var choices = tossScheduleOptions(names,gr.levelIdx);
+      gr.choices = remapPreferences(choices,gr.newRoster,allRenameMap);
+    });
     applyRenamesGlobally(allRenameMap);
 
     for (var gi2 = 0; gi2 < resolvedByGroup.length; gi2++){
       var gr = resolvedByGroup[gi2];
       var pool = state.pools.filter(function(p){ return p.id === gr.poolId; })[0];
       if (!pool) continue;
-      var ok = regeneratePoolIfNeeded(pool, gr.oldRoster, gr.removedNames, gr.addedNames);
+      state.groupChoices[gr.levelIdx] = gr.choices;
+      state.levelNames[gr.levelIdx] = gr.newRoster.slice();
+      state.levelCounts[gr.levelIdx] = gr.newRoster.length;
+      var ok = regeneratePoolIfNeeded(pool, gr.oldRoster.map(function(n){return allRenameMap[n] || n;}), gr.removedNames, gr.addedNames);
       if (!ok) return false;
       state.activeRosterLevels[gr.levelIdx] = gr.newRoster;
     }
@@ -6250,6 +6504,14 @@
     };
   }
 
+  function downloadFile(blob,name){
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function(){URL.revokeObjectURL(url);},1000);
+  }
+
   function saveSchedule(){
     var data = buildSaveData();
     var text = JSON.stringify(data, null, 2);
@@ -6259,13 +6521,7 @@
                '-' + pad(stamp.getHours()) + pad(stamp.getMinutes()) + '.json';
     try {
       var blob = new Blob([text], { type: 'application/json' });
-      var url = URL.createObjectURL(blob);
-      var a = document.createElement('a');
-      a.href = url; a.download = name;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      setTimeout(function(){ URL.revokeObjectURL(url); }, 0);
+      downloadFile(blob,name);
       return true;
     } catch (e){
       return false;
@@ -6487,7 +6743,74 @@
     goToStep(2);
   });
 
-  document.getElementById('printBtn').addEventListener('click', function(){ window.print(); });
+  document.getElementById('rerollBtn').addEventListener('click',rerollSchedule);
+  function schedulePages(){
+    var rounds = [];
+    function pairLine(a,b,score){
+      var result = score && score.some(function(v){return typeof v === 'number';}) ?
+        '   ('+score.map(function(v){return v ?? '–';}).join('–')+')' : '';
+      return a.join(' & ')+'   '+t('vsLabel')+'   '+b.join(' & ')+result;
+    }
+    function addRound(n,rows){
+      var time = state.format === 'koc' ? '' : roundTimeText(n);
+      rounds.push({heading:t('roundLabel')+' '+n+(time ? '   '+time : ''),rows:rows});
+    }
+    if (state.format === 'koc'){
+      var k = ensureKocRoster();
+      if (!k.assignment) return [];
+      if (currentKocRound()){
+        k.roundPlan.forEach(function(rd){
+          var rows = rd.matches.slice().reverse().map(function(m){
+            return {label:courtName(m.court),value:pairLine(m.teams[0].map(kocPlayerName),m.teams[1].map(kocPlayerName),m.score)};
+          });
+          if (rd.waiting.length) rows.push({label:t('printRest'),value:rd.waiting.map(kocPlayerName).join(', ')});
+          addRound(rd.number,rows);
+        });
+      }else{
+        var rows=[],order=k.displayOrder || Object.keys(k.assignment).map(Number);
+        for (var c=k.courts;c>=1;c--){
+          var names=order.filter(function(i){return k.assignment[i]===c;}).map(kocPlayerName);
+          rows.push({label:courtName(c),value:names.length===4 && k.roster.some(function(p){return p.level;}) ? pairLine(names.slice(0,2),names.slice(2)) : names.join(', ')});
+        }
+        var waiting=kocWaitingNames(k);
+        if (waiting.length) rows.push({label:t('printRest'),value:waiting.join(', ')});
+        addRound(1,rows);
+      }
+    }else{
+      for (var n=1;n<=liveMaxRound();n++){
+        var rows=[];
+        liveMatchesForRound(n).forEach(function(group){
+          var pool=group.pool, rd=group.round, prefix=pool.label ? poolDisplayLabel(pool)+' · ' : '';
+          rd.courts.forEach(function(c){
+            var sc=state.scores[scoreKey(pool.id,c.courtIndex,n)];
+            rows.push({label:prefix+courtName(c.courtIndex),value:pairLine(c.team1,c.team2,sc && [sc.t1,sc.t2])});
+          });
+          if(rd.resting.length)rows.push({label:prefix+t('printRest'),value:rd.resting.join(', ')});
+        });
+        if(rows.length)addRound(n,rows);
+      }
+    }
+    var mode={toss:'formatToss',splitToss:'formatSplitToss',americano:'formatAmericano',koc:'formatKoc'};
+    return rounds.length ? ScheduleDocument.layout(t(mode[state.format]),rounds) : [];
+  }
+  function preparePrint(){
+    if (state.step !== 3 && !(state.format === 'koc' && state.step === 4)) return;
+    var pages=schedulePages();
+    if (!pages.length) return;
+    ScheduleDocument.printPages(document.getElementById('printPages'),pages);
+    document.body.classList.add('print-schedule');
+  }
+  window.addEventListener('beforeprint',preparePrint);
+  window.addEventListener('afterprint',function(){document.body.classList.remove('print-schedule');});
+  ['printBtn','kocPrint'].forEach(function(id){
+    document.getElementById(id).addEventListener('click',function(){preparePrint();window.print();});
+  });
+  ['pdfBtn','kocPdf'].forEach(function(id){
+    document.getElementById(id).addEventListener('click',function(){
+      var pages=schedulePages();
+      if (pages.length) downloadFile(ScheduleDocument.pdf(pages),'Koriander-'+state.format+'-'+new Date().toISOString().slice(0,10)+'.pdf');
+    });
+  });
 
   function backToModePicker(){
     if (state.pools.length || (state.koc && state.koc.assignment)){
@@ -6779,7 +7102,7 @@
   }
   function liveMatch(pool,court,round,editable){
     var card = liveElement('article','live-match');
-    var head = liveElement('div','live-match-head',t('courtLabel')+' '+displayedCourtNumber(court.courtIndex));
+    var head = liveElement('div','live-match-head',courtName(court.courtIndex));
     if (pool.label) head.appendChild(liveElement('small','',poolDisplayLabel(pool)));
     card.appendChild(head);
     var result = pool.resultsEnabled ? state.scores[scoreKey(pool.id,court.courtIndex,round)] : null;
@@ -7025,12 +7348,15 @@
         for (var court=schedule.courts;court>=1;court--){
           var card=liveElement('article','live-koc-card'+
             (court===schedule.courts?' crown':''));
-          card.appendChild(liveElement('h3','',t('courtLabel')+' '+court+
+          card.appendChild(liveElement('h3','',courtName(court)+
             (court===schedule.courts?' 👑':'')));
           var ul=liveElement('ul','');
           var players=(schedule.displayOrder||Object.keys(schedule.assignment).map(Number))
             .filter(function(i){return schedule.assignment[i]===court;});
-          players.forEach(function(i){ul.appendChild(liveElement('li','',kocPlayerName(i)));});
+          players.forEach(function(i,index){
+            var split = index === 2 && players.length === 4 && schedule.roster.some(function(p){return p.level;});
+            ul.appendChild(liveElement('li',split ? 'next-team' : '',kocPlayerName(i)));
+          });
           for(var x=players.length;x<4;x++) ul.appendChild(liveElement('li','empty','—'));
           card.appendChild(ul);
           courtGrid.appendChild(card);
@@ -7465,7 +7791,7 @@
     var hintedPlayers = crossed && k.incomingEnabled ? Object.keys(k.assignment).map(Number).filter(function(player){
       return k.assignment[player] === 1 && kocLowestCourtSlot(k,player) && k.roster[player].incoming === true;
     }) : [];
-    return {crossed:crossed, hintedPlayers:hintedPlayers};
+    return {crossed:crossed, hintedPlayers:hintedPlayers,levels:k.roster.map(function(p){return p.level || 0;})};
   }
 
   function kocGuidedReady(k, attendees){
@@ -7485,7 +7811,7 @@
     round.matches.slice().reverse().forEach(function(match){
       var cardClass = live ? 'live-koc-card' : 'koc-court';
       var card = liveElement('article',cardClass + (match.court === round.matches.length ? ' crown' : ''));
-      card.appendChild(liveElement('h3','',t('courtLabel') + ' ' + match.court +
+      card.appendChild(liveElement('h3','',courtName(match.court) +
         (match.court === round.matches.length ? ' 👑' : '')));
       var teams = liveElement('div','koc-round-teams');
       match.teams.forEach(function(team,side){
@@ -7544,7 +7870,7 @@
     state.koc.roundPlan.slice(0,-1).reverse().forEach(function(previous){
       var row = liveElement('p','',tf('kocRoundTitle',{n:previous.number}) + ' · ');
       row.append(previous.matches.map(function(match){
-        return t('courtLabel') + ' ' + match.court + ' ' + match.score.join('–');
+        return courtName(match.court) + ' ' + match.score.join('–');
       }).join(' · '));
       history.appendChild(row);
     });

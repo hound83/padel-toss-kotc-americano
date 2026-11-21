@@ -117,8 +117,8 @@ test('older Toss sessions keep default court numbers and hide times',()=>{
   assert.equal(settings.settings().roundMinutes,20);
   state.format='americano';
   state.tossPlan={startTime:'11:00',roundMinutes:20,courtNumbers:[2,3]};
-  assert.equal(settings.time(1),'');
-  assert.equal(settings.court(1),1);
+  assert.equal(settings.time(1),'11:00\u201311:20');
+  assert.equal(settings.court(1),2);
 });
 test('Toss validates time, duration and duplicate court numbers',()=>{
   const state={format:'toss',courts:2,tossPlan:{startTime:'24:00',roundMinutes:20,courtNumbers:[2,3]}};
@@ -131,4 +131,28 @@ test('Toss validates time, duration and duplicate court numbers',()=>{
   state.tossPlan.courtNumbers=[3,3];
   assert.equal(settings.error(),'tossCourtNumbersError');
   assert.equal(settings.time(1),'');
+});
+
+test('final rest is a preference, courts stay full and waiting twice takes priority',()=>{
+  const names=players(12),duo=[names[0],names[1]];
+  for(let seed=1;seed<=60;seed++){
+    const rounds=scheduler(seed)(names,7,0,2,null,{avoidConsecutiveRest:true,lastRest:names.slice(6),firstRoundPairs:[duo]});
+    const counts=check(rounds,names,8);
+    assert.ok(rounds.at(-1).resting.every(n=>names.slice(6).includes(n)));
+    assert.ok(Math.max(...counts)-Math.min(...counts)<=2);
+  }
+  const seed={previousRest:[names[0],names[1],names[2],names[3]]};
+  const [last]=scheduler(4)(names,1,6,2,seed,{avoidConsecutiveRest:true,lastRest:names.slice(0,4)});
+  assert.ok(seed.previousRest.every(n=>playing(last).includes(n)));
+});
+test('paired players share attendance where feasible and optional levels balance equal-history doubles',()=>{
+  const names=players(12), duo=names.slice(0,2);
+  for(let seed=1;seed<=50;seed++){
+    const rounds=scheduler(seed)(names,7,0,2,null,{avoidConsecutiveRest:true,firstRoundPairs:[duo]});
+    check(rounds,names,8);
+    assert.ok(rounds.every(r=>r.resting.includes(duo[0])===r.resting.includes(duo[1])));
+    const four=names.slice(0,4), levels=Object.fromEntries(four.map((name,i)=>[name,i<2?-1:1]));
+    const [opening]=scheduler(seed)(four,1,0,1,null,{levels});
+    assert.equal(opening.courts[0].team1.reduce((sum,n)=>sum+levels[n],0),0);
+  }
 });

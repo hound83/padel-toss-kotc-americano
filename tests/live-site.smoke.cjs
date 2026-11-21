@@ -36,7 +36,7 @@ const assert=require('node:assert/strict');
     }
     assert.ok(published,'GitHub Pages must serve the current page, worker, stylesheet and mode artwork');
     await page.goto(url,{waitUntil:'networkidle'});
-    assert.equal(await page.locator('#appVersion').textContent(),'v2.7.1');
+    assert.equal(await page.locator('#appVersion').textContent(),'v2.8.0');
     await page.waitForFunction(()=>document.querySelectorAll('.mode-illustration').length===4&&[...document.querySelectorAll('.mode-illustration')].every(img=>img.complete&&img.naturalWidth>0));
     assert.equal(await page.evaluate(()=>getComputedStyle(document.documentElement).getPropertyValue('--teal-900').trim()),'#193B57');
     await page.evaluate(()=>navigator.serviceWorker.ready);
@@ -87,8 +87,17 @@ const assert=require('node:assert/strict');
     assert.ok(rounds[0].courts.some(c=>c.team1.concat(c.team2).includes('Speler 16')));
     assert.ok(rounds[0].courts.some(c=>[c.team1,c.team2].some(team=>team.includes('Speler 1')&&team.includes('Speler 2'))));
     for(let i=1;i<rounds.length;i++)assert.ok(rounds[i].resting.every(name=>!rounds[i-1].resting.includes(name)));
+    await tossPage.locator('#rerollBtn').tap();
+    assert.match(await tossPage.locator('#rerollStatus').innerText(),/ronde 1/);
+    await tossPage.evaluate(()=>navigator.serviceWorker.ready);
+    await tossPage.waitForFunction(()=>!!navigator.serviceWorker.controller);
+    await tossContext.setOffline(true);
+    const pdfDownload=tossPage.waitForEvent('download');
+    await tossPage.locator('#pdfBtn').tap();
+    const pdf=fs.readFileSync(await (await pdfDownload).path());
+    assert.match(pdf.toString('latin1'),/^%PDF-/);
     await tossContext.close();
     assert.deepEqual(errors,[]);
-    console.log(JSON.stringify({url,version:'v2.7.1',modes:4,desktop:true,mobile:true,score:'26-6',freshInstall:true,offline:true}));
+    console.log(JSON.stringify({url,version:'v2.8.0',modes:4,desktop:true,mobile:true,score:'26-6',freshInstall:true,offline:true}));
   }finally{await browser.close();}
 })().catch(error=>{console.error(error);process.exitCode=1;});

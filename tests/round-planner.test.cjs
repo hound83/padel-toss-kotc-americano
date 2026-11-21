@@ -137,3 +137,13 @@ test('schedule preview counts consecutive breaks and partnership repeats',()=>{
   assert.deepEqual(summary.rest,[['Evi',2]]);
   assert.deepEqual(summary.repeats,[{names:['Ada','Bo'],count:3},{names:['Cem','Dee'],count:3}]);
 });
+
+test('explicit levels balance opening KOC teams and preserve court assignments',()=>{
+  const levels=[-1,-1,1,1,0,0,0,0];
+  const assignment=Object.fromEntries(ids(8).map(i=>[i,1+Math.floor(i/4)]));
+  for(const crossed of [true,false]){
+    const first=rounds.startKocRounds(assignment,2,8,fit,random,{levels,crossed});
+    assert.deepEqual(sort(first.matches[0].teams.flat()),[0,1,2,3]);
+    first.matches[0].teams.forEach(team=>assert.equal(levels[team[0]]+levels[team[1]],0));
+  }
+});
