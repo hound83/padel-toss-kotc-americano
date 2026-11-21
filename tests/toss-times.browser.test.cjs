@@ -84,6 +84,7 @@ test('Toss times and court numbers appear in schedule, print and presentation an
   assert.equal(await page.locator('#scheduleRound2 .round-time').innerText(),'11:15–11:30');
   assert.deepEqual((await save()).state.pools[0].rounds,saved.state.pools[0].rounds);
   await page.locator('#loadFileInput').setInputFiles({name:'plan.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(saved))});
+  await page.waitForFunction(()=>document.querySelector('#scheduleRound2 .round-time')?.textContent==='11:20\u201311:40');
   assert.equal(await page.locator('#scheduleRound2 .round-time').innerText(),'11:20–11:40');
   await page.locator('#backToSettingsBtn').click();
   if(!await options.getAttribute('open'))await options.locator('summary').click();
@@ -93,6 +94,7 @@ test('Toss times and court numbers appear in schedule, print and presentation an
   assert.deepEqual(await page.locator('#scheduleRound1 .court-label').allTextContents(),['Baan 2','Baan 3']);
   delete saved.state.tossPlan;
   await page.locator('#loadFileInput').setInputFiles({name:'older.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(saved))});
+  await page.waitForFunction(()=>document.querySelectorAll('#roundsCol .round-time').length===0);
   assert.equal(await page.locator('#roundsCol .round-time').count(),0);
   assert.deepEqual(await page.locator('#scheduleRound1 .court-label').allTextContents(),['Baan 1','Baan 2']);
   assert.deepEqual(errors,[]);
