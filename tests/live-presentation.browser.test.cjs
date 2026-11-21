@@ -418,7 +418,7 @@ test('v2.2: clean navigation and live KOC, Toss, Americano and split Toss', asyn
   assert.equal(await screenLabel.innerText(),firstScreen,'the screen stays while entering a score');
   assert.equal(await visibleField.evaluate(input=>input===document.activeElement),true);
   await visibleField.blur();
-  await fourCourtAmericano.clock.runFor(2000);
+  await fourCourtAmericano.clock.runFor(2200);
   assert.match(await fourCourtAmericano.locator('#liveCountdown').innerText(),/over [78] s/);
   await fourCourtAmericano.clock.runFor(8100);
   assert.equal(await screenLabel.innerText(),`Scherm 2 / ${screenTotal}`);

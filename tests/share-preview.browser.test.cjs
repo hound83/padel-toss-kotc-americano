@@ -86,6 +86,13 @@ test('Stable layout and isolated preview share one organizer-signed schedule acr
   if(!real)await viewer.evaluate(({payload,channel})=>window.testStream.dispatchEvent(new MessageEvent('message',{data:JSON.stringify({event:'message',topic:channel,message:payload})})),{payload,channel});
   await viewer.locator('#connection.closed').waitFor();
   assert.match(await viewer.locator('#connection').textContent(),/gesloten/);
+  if(real){
+    const lateViewer=await browser.newPage();
+    await lateViewer.goto(url);
+    await lateViewer.locator('#connection.closed').waitFor();
+    assert.ok(await lateViewer.getByText('29–18',{exact:true}).count());
+    await lateViewer.close();
+  }
   await viewer.reload();
   await viewer.locator('#connection.closed').waitFor();
   assert.equal(await viewer.getByText('29–18',{exact:true}).count()>0,true);

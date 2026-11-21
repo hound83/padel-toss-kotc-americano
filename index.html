@@ -4183,7 +4183,7 @@
 
   function tossSessionError(){
     var plan = tossSessionSettings();
-    if (typeof plan.startTime !== 'string' || (plan.startTime !== '' && !/^([01]\d|2[0-3]):[0-5]\d$/.test(plan.startTime))) return 'tossStartTimeError';
+    if (state.format !== 'koc' && (typeof plan.startTime !== 'string' || (plan.startTime !== '' && !/^([01]\d|2[0-3]):[0-5]\d$/.test(plan.startTime)))) return 'tossStartTimeError';
     if (!Number.isInteger(plan.roundMinutes) || plan.roundMinutes < 1 || plan.roundMinutes > 240) return 'tossRoundMinutesError';
     var count = state.format === 'koc' ? state.koc.courts : state.courts;
     var numbers = plan.courtNumbers.slice(0,count).map(function(value){return String(value ?? '').trim().toLowerCase();});
@@ -4204,7 +4204,7 @@
 
   function roundTimeText(round){
     var plan = tossSessionSettings();
-    if (tossSessionError() || !plan.startTime) return '';
+    if (tossSessionError() || !/^([01]\d|2[0-3]):[0-5]\d$/.test(plan.startTime)) return '';
     var parts = plan.startTime.split(':').map(Number);
     var start = parts[0]*60+parts[1]+(round-1)*plan.roundMinutes;
     function clock(minutes){
@@ -4246,10 +4246,11 @@
     }
     if (!koc) {
     var startTime = field('tossStartTime',t('tossStartTime'),'text',plan.startTime,function(input){
-      plan.startTime=input.value.trim();
+      plan.startTime=input.value.trim().replace(/^(\d):(\d{2})$/,'0$1:$2');
       checkTime();
     });
     startTime.placeholder='11:00';
+    startTime.addEventListener('blur',function(){startTime.value=plan.startTime;});
     var timeHint=liveElement('small','toss-start-error');
     timeHint.id='startTimeHint';
     startTime.after(timeHint);
@@ -8189,7 +8190,7 @@
         await TossShare.send(session,{...snapshot,at:Date.now()});
         if(active===session && !ending){lastSent=data;info.textContent=say('Kijklink klaar. Wijzigingen worden tijdens het spelen gedeeld.','Link ready. Changes are shared during play.');}
         done=true;
-      }catch{info.textContent=say('De link toont de beginstand. Live bijwerken lukt nu niet. De app probeert het opnieuw.','The link shows the initial schedule. Live updates are unavailable. Retrying.');}
+      }catch{if(active===session && !ending)info.textContent=say('De link toont de beginstand. Live bijwerken lukt nu niet. De app probeert het opnieuw.','The link shows the initial schedule. Live updates are unavailable. Retrying.');}
       finally{running=false;retry=setTimeout(sync,done?1500:30000);}
     }
     window.queueShareUpdate=()=>{clearTimeout(retry);retry=setTimeout(sync,1200);};
