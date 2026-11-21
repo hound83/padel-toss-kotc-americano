@@ -884,6 +884,17 @@
   .live-upcoming .team-score{ font-family:var(--font-mono); font-weight:700; color:var(--teal-900); }
 
   .toss-start-options{margin:16px 0;padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:var(--surface);}
+  .toss-plan-fields{display:flex;flex-wrap:wrap;align-items:flex-start;gap:14px;margin:14px 0;}
+  .toss-plan-fields>.field-group{flex:1 1 140px;}
+  .toss-plan-fields input{min-width:0;width:100%;padding:9px;border:1px solid var(--line);border-radius:7px;font:inherit;background:var(--surface);color:var(--ink);}
+  .toss-court-numbers{flex:2 1 260px;min-width:0;margin:0;padding:0;border:0;}
+  .toss-court-numbers legend{padding:0;margin-bottom:8px;font-size:var(--fs-xs);font-weight:600;color:var(--teal-900);text-transform:uppercase;letter-spacing:.04em;}
+  .toss-court-fields{display:flex;flex-wrap:wrap;gap:8px;}
+  .toss-court-fields .field-group{width:76px;margin:0;}
+  .toss-court-fields label{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;}
+  .round-time{font-family:var(--font-mono);font-size:var(--fs-sm);font-weight:650;white-space:nowrap;}
+  .round-head{flex-wrap:wrap;}
+  .live-section-head .round-time{display:inline-block;margin-inline-start:12px;}
   .toss-start-options summary{cursor:pointer;font-weight:750;color:var(--teal-900);}
   .toss-start-options p{margin:10px 0;font-size:var(--fs-sm);line-height:1.5;}
   .toss-start-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:8px;margin:12px 0;}
@@ -1448,7 +1459,8 @@
     </div>
 
     <details class="toss-start-options" id="tossStartOptions" hidden>
-      <summary data-i18n="tossStartTitle">Extra instellingen voor ronde 1</summary>
+      <summary data-i18n="tossStartTitle">Extra instellingen voor Toss</summary>
+      <div class="toss-plan-fields" id="tossSessionSettings"></div>
       <p data-i18n="tossStartHelp">Vink Start aan bij spelers die zeker in ronde 1 moeten spelen. Selecteer bij Duo twee spelers en leg het startkoppel vast. Deze spelers spelen automatisch in ronde 1.</p>
       <div class="toss-start-grid" id="tossStartGrid"></div>
       <button class="btn btn-ghost" id="tossAddPair" type="button" data-i18n="tossAddPair" disabled>Startkoppel vastleggen</button>
@@ -1560,7 +1572,7 @@
   </section>
 
   <footer class="app-footer">
-    <span id="appVersion">v2.7.0</span>
+    <span id="appVersion">v2.7.1</span>
     <details><summary data-i18n="whatsNew">Wat is nieuw?</summary>
       <ul>
         <li data-i18n="changeIllustrations">Nieuwe baanillustraties, marineblauw/lime en een puntenscore van 26–6.</li>
@@ -1723,7 +1735,13 @@
       scoringGames: "Padeltelling in games",
       pointsRule: "Elke gewonnen rally telt als één punt. Een mogelijke eindstand is 21–17.",
       gamesRule: "Binnen een game geldt de padeltelling (15, 30, 40). Voer per duo het aantal gewonnen games in, bijvoorbeeld 4–3.",
-      tossStartTitle: "Extra instellingen voor ronde 1",
+      tossStartTime: "Starttijd (optioneel)",
+      tossRoundMinutes: "Rondeduur (min)",
+      tossCourtNumbers: "Baannummers",
+      tossStartTimeError: "Vul een geldige starttijd in of laat de starttijd leeg.",
+      tossRoundMinutesError: "Kies een rondeduur van 1 tot en met 240 minuten.",
+      tossCourtNumbersError: "Gebruik voor elke baan een ander nummer van 1 tot en met 999.",
+      tossStartTitle: "Extra instellingen voor Toss",
       tossStartHelp: "Vink Start aan bij spelers die zeker in ronde 1 moeten spelen. Selecteer bij Duo twee spelers en leg het startkoppel vast. Deze spelers spelen automatisch in ronde 1.",
       tossStartPlay: "Start",
       tossStartPair: "Duo",
@@ -2073,7 +2091,13 @@
       scoringGames: "Padel games",
       pointsRule: "Count each point won as 1, 2, 3… A final score could be 21–17.",
       gamesRule: "Count 15, 30 and 40 within a game. When entering scores, report games won, for example 4–3.",
-      tossStartTitle: "Extra settings for round 1",
+      tossStartTime: "Start time (optional)",
+      tossRoundMinutes: "Round duration (min)",
+      tossCourtNumbers: "Court numbers",
+      tossStartTimeError: "Enter a valid start time or leave it empty.",
+      tossRoundMinutesError: "Choose a round duration between 1 and 240 minutes.",
+      tossCourtNumbersError: "Use a different number from 1 to 999 for each court.",
+      tossStartTitle: "Extra settings for Toss",
       tossStartHelp: "Tick Start for players who must play in round 1. Select two players under Pair and confirm the starting pair. These players automatically play in round 1.",
       tossStartPlay: "Start",
       tossStartPair: "Pair",
@@ -3858,6 +3882,99 @@
   }
 
 
+
+  function tossSessionSettings(){
+    if (!state.tossPlan || typeof state.tossPlan !== 'object' || Array.isArray(state.tossPlan)) state.tossPlan = {};
+    var plan = state.tossPlan;
+    if (plan.startTime === undefined) plan.startTime = '';
+    if (plan.roundMinutes === undefined) plan.roundMinutes = 20;
+    if (!Array.isArray(plan.courtNumbers)) plan.courtNumbers = [];
+    for (var index = 0; index < state.courts; index++){
+      if (plan.courtNumbers[index] === undefined){
+        var number = index+1;
+        while (plan.courtNumbers.indexOf(number) >= 0) number++;
+        plan.courtNumbers[index] = number;
+      }
+    }
+    return plan;
+  }
+
+  function tossSessionError(){
+    var plan = tossSessionSettings();
+    if (typeof plan.startTime !== 'string' || (plan.startTime !== '' && !/^([01]\d|2[0-3]):[0-5]\d$/.test(plan.startTime))) return 'tossStartTimeError';
+    if (!Number.isInteger(plan.roundMinutes) || plan.roundMinutes < 1 || plan.roundMinutes > 240) return 'tossRoundMinutesError';
+    var numbers = plan.courtNumbers.slice(0,state.courts);
+    if (numbers.some(function(number){return !Number.isInteger(number) || number < 1 || number > 999;}) ||
+        new Set(numbers).size !== numbers.length) return 'tossCourtNumbersError';
+    return '';
+  }
+
+  function displayedCourtNumber(index){
+    if (state.format !== 'toss') return index;
+    var number = tossSessionSettings().courtNumbers[index-1];
+    return Number.isInteger(number) && number >= 1 && number <= 999 ? number : index;
+  }
+
+  function roundTimeText(round){
+    if (state.format !== 'toss') return '';
+    var plan = tossSessionSettings();
+    if (tossSessionError() || !plan.startTime) return '';
+    var parts = plan.startTime.split(':').map(Number);
+    var start = parts[0]*60+parts[1]+(round-1)*plan.roundMinutes;
+    function clock(minutes){
+      var days = Math.floor(minutes/1440);
+      var time = String(Math.floor(minutes/60)%24).padStart(2,'0')+':'+String(minutes%60).padStart(2,'0');
+      return time+(days ? ' (+'+days+')' : '');
+    }
+    return clock(start)+'\u2013'+clock(start+plan.roundMinutes);
+  }
+
+  function renderTossSessionSettings(){
+    var plan = tossSessionSettings();
+    var root = document.getElementById('tossSessionSettings');
+    root.replaceChildren();
+    function field(id,key,type,value,update,parent){
+      var group = liveElement('div','field-group');
+      var input = document.createElement('input');
+      input.id = id;
+      input.type = type;
+      input.value = value === null ? '' : value;
+      var label = liveElement('label','',key);
+      label.htmlFor = id;
+      group.append(label,input);
+      (parent || root).appendChild(group);
+      input.addEventListener('input',function(){
+        update(input);
+        validateTossStart();
+        if (state.pools.length) renderSchedule();
+        scheduleAutosave();
+      });
+      return input;
+    }
+    field('tossStartTime',t('tossStartTime'),'time',plan.startTime,function(input){plan.startTime=input.value;});
+    var duration = field('tossRoundMinutes',t('tossRoundMinutes'),'number',plan.roundMinutes,function(input){
+      plan.roundMinutes = input.value === '' ? null : Number(input.value);
+    });
+    duration.min = '1';
+    duration.max = '240';
+    duration.step = '1';
+    var courtGroup = liveElement('fieldset','toss-court-numbers');
+    courtGroup.appendChild(liveElement('legend','',t('tossCourtNumbers')));
+    var courts = liveElement('div','toss-court-fields');
+    courtGroup.appendChild(courts);
+    root.appendChild(courtGroup);
+    for (var index = 0; index < state.courts; index++){
+      (function(index){
+        var input = field('tossCourtNumber'+index,t('courtLabel')+' '+(index+1),'number',plan.courtNumbers[index],function(input){
+          plan.courtNumbers[index] = input.value === '' ? null : Number(input.value);
+        },courts);
+        input.min = '1';
+        input.max = '999';
+        input.step = '1';
+      })(index);
+    }
+  }
+
   function tossSetupName(value, index){
     return String(value || '').trim() || tf('namePlaceholder',{n:index+1});
   }
@@ -3899,9 +4016,10 @@
     var selected = new Set(choices.players.concat(choices.pairs.flat()));
     var n = (state.names || []).length;
     var slots = usableCourts(n,state.courts)*4;
-    var valid = selected.size <= slots;
+    var settingsError = tossSessionError();
+    var valid = selected.size <= slots && !settingsError;
     document.getElementById('tossStartStatus').textContent = tf('tossStartCount',{n:selected.size,slots:slots});
-    error.textContent = valid ? '' : tf('tossStartTooMany',{n:selected.size,slots:slots});
+    error.textContent = settingsError ? t(settingsError) : valid ? '' : tf('tossStartTooMany',{n:selected.size,slots:slots});
     error.hidden = valid;
     warning.textContent = tf('tossWaitImpossible',{n:n,slots:slots});
     warning.hidden = n <= slots*2;
@@ -3916,6 +4034,7 @@
       validateTossStart();
       return;
     }
+    renderTossSessionSettings();
     var choices = tossStartChoices();
     var paired = new Set(choices.pairs.flat());
     var grid = document.getElementById('tossStartGrid');
@@ -4276,7 +4395,7 @@
 
     var label = document.createElement('div');
     label.className = 'court-label';
-    label.textContent = t('courtLabel') + ' ' + court.courtIndex;
+    label.textContent = t('courtLabel') + ' ' + displayedCourtNumber(court.courtIndex);
     card.appendChild(label);
 
     var body = document.createElement('div');
@@ -4366,6 +4485,8 @@
       var head = document.createElement('div');
       head.className = 'round-head';
       head.innerHTML = '<span class="round-num">' + t('roundLabel') + ' ' + String(r).padStart(2, '0') + '</span><span class="round-line"></span>';
+      var time = roundTimeText(r);
+      if (time) head.insertBefore(liveElement('span','round-time',time),head.lastChild);
       block.appendChild(head);
 
       state.pools.forEach(function(pool){
@@ -6658,7 +6779,7 @@
   }
   function liveMatch(pool,court,round,editable){
     var card = liveElement('article','live-match');
-    var head = liveElement('div','live-match-head',t('courtLabel')+' '+court.courtIndex);
+    var head = liveElement('div','live-match-head',t('courtLabel')+' '+displayedCourtNumber(court.courtIndex));
     if (pool.label) head.appendChild(liveElement('small','',poolDisplayLabel(pool)));
     card.appendChild(head);
     var result = pool.resultsEnabled ? state.scores[scoreKey(pool.id,court.courtIndex,round)] : null;
@@ -6690,6 +6811,8 @@
     }
     target.appendChild(liveElement('h2','live-section-head'+(current?'':' live-next-head'),
       tf(current?'liveCurrentHeading':'liveUpcomingHeading',{n:round})));
+    var time = roundTimeText(round);
+    if (time) target.lastChild.appendChild(liveElement('span','round-time',time));
     var groups=liveMatchesForRound(round);
     if (!groups.length){target.appendChild(liveElement('p','live-empty',t('liveNoSchedule')));return;}
     groups.forEach(function(group){

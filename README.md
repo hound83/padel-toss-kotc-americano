@@ -93,7 +93,9 @@ Als de baanindeling groter is dan het scherm, verdeelt de presentatie de kaarten
 
 ## Extra startkeuzes bij Toss
 
-Onder de namen staat **Extra instellingen voor ronde 1**, standaard ingeklapt. Met **Start** staat vast dat een speler in de eerste ronde speelt. Vink bij **Duo** twee spelers aan en kies **Startkoppel vastleggen** om hen de eerste ronde als partners te laten spelen. Er kunnen meerdere startkoppels worden vastgelegd. Deze keuzes blijven bewaard bij opslaan, hervatten en opnieuw genereren.
+Onder de namen staat **Extra instellingen voor Toss**, standaard ingeklapt. Met **Start** staat vast dat een speler in de eerste ronde speelt. Vink bij **Duo** twee spelers aan en kies **Startkoppel vastleggen** om hen de eerste ronde als partners te laten spelen. Er kunnen meerdere startkoppels worden vastgelegd. Deze keuzes blijven bewaard bij opslaan, hervatten en opnieuw genereren.
+
+In hetzelfde menu staan een optionele **Starttijd**, de **Rondeduur** (standaard 20 minuten) en de **Baannummers**. Een ingevulde starttijd toont per ronde de begin- en eindtijd in het schema, de presentatiemodus en de afdruk. De rondes sluiten direct op elkaar aan. Baannummers kunnen bijvoorbeeld **2** en **3** zijn bij twee beschikbare banen. Deze instellingen blijven bewaard in opgeslagen sessies.
 
 Toss voorkomt twee opeenvolgende wachtrondes en verdeelt de speelbeurten zo gelijk mogelijk. Dit kan wanneer minstens de helft van de deelnemers per ronde speelt. Bij meer deelnemers toont de planner dat opeenvolgende wachtrondes onvermijdelijk zijn. Bij het aanpassen van deelnemers blijft de wachtverdeling van de al gespeelde rondes meetellen.
 
