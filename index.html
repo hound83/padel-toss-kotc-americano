@@ -1196,9 +1196,24 @@
   .court-name-button{font:inherit;color:inherit;background:transparent;border:0;text-align:left;padding:0;cursor:pointer;min-width:0;}
   @container(max-width:519px){.match-card .court-label{padding-inline:3px;}.court-name-button{font-family:Arial,sans-serif;}.court-name-button span{overflow-wrap:normal;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;}}
   @media screen{.player-label{display:block;min-width:0;max-width:100%;text-overflow:ellipsis;white-space:nowrap;overflow:hidden;cursor:pointer}}
+  @media screen{.resting-line .player-label,.live-waiting .player-label{display:inline-block;vertical-align:bottom;}}
   #courtNameDialog{max-width:min(32rem,94vw);color:var(--ink);border:1px solid var(--line);border-radius:12px;overflow-wrap:anywhere;}
+  #kocEditDialog{width:min(42rem,94vw);max-height:88dvh;overflow:auto;border:1px solid var(--line);border-radius:12px;color:var(--ink);padding:1.2rem;}
+  #kocEditDialog fieldset{margin-block:1rem;border:1px solid var(--line);border-radius:8px;}
+  #kocEditDialog label{display:grid;gap:.2rem;min-width:0;}
+  #kocEditDialog input{min-width:0;width:100%;font:inherit;}
+  #kocEditDialog .error-msg:not(:empty){display:block;}
+  #kocEditDialog:not([open]){display:none;}
   #shareDialog{width:min(32rem,94vw);padding:1.3rem;color:var(--ink);border:1px solid var(--line);border-radius:12px;}
-  #shareDialog input{width:100%;padding:.55rem;margin-bottom:.75rem;font:inherit;}
+  #shareDialog{max-height:88dvh;overflow-y:auto;}
+#shareDialog input,#shareDialog select{width:100%;min-width:0;padding:.55rem;margin:0;font:inherit;}
+.session-notice{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:.65rem;background:#fff2c9;color:#382d16;padding:.65rem 1rem;}.session-notice[hidden]{display:none;}
+#shareDialog .share-fields,#shareDialog section{display:grid;gap:.65rem;}
+#shareDialog .share-fields{gap:1.15rem;}#shareDialog section:has(> input[hidden]):not(:has(> select)){display:none;}
+#shareDialog section>label{font-weight:700;}#shareDialog section>p{margin:0;color:var(--ink);font-size:.92em;}
+#shareDialog section>button,.share-fields>button{justify-self:start;}
+#shareDialog .share-footer{display:flex;flex-wrap:wrap;gap:.75rem;margin-top:1.25rem;}
+@media(max-width:420px){#shareDialog button{justify-self:stretch;}#shareDialog .share-footer>button{flex:1 1 100%;}}
   #shareDialog [hidden]{display:none;}#shareDialog::backdrop{background:#193b5770;}
   /* ---------- Edit roster panel ---------- */
   .edit-status{
@@ -1521,6 +1536,7 @@
           <button class="btn btn-ghost" type="button" id="kocPdf"><svg class="export-icon" width="22" height="22" aria-hidden="true" focusable="false"><use href="#icon-pdf"/></svg><span data-i18n="pdfBtn">PDF downloaden</span></button>
           <button class="btn btn-ghost" id="kocSave" type="button" data-i18n="saveBtn">💾 Speelschema opslaan</button>
           <button class="btn btn-ghost" id="kocLoad" type="button" data-i18n="loadBtn">📂 Opgeslagen schema laden</button>
+          <button class="btn btn-ghost" id="kocEditDetails" type="button" data-i18n="kocEditDetails" hidden></button>
           <button class="btn btn-ghost" id="kocRoundReset" type="button" data-i18n="kocResetRounds" hidden></button>
         </div>
       </details>
@@ -1727,17 +1743,32 @@
   </section>
 
   <dialog id="courtNameDialog" aria-labelledby="courtNameFull"><h2 id="courtNameFull"></h2><form method="dialog"><button class="btn btn-ghost" data-i18n="closeShare"></button></form></dialog>
+  <dialog id="kocEditDialog" aria-labelledby="kocEditTitle">
+    <form id="kocEditForm">
+      <h2 id="kocEditTitle" data-i18n="kocEditDetails"></h2>
+      <fieldset><legend data-i18n="kocNames"></legend><div class="names-grid" id="kocEditNames"></div></fieldset>
+      <fieldset><legend data-i18n="tossCourtNumbers"></legend><div class="names-grid" id="kocEditCourts"></div></fieldset>
+      <p class="error-msg" id="kocEditError" role="alert"></p>
+      <div class="actions-row"><button type="button" class="btn btn-ghost" id="kocEditCancel" data-i18n="editCancelBtn"></button>
+      <button type="submit" class="btn btn-primary" data-i18n="applyDetails"></button></div>
+    </form>
+  </dialog>
   <dialog id="shareDialog" aria-labelledby="shareTitle">
     <h2 id="shareTitle" data-i18n="shareAction">Schema delen</h2><p id="shareInfo" role="status"></p>
-    <input id="shareUrl" type="url" readonly hidden data-i18n-aria-label="viewLink">
-    <div><button id="sharePublish" class="btn btn-primary" type="button" data-i18n="makeLink"></button>
-    <button id="shareCopy" class="btn btn-primary" type="button" data-i18n="copyLink" hidden></button>
-    <button id="shareEnd" class="btn btn-ghost" type="button" data-i18n="endShare" hidden></button>
-    <button id="shareClose" class="btn btn-ghost" type="button" data-i18n="closeShare"></button></div>
+    <div class="share-fields">
+      <button id="sharePublish" class="btn btn-primary" type="button" data-i18n="makeLink"></button>
+      <section id="viewGroup"><label id="viewCaption" for="shareUrl" hidden></label><input id="shareUrl" type="url" readonly hidden data-i18n-aria-label="viewLink"><button id="shareCopy" class="btn btn-primary" type="button" data-i18n="copyLink" hidden></button></section>
+      <section id="entryGroup" hidden><label id="modeCaption" for="entryMode"></label><select id="entryMode"><option value="view"></option><option value="group"></option><option value="personal"></option></select>
+        <label id="recipientCaption" for="entryPlayer" hidden></label><select id="entryPlayer" hidden></select>
+        <input id="entryUrl" type="url" readonly hidden data-i18n-aria-label="entryLink"><button id="entryCopy" class="btn btn-primary" type="button" data-i18n="entryCopy" hidden></button></section>
+      <section id="ownerGroup" hidden><label id="ownerCaption" for="ownerUrl"></label><p id="ownerHint"></p><input id="ownerUrl" type="url" readonly><button id="ownerCopy" class="btn btn-ghost" type="button"></button></section>
+    </div>
+    <div class="share-footer"><button id="shareEnd" class="btn btn-ghost" type="button" data-i18n="endShare" hidden></button><button id="shareClose" class="btn btn-ghost" type="button" data-i18n="closeShare"></button></div>
   </dialog>
   <footer class="app-footer">
     <span id="appVersion">v2.8.0</span>
     <a id="versionLink" href="?preview=3">Probeer de 3.0-preview</a>
+    <a hidden id="entryVersionLink" href="?preview=3.1" data-i18n="entryVersion">Probeer 3.1 met score-invoer</a>
     <details><summary data-i18n="whatsNew">Wat is nieuw?</summary>
       <ul>
         <li data-i18n="changeIllustrations">Nieuwe baanillustraties, marineblauw/lime en een puntenscore van 26–6.</li>
@@ -1861,6 +1892,8 @@
 <script src="./name-hint.js"></script>
 <script src="./schedule-document.js"></script>
 <script src="./round-planner.js"></script>
+<script src="./ranking.js"></script>
+<script src="./session-admin.js"></script>
 <script>
 (function(){
   "use strict";
@@ -2195,7 +2228,7 @@
       changeKocEntry: 'KOC: vaste startbanen voor spelers 1 en 2 en optionele plaatsing op de laagste baan.',
       changeKocNames: 'KOC: dubbele namen direct herkennen en blokkeren.',
       changeKocRandom: 'KOC: meer variatie op de onderste banen en in de spelersvolgorde.',
-      moreOptions:'Meer opties', shareAction:'Schema delen', viewLink:'Kijklink', makeLink:'Kijklink maken',copyLink:'Kijklink kopiëren',closeShare:'Sluiten',endShare:'Kijksessie beëindigen',previewLink:'Probeer de 3.0-preview',stableLink:'Terug naar versie 2.8.0',
+      kocEditDetails:'Namen en banen wijzigen',applyDetails:'Wijzigingen toepassen',entryVersion:'Probeer 3.1 met score-invoer',entryMake:'Invullink maken',entryCopy:'Invullink kopiëren',entryLink:'Invullink',moreOptions:'Meer opties', shareAction:'Schema delen', viewLink:'Kijklink', makeLink:'Kijklink maken',copyLink:'Kijklink kopiëren',closeShare:'Sluiten',endShare:'Kijksessie beëindigen',previewLink:'Probeer de 3.0-preview',stableLink:'Terug naar versie 2.8.0',
       changeAutosave: 'Automatisch bewaren en hervatten.', changePwa: 'Installeerbaar, offline en presentatiemodus.',
       updateAvailable: 'Er staat een nieuwe versie klaar.', updateReload: 'Vernieuwen',
       beginnerLabel: 'Zilver',
@@ -2553,7 +2586,7 @@
       changeKocEntry: 'KOC: fixed start courts for players 1 and 2, with optional placement on the lowest court.',
       changeKocNames: 'KOC: spot and block duplicate player names immediately.',
       changeKocRandom: 'KOC: more variation across lower courts and player display order.',
-      moreOptions:'More options', shareAction:'Share schedule',viewLink:'View link',makeLink:'Create view link',copyLink:'Copy view link',closeShare:'Close',endShare:'End viewing session',previewLink:'Try the 3.0 preview',stableLink:'Back to version 2.8.0',
+      kocEditDetails:'Edit names and courts',applyDetails:'Apply changes',entryVersion:'Try 3.1 with player scoring',entryMake:'Create score entry link',entryCopy:'Copy score entry link',entryLink:'Score entry link',moreOptions:'More options', shareAction:'Share schedule',viewLink:'View link',makeLink:'Create view link',copyLink:'Copy view link',closeShare:'Close',endShare:'End viewing session',previewLink:'Try the 3.0 preview',stableLink:'Back to version 2.8.0',
       changeAutosave: 'Automatic saving and session recovery.', changePwa: 'Installable, offline, and presentation mode.',
       updateAvailable: 'A new version is available.', updateReload: 'Refresh',
       beginnerLabel: 'Silver',
@@ -2618,7 +2651,11 @@
     });
     document.documentElement.lang = state.lang;
     const versionLink=document.getElementById('versionLink');
-    versionLink.href=previewV3?'./':'?preview=3';versionLink.textContent=t(previewV3?'stableLink':'previewLink');
+    versionLink.href=previewV3?(hostedSessions?'/?preview=2.8':'./'):'?preview=3';versionLink.textContent=t(previewV3?'stableLink':'previewLink');
+    const entryNav = document.getElementById('entryVersionLink');
+    entryNav.hidden = !hostedSessions && !entryPreview;
+    entryNav.href = entryPreview ? '?preview=3' : '?preview=3.1';
+    entryNav.textContent = t(entryPreview ? 'previewLink' : 'entryVersion');
     renderRoundRules();
     renderRoundSettings();
     paintRoundClocks(true);
@@ -2665,7 +2702,10 @@
     eyebrow.hidden = false;
   }
 
-  var previewV3 = new URLSearchParams(location.search).get("preview")==="3";
+  var previewVersion = new URLSearchParams(location.search).get('preview');
+  var hostedSessions = !!document.querySelector('meta[name="koriander-sessions"]');
+  var entryPreview = previewVersion === '3.1' || (hostedSessions && !previewVersion);
+  var previewV3 = entryPreview || previewVersion === '3';
   var rehearsalMode = new URLSearchParams(window.location.search).get('rehearsal') === '1';
   var state = {
     step: 1,
@@ -2781,6 +2821,7 @@
     root.innerHTML = '';
     var round = currentKocRound();
     ['kocPrint','kocPdf'].forEach(function(id){document.getElementById(id).disabled = !k.assignment || !!kocDuplicateIndices().length;});
+    document.getElementById('kocEditDetails').hidden = !k.assignment;
     renderGuidedKoc(round);
     paintRoundClocks();
     if (round || !k.assignment || kocDuplicateIndices().length) return;
@@ -2817,6 +2858,42 @@
     }
     appendKocWaitingCard(root, k, 'koc-court');
   }
+
+  const kocEditDialog = document.getElementById('kocEditDialog');
+  document.getElementById('kocEditDetails').onclick = function(){
+    const k = ensureKocRoster(), plan = tossSessionSettings();
+    function fields(id,items,max){
+      const root = document.getElementById(id);
+      root.replaceChildren();
+      for (const [index,caption,value] of items){
+        const label = liveElement('label','',caption);
+        const input = document.createElement('input');
+        input.dataset.index = index; input.maxLength = max; input.value = value;
+        input.placeholder = caption;
+        label.append(input); root.append(label);
+      }
+    }
+    fields('kocEditNames',kocAttendees().map(i=>[i,tf('namePlaceholder',{n:i+1}),k.roster[i].name || '']),50);
+    fields('kocEditCourts',Array.from({length:k.courts},(_,i)=>[i,t('courtLabel')+' '+(i+1),plan.courtNumbers[i]]),40);
+    document.getElementById('kocEditError').textContent = '';
+    kocEditDialog.showModal();
+  };
+  document.getElementById('kocEditCancel').onclick = ()=>kocEditDialog.close();
+  document.getElementById('kocEditForm').onsubmit = function(event){
+    event.preventDefault();
+    const k = ensureKocRoster(), plan = tossSessionSettings();
+    const names = [...document.querySelectorAll('#kocEditNames input')];
+    const courts = [...document.querySelectorAll('#kocEditCourts input')];
+    const unique = values=>new Set(values.map(v=>v.normalize('NFKC').trim().replace(/\s+/g,' ').toLocaleLowerCase())).size===values.length;
+    const labels = courts.map(input=>input.value.trim());
+    const error = !unique(names.map(input=>input.value.trim() || input.placeholder)) ? 'kocDup' :
+      labels.some(label=>!label) || !unique(labels) ? 'tossCourtNumbersError' : '';
+    document.getElementById('kocEditError').textContent = error ? t(error) : '';
+    if (error) return;
+    names.forEach(input=>{k.roster[Number(input.dataset.index)].name=input.value.trim();});
+    labels.forEach((value,i)=>{plan.courtNumbers[i]=value;});
+    kocEditDialog.close(); renderKoc(); renderRoundRules(); writeAutosave();
+  };
 
   function levelSelect(name,value,update){
     var select = document.createElement('select');
@@ -3619,6 +3696,13 @@
     });
   }
   window.addEventListener('resize',queueNameMeasurements);
+  function appendWaitingNames(container,names){
+    names.forEach(function(name,i){
+      if(i)container.append(', ');
+      container.append(nameLabel('span','',name));
+    });
+    return container;
+  }
   function nameLabel(tag,css,name){
     var el = liveElement(tag,css+' player-label',name);
     el.title = name;
@@ -4931,6 +5015,7 @@
       input.addEventListener('input', function(){
         var value = input.value === '' ? null : Number(input.value);
         if (!state.scores[key]) state.scores[key] = { t1: null, t2: null };
+        delete court.entryTicket;
         state.scores[key][side] = PadelRounds.validScore(value) ? value : null;
         renderLeaderboard();
         var tools = document.getElementById('scheduleRoundTools');
@@ -5048,7 +5133,7 @@
           var resting = document.createElement('div');
           resting.className = 'resting-line';
           var prefix = pool.label ? poolDisplayLabel(pool) + t('restingPoolSuffix') : t('restingPrefix');
-          resting.append(prefix,liveElement('b','',rd.resting.join(', ')));
+          resting.append(prefix,appendWaitingNames(liveElement('b',''),rd.resting));
           block.appendChild(resting);
         }
       });
@@ -5311,274 +5396,7 @@
     if (playcountVisible) renderPlayCounts();
   });
 
-  // A game's normalized margin estimates the sum of two player effects minus
-  // the other two. Ridge shrinkage pulls poorly supported effects toward zero.
-  function fitAmericanoStrength(games, playerCount){
-    var matrix = Array.from({length:playerCount}, function(){return new Float64Array(playerCount);});
-    var rhs = new Float64Array(playerCount);
-    for (var i = 0; i < playerCount; i++) matrix[i][i] = 3;
-    games.forEach(function(game){
-      game.players.forEach(function(a, x){
-        var sign = x < 2 ? 1 : -1;
-        rhs[a] += sign * game.margin;
-        game.players.forEach(function(b, y){matrix[a][b] += y < 2 ? sign : -sign;});
-      });
-    });
-    // In-place Cholesky factorization and triangular solves. The positive
-    // ridge penalty keeps the system solvable even with fixed pairings.
-    for (var row = 0; row < playerCount; row++){
-      for (var col = 0; col <= row; col++){
-        var value = matrix[row][col];
-        for (var k = 0; k < col; k++) value -= matrix[row][k] * matrix[col][k];
-        matrix[row][col] = row === col ? Math.sqrt(value) : value / matrix[col][col];
-      }
-      for (var j = 0; j < row; j++) rhs[row] -= matrix[row][j] * rhs[j];
-      rhs[row] /= matrix[row][row];
-    }
-    for (var row = playerCount - 1; row >= 0; row--){
-      for (var j = row + 1; j < playerCount; j++) rhs[row] -= matrix[j][row] * rhs[j];
-      rhs[row] /= matrix[row][row];
-    }
-    return rhs;
-  }
-
-  function amerImpact(game, strength, side){
-    var p = game.players;
-    return (strength[p[0]] + strength[p[1]] - strength[p[2]] - strength[p[3]]) * side;
-  }
-
-  function assessAmericanoStrength(games, playerCount){
-    if (games.length < 12 || new Set(games.map(function(game){return game.round;})).size < 3){
-      return {status:'few',model:null};
-    }
-    var baselineError = 0, neutralError = 0, modelError = 0, observations = 0, residuals = [];
-    for (var fold = 0; fold < 3; fold++){
-      var training = games.filter(function(game){return game.round % 3 !== fold;});
-      var count = new Uint16Array(playerCount), margin = new Float64Array(playerCount);
-      training.forEach(function(game){
-        game.players.forEach(function(player, side){count[player]++; margin[player] += side < 2 ? game.margin : -game.margin;});
-      });
-      var strength = fitAmericanoStrength(training, playerCount);
-      games.forEach(function(game){
-        if (game.round % 3 !== fold || game.players.some(function(p){return count[p] < 2;})) return;
-        var predicted = Math.max(-1, Math.min(1, amerImpact(game, strength, 1)));
-        residuals.push(game.margin - predicted, predicted - game.margin);
-        game.players.forEach(function(player, side){
-          var sign = side < 2 ? 1 : -1;
-          baselineError += Math.abs(game.margin * sign - margin[player] / count[player]);
-          neutralError += Math.abs(game.margin);
-          modelError += Math.abs(game.margin - predicted);
-          observations++;
-        });
-      });
-    }
-    if (observations < 48) return {status:'few',model:null};
-    if (modelError >= Math.min(baselineError,neutralError) * .95) return {status:'accuracy',model:null};
-    return {status:'weighted',model:{strength:fitAmericanoStrength(games, playerCount),residuals:residuals,
-      baselineError:baselineError / observations,modelError:modelError / observations}};
-  }
-
-  function neutralScoreRange(score, length, residuals){
-    var seed = 82473, samples = [];
-    for (var i = 0; i < 512; i++){
-      seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
-      var error = residuals[Math.floor(seed / 4294967296 * residuals.length)];
-      samples.push(Math.max(0, Math.min(length, Math.round(score + error * length / 2))));
-    }
-    samples.sort(function(a,b){return a-b;});
-    return {low:samples[51], high:samples[460]};
-  }
-
-  var americanoStrengthCache = new Map();
-  function computeTotals(poolFilter, applyWeighting = true){
-    var totals = Object.create(null);
-    var h2h = Object.create(null);
-    var americano = state.format === 'americano' && applyWeighting;
-    var games = [], scoreLengths = [], scheduled = 0, completed = 0, rosterOrder = 0;
-    function bumpH2H(a, b, amount){
-      if (!h2h[a]) h2h[a] = Object.create(null);
-      h2h[a][b] = (h2h[a][b] || 0) + amount;
-    }
-
-    state.pools.forEach(function(pool){
-      if (!pool.resultsEnabled) return;
-      if (poolFilter && pool.id !== poolFilter) return;
-      pool.players.forEach(function(name){
-        if (!totals[name]) totals[name] = { name: name, order: rosterOrder++, points: 0, played: 0, scored: 0, forPts: 0, againstPts: 0, group: pool.id };
-        else totals[name].group = pool.id;
-      });
-      pool.rounds.forEach(function(rd){
-        rd.courts.forEach(function(court){
-          var key = scoreKey(pool.id, court.courtIndex, rd.round);
-          var sc = state.scores[key];
-          scheduled++;
-          court.team1.forEach(function(name){
-            totals[name].played++;
-            if (sc && typeof sc.t1 === 'number') totals[name].points += sc.t1;
-          });
-          court.team2.forEach(function(name){
-            totals[name].played++;
-            if (sc && typeof sc.t2 === 'number') totals[name].points += sc.t2;
-          });
-          if (sc && typeof sc.t1 === 'number' && typeof sc.t2 === 'number'){
-            var diff = sc.t1 - sc.t2;
-            completed++;
-            var length = sc.t1 + sc.t2;
-            if (americano && sc.t1 >= 0 && sc.t2 >= 0 && length > 0){
-              games.push({round:rd.round,names:court.team1.concat(court.team2),margin:diff / length,length:length});
-              scoreLengths.push(length);
-            }
-            court.team1.forEach(function(name){ totals[name].scored++; totals[name].forPts += sc.t1; totals[name].againstPts += sc.t2; });
-            court.team2.forEach(function(name){ totals[name].scored++; totals[name].forPts += sc.t2; totals[name].againstPts += sc.t1; });
-            court.team1.forEach(function(a){
-              court.team2.forEach(function(b){
-                bumpH2H(a, b, diff);
-                bumpH2H(b, a, -diff);
-              });
-            });
-          }
-        });
-      });
-    });
-
-    // mark players no longer in their pool's active roster
-    Object.keys(totals).forEach(function(name){
-      var roster = activeRosterForPool(totals[name].group);
-      if (roster.indexOf(name) === -1) totals[name].group = 'out';
-    });
-
-    // Reference game count = the most common number of games played among
-    // still-active players in this scope (ties broken toward the LARGER
-    // value — ordinary fair rotation can easily produce an even split, e.g.
-    // exactly half the group resting one extra time when the rounds don't
-    // divide evenly; that's normal variance, not a disparity worth
-    // correcting). Anyone who played MORE than this gets their points/diff
-    // scaled down proportionally, for a fair comparison against players who
-    // simply had more opportunities.
-    //
-    // Below the reference, direction depends on WHY: a player who left (out)
-    // or joined later chose/was dealt that shorter run deliberately, so
-    // extrapolating their score upward would just reward a lucky small
-    // sample — they keep their raw points, unmarked. But a player who was
-    // there the whole time and simply drew fewer games by the luck of the
-    // rotation didn't do anything to deserve fewer chances to score — so
-    // THEIR points get scaled UP to the reference too, marked distinctly
-    // from a scale-down so it's clear which direction the adjustment went.
-    var rowsArr = Object.keys(totals).map(function(k){ return totals[k]; });
-    var model = null, nominalLength = 0, weightingStatus = 'few';
-    if (americano && games.length){
-      var playerNames = Object.keys(totals);
-      var playerIndices = new Map(playerNames.map(function(name,i){return [name,i];}));
-      games.forEach(function(game){game.players = game.names.map(function(name){return playerIndices.get(name);});});
-      var signature = JSON.stringify([playerNames,games]);
-      var cacheKey = poolFilter || 'main';
-      var cached = americanoStrengthCache.get(cacheKey);
-      if (!cached || cached.signature !== signature){
-        cached = {signature:signature,assessment:assessAmericanoStrength(games,rowsArr.length)};
-        americanoStrengthCache.set(cacheKey,cached);
-      }
-      model = cached.assessment.model;
-      weightingStatus = cached.assessment.status;
-      scoreLengths.sort(function(a,b){return a-b;});
-      nominalLength = scoreLengths[Math.floor((scoreLengths.length - 1) / 2)];
-      if (model){
-        games.forEach(function(game){
-          var margin = amerImpact(game, model.strength, 1);
-          game.names.forEach(function(name, i){
-            var row = totals[name], sign = i < 2 ? 1 : -1;
-            var effect = (margin * sign - model.strength[game.players[i]]) * game.length;
-            row.drawEffect = (row.drawEffect || 0) + effect;
-          });
-        });
-      }
-    }
-    var activeRows = rowsArr.filter(function(r){ return r.group !== 'out'; });
-    var refPool = activeRows.length ? activeRows : rowsArr;
-    var freq = {};
-    refPool.forEach(function(r){ freq[r.played] = (freq[r.played] || 0) + 1; });
-    var referenceGames = 0, bestCount = -1;
-    Object.keys(freq).forEach(function(k){
-      var n = parseInt(k, 10);
-      if (freq[k] > bestCount || (freq[k] === bestCount && n > referenceGames)){
-        bestCount = freq[k]; referenceGames = n;
-      }
-    });
-
-    var recalculated = false;
-    rowsArr.forEach(function(row){
-      var scale = function(){
-        row.adjPoints = Math.round((row.points / row.played) * referenceGames);
-        row.adjDiff = Math.round(((row.forPts - row.againstPts) / row.played) * referenceGames);
-      };
-      if (row.played <= 0 || row.played === referenceGames || row.group === 'out'){
-        row.adjPoints = row.points;
-        row.adjDiff = row.forPts - row.againstPts;
-        row.recalcDir = 'none';
-      } else if (row.played > referenceGames){
-        scale();
-        row.recalcDir = 'down';
-        recalculated = true;
-      } else if (!Object.prototype.hasOwnProperty.call(state.laterAdditions,row.name)){
-        // Present the whole time, just drew fewer games by luck of the draw.
-        scale();
-        row.recalcDir = 'up';
-        recalculated = true;
-      } else {
-        row.adjPoints = row.points;
-        row.adjDiff = row.forPts - row.againstPts;
-        row.recalcDir = 'none';
-      }
-      var factor = row.recalcDir === 'none' ? 1 : referenceGames / row.played;
-      if (model && completed === scheduled && row.recalcDir === 'up' && row.scored >= 2){
-        var missing = referenceGames - row.played;
-        var rating = model.strength[playerIndices.get(row.name)];
-        var estimate = Math.max(0, Math.min(nominalLength, Math.round(nominalLength * (1 + rating) / 2)));
-        row.adjPoints = row.points + missing * estimate;
-        row.adjDiff = row.forPts - row.againstPts + missing * (2 * estimate - nominalLength);
-        row.projection = {count:missing,score:estimate,length:nominalLength,residuals:model.residuals};
-        factor = 1;
-      }
-      row.drawEffect = Math.round((row.drawEffect || 0) * factor);
-      row.rankDiff = row.adjDiff - row.drawEffect;
-      row.referenceGames = referenceGames;
-    });
-
-    return { totals: totals, h2h: h2h, referenceGames: referenceGames, recalculated: recalculated,
-      weighted: !!model, weightingStatus:weightingStatus };
-  }
-
-  function compareStanding(a, b){
-    if (a.adjPoints !== b.adjPoints) return b.adjPoints - a.adjPoints;
-    return b.rankDiff - a.rankDiff;
-  }
-  function compareHeadToHead(a,b,h2h){
-    return -((h2h[a.name] && h2h[a.name][b.name]) || 0);
-  }
-
-  function rankPlayers(totals, h2h){
-    var rows = Object.values(totals);
-    if (state.format !== 'americano'){
-      function compare(a,b){return compareStanding(a,b) || compareHeadToHead(a,b,h2h);}
-      rows.sort(compare);
-      var rank = 1;
-      rows.forEach(function(row,i){
-        if (i && compare(rows[i-1],row)) rank = i + 1;
-        row.rank = rank;
-      });
-      return rows;
-    }
-    rows.sort(function(a,b){return compareStanding(a,b) || a.order - b.order;});
-    for (var start = 0; start < rows.length;){
-      var end = start + 1;
-      while (end < rows.length && !compareStanding(rows[start],rows[end])) end++;
-      // A pairwise comparator is not transitive for a three-way tie.
-      var direct = end - start === 2 ? compareHeadToHead(rows[start],rows[start+1],h2h) : 0;
-      if (direct > 0) [rows[start],rows[start+1]] = [rows[start+1],rows[start]];
-      for (var i = start; i < end; i++) rows[i].rank = direct ? i + 1 : start + 1;
-      start = end;
-    }
-    return rows;
-  }
+  const {computeTotals,rankPlayers,fitAmericanoStrength,neutralScoreRange} = createPadelRanking(()=>state,scoreKey,activeRosterForPool);
 
   function signedBalance(value){return (value > 0 ? '+' : '') + value;}
   function rankBreakdown(row){
@@ -6979,6 +6797,7 @@
     }
     loadError.classList.remove('visible');
     delete data.state.previewChannel;
+    window.detachTossSession?.();
     applyLoadedState(data.state);
     scheduleAutosave();
     return true;
@@ -7008,6 +6827,7 @@
   });
 
   function doStartOver(){
+    window.detachTossSession?.();
     editSession = null;
     var keepLang = state.lang;
     resetBulkNameTools();
@@ -7142,7 +6962,7 @@
   // ---------- Local-first recovery ----------
   // No account or remote database: the organiser's own browser holds the
   // working copy, and the JSON export above remains a portable backup.
-  var AUTOSAVE_KEY = previewV3 ? 'padel-toss-session-v3-preview' : rehearsalMode ? 'padel-toss-americano-rehearsal-v2' : 'padel-toss-americano-session-v2';
+  var AUTOSAVE_KEY = entryPreview ? (location.pathname.includes('/b/') ? 'padel-toss-managed-'+location.pathname.split('/').pop().slice(0,12) : 'padel-toss-session-v31-preview') : previewV3 ? 'padel-toss-session-v3-preview' : rehearsalMode ? 'padel-toss-americano-rehearsal-v2' : 'padel-toss-americano-session-v2';
   var autosaveTimer = null;
   var autosaveSuspended = false;
   function formSnapshot(){
@@ -7397,11 +7217,13 @@
     input.inputMode = 'numeric';
     var names = court[side === 't1' ? 'team1' : 'team2'];
     input.setAttribute('aria-label', tf(scoreMode() === 'games' ? 'gameScoreForTeam' : 'scoreForTeam', {team:names.join(' & ')}));
+    input.dataset.entrySlot=key;input.dataset.entrySide=side;
     var current = state.scores[key];
     input.value = current && typeof current[side] === 'number' ? String(current[side]) : '';
     input.addEventListener('input',function(){
       var value = input.value === '' ? null : Number(input.value);
       if (!state.scores[key]) state.scores[key] = {t1:null,t2:null};
+      delete court.entryTicket;
       state.scores[key][side] = PadelRounds.validScore(value) ? value : null;
       renderLeaderboard();
       var tools = document.getElementById('liveRoundTools');
@@ -7474,7 +7296,8 @@
       });
       section.appendChild(grid);
       if (group.round.resting && group.round.resting.length){
-        var waiting = liveElement('p','live-waiting',tf('liveWaiting',{names:group.round.resting.join(', ')}));
+        var waiting = liveElement('p','live-waiting',tf('liveWaiting',{names:''}));
+        appendWaitingNames(waiting,group.round.resting);
         waiting.tabIndex = 0;
         section.appendChild(waiting);
       }
@@ -8173,6 +7996,7 @@
         score.addEventListener('input',function(){
           if (currentKocRound() !== round) return;
           var value = score.value === '' ? null : Number(score.value);
+          delete match.entryTicket;
           match.score[side] = PadelRounds.validScore(value) ? value : null;
           document.querySelectorAll('[data-koc-round-score="' + score.dataset.kocRoundScore + '"]').forEach(function(other){
             if (other !== score) other.value = match.score[side] === null ? '' : match.score[side];
@@ -8255,13 +8079,27 @@
   function viewSnapshot(){
     const en=state.lang==='en', koc=state.format==='koc';
     const rounds=[], boards=[];
+    let newTickets=false;
+    function scoredRow(row,match,slot,open){
+      if(!entryPreview)return row;
+      row.slot=slot;
+      if(open && !row.score){
+        const lineup=JSON.stringify([slot,row.teams]);
+        if(!match.entryTicket || match.entryLineup!==lineup){match.entryTicket=crypto.randomUUID();match.entryLineup=lineup;newTickets=true;}
+        row.ticket=match.entryTicket;
+      }else if(match.entryTicket){delete match.entryTicket;delete match.entryLineup;newTickets=true;}
+      return row;
+    }
     function rest(names,label){return {rest:true,label:(label||'')+t('printRest'),teams:[names]};}
     if(koc){
       const k=state.koc;
       if(!k || !k.assignment)return null;
       if(currentKocRound()){
         for(const rd of k.roundPlan){
-          const rows=rd.matches.slice().reverse().map(m=>({label:courtName(m.court),teams:m.teams.map(team=>team.map(kocPlayerName)),score:m.score?.some(Number.isInteger)?m.score:null}));
+          const rows=rd.matches.slice().reverse().map(m=>scoredRow({
+            label:courtName(m.court),teams:m.teams.map(team=>team.map(kocPlayerName)),
+            score:m.score.some(Number.isInteger)?[...m.score]:null
+          },m,'koc-'+m.court+'-'+rd.number,rd===currentKocRound()));
           if(rd.waiting.length)rows.push(rest(rd.waiting.map(kocPlayerName)));
           rounds.push({n:rd.number,rows});
         }
@@ -8281,8 +8119,10 @@
         for(const {pool,round} of liveMatchesForRound(n)){
           const group=pool.label?poolDisplayLabel(pool)+' · ':'';
           for(const court of round.courts){
-            const score=state.scores[scoreKey(pool.id,court.courtIndex,n)];
-            rows.push({label:group+courtName(court.courtIndex),teams:[court.team1,court.team2],score:pool.resultsEnabled && score && [score.t1,score.t2].some(Number.isInteger)?[score.t1,score.t2]:null});
+            const slot=scoreKey(pool.id,court.courtIndex,n), value=state.scores[slot];
+            const score=pool.resultsEnabled && value && [value.t1,value.t2].some(Number.isInteger)?[value.t1,value.t2]:null;
+            const row={label:group+courtName(court.courtIndex),teams:[court.team1,court.team2],score};
+            rows.push(pool.resultsEnabled && state.format!=='toss' ? scoredRow(row,court,slot,!(state.splitDone && pool.id==='main')) : row);
           }
           if(round.resting.length)rows.push(rest(round.resting,group));
         }
@@ -8291,14 +8131,26 @@
       const groups=state.format==='americano' && !state.splitDone?[{id:null,resultsEnabled:true}]:state.pools.filter(p=>!state.splitDone || ['top','bottom'].includes(p.id));
       for(const pool of groups.filter(p=>p.resultsEnabled)){
         const totals=computeTotals(pool.id);
-        boards.push({title:(pool.id?poolDisplayLabel(pool)+' · ':'')+t('boardTitle'),unit:t(scoreMode()==='games'?'gameColumn':'thPts'),rows:rankPlayers(totals.totals,totals.h2h).map(p=>[p.rank,p.name,p.adjPoints])});
+        boards.push({...entryPreview && {poolId:pool.id},title:(pool.id?poolDisplayLabel(pool)+' · ':'')+t('boardTitle'),unit:t(scoreMode()==='games'?'gameColumn':'thPts'),rows:rankPlayers(totals.totals,totals.h2h).map(p=>[p.rank,p.name,p.adjPoints])});
       }
     }
     const titles={toss:'formatToss',splitToss:'formatSplitToss',americano:'formatAmericano',koc:'formatKoc'};
     var names = new Set(rounds.flatMap(rd=>rd.rows.flatMap(row=>row.teams.flat())));
     var previous = state.viewerIds || {};
     state.viewerIds = Object.fromEntries(Array.from(names,name=>[name,Object.hasOwn(previous,name) ? previous[name] : crypto.randomUUID()]));
-    return {title:t(titles[state.format]),en,rounds,boards,playerIds:state.viewerIds};
+    if(koc){
+      const k=state.koc;
+      k.viewerIds ||= {};
+      for(const i of kocAttendees()){
+        const name=kocPlayerName(i);
+        k.viewerIds[i] ||= state.viewerIds[name];
+        state.viewerIds[name]=k.viewerIds[i];
+      }
+    }
+    if(newTickets)scheduleAutosave();
+    const snapshot={title:t(titles[state.format]),en,rounds,boards,playerIds:state.viewerIds};
+    if(entryPreview)snapshot.entryMode=koc?'koc':scoreMode();
+    return snapshot;
   }
 
   function setupSharing(){
@@ -8381,14 +8233,23 @@
   }
 
   // init
-  if(previewV3){document.getElementById("appVersion").textContent="v3.0.0-preview";import("./share-v3.js").then(setupSharing);}
+  if(entryPreview){
+    document.getElementById('appVersion').textContent='v3.1.0-preview';
+    PadelSessions.setup({
+      hosted:hostedSessions, language:()=>state.lang,
+      snapshot:()=>{if(editSession || ![3,4].includes(state.step))return null;const view=viewSnapshot();return view ? {state,view} : null;},
+      editing:()=>!!editSession || document.getElementById('kocEditDialog')?.open || document.body.classList.contains('presentation-mode') && !!document.activeElement?.matches('input'),
+      restore:doc=>{applyLoadedState(doc);if(document.body.classList.contains('presentation-mode'))renderLivePresentation();writeAutosave();},
+      save:writeAutosave
+    });
+  }else if(previewV3){document.getElementById('appVersion').textContent='v3.0.0-preview';import('./share-v3.js').then(setupSharing);}
   applyStaticTranslations();
   setupBulkNameTools();
   renderKoc();
   goToStep(0);
   try {
     var existing = JSON.parse(localStorage.getItem(AUTOSAVE_KEY));
-    if (existing && existing.format === 'padel-toss-autosave' && existing.version === 2 &&
+    if (!location.pathname.includes('/b/') && existing && existing.format === 'padel-toss-autosave' && existing.version === 2 &&
         validateSaveData({format:SAVE_FORMAT,version:SAVE_VERSION,state:existing.state}) === null){
       resumeOverlay.classList.add('visible');
     }

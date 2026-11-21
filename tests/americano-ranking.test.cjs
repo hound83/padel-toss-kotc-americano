@@ -5,11 +5,8 @@ const path = require('node:path');
 const {performance} = require('node:perf_hooks');
 
 const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
-const start = html.indexOf('  function fitAmericanoStrength(');
-const end = html.indexOf('  function signedBalance(', start);
-assert.ok(start >= 0 && end > start);
-const ranking = new Function('state','scoreKey','activeRosterForPool',
-  html.slice(start,end) + '\nreturn {computeTotals,rankPlayers,assessAmericanoStrength,neutralScoreRange};');
+const createRanking=require('../ranking.js');
+const ranking=(state,key,roster)=>createRanking(()=>state,key,roster);
 const scoreKey = (pool,court,round) => `${pool}-${court}-${round}`;
 
 test('only a shared rank crossing the cutoff is drawn',()=>{

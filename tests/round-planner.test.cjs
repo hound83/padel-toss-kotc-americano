@@ -5,9 +5,7 @@ const path = require('node:path');
 const rounds = require('../round-planner.js');
 
 const source = fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');
-const start = source.indexOf('  function fitAmericanoStrength(');
-const end = source.indexOf('  function amerImpact(',start);
-const fit = new Function(source.slice(start,end)+'\nreturn fitAmericanoStrength;')();
+const {fitAmericanoStrength:fit}=require('../ranking.js')();
 const random = () => .5;
 
 function ids(n){return Array.from({length:n},(_,i)=>i);}

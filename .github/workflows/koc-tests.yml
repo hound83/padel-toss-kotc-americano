@@ -16,7 +16,7 @@ jobs:
         with:
           node-version: '22'
       - name: Scheduling, ranking and name-list unit tests
-        run: node --test tests/koc.test.cjs tests/bulk-names.test.cjs tests/americano-ranking.test.cjs tests/round-planner.test.cjs tests/toss-start.test.cjs
+        run: node --test tests/koc.test.cjs tests/bulk-names.test.cjs tests/americano-ranking.test.cjs tests/round-planner.test.cjs tests/toss-start.test.cjs tests/sessions.test.cjs
       - name: Install browser test dependencies
         run: |
           npm install --no-save --no-package-lock playwright@1.58.0
@@ -26,6 +26,17 @@ jobs:
         run: timeout 120s node --test --test-timeout=60000 --test-reporter=spec tests/*.browser.test.cjs
         env:
           PADEL_SCREENSHOT_DIR: test-results
+      - name: Exercise organizer handoff on the Workers and D1 runtime
+        run: |
+          npm exec --yes --package=wrangler@4.87.0 -- wrangler dev --local --ip 127.0.0.1 --port 8787 > "$RUNNER_TEMP/koriander-worker.log" 2>&1 &
+          worker_pid=$!
+          trap 'kill "$worker_pid" 2>/dev/null || true' EXIT
+          for attempt in {1..120}; do
+            if curl -fsS -o /dev/null http://127.0.0.1:8787/; then break; fi
+            if ! kill -0 "$worker_pid" 2>/dev/null; then cat "$RUNNER_TEMP/koriander-worker.log"; exit 1; fi
+            sleep 1
+          done
+          PADEL_SESSION_SITE_URL=http://127.0.0.1:8787 node --test --test-timeout=90000 tests/sessions.browser.test.cjs
       - name: Check preview updates over the public relay
         if: github.event_name == 'pull_request'
         run: node --test tests/share-preview.browser.test.cjs
