@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="nl"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="no-referrer">
+<title>Speelschema · Koriander Toss</title>
+<style>
+*{box-sizing:border-box}body{margin:auto;max-width:60rem;background:#f1f6fa;color:#213b55;padding:1.2rem;font:1.05rem/1.5 system-ui,sans-serif}
+h1,h2,p{margin:.5rem 0} header{border-bottom:2px solid;padding-bottom:1rem}select{font:inherit;padding:.45rem;max-width:100%}section{margin:1rem 0}article{display:grid;grid-template-columns:minmax(8rem,24%) 1fr;gap:1rem;background:white;border:1px solid #d5e0e9;border-radius:.65rem;margin:.4rem 0;padding:.7rem;overflow-wrap:anywhere}article strong{font-size:1.15rem}small{font-size:.95rem}table{border-collapse:collapse;width:100%;background:white}td,th{padding:.35rem;text-align:left;border-bottom:1px solid #d5e0e9}label{display:block;font-weight:650;margin-top:1rem} #connection{color:#486078}@media(max-width:520px){article{grid-template-columns:1fr;gap:.2rem}}
+</style>
+<header><h1 id="title">Speelschema</h1><p id="updated"></p><small id="connection" role="status">Kijklink openen…</small></header>
+<label id="label" for="player" hidden>Speler</label><select id="player" hidden></select><main id="rounds"></main>
+<script src="./share-v3.js"></script><script>
+(async()=>{
+ const $=id=>document.getElementById(id);
+ function node(tag,text){const el=document.createElement(tag);el.textContent=text;return el;}
+ let latest,online=false;
+ function status(){if(latest)$('connection').textContent=online?(latest.en?'Listening for updates':'Verbonden voor wijzigingen'):(latest.en?'Showing the saved schedule':'De opgeslagen indeling is zichtbaar');}
+ function draw(){
+   const s=latest,en=s.en,player=$('player').value;
+   $('title').textContent=s.title;
+   $('updated').textContent=(en?'Updated ':'Bijgewerkt ')+new Date(s.at).toLocaleString(en?'en-GB':'nl-NL',{dateStyle:'short',timeStyle:'short'});
+   $('rounds').replaceChildren(); status();
+   for(const round of s.rounds){
+     const rows=round.rows.filter(row=>!player||row.teams.flat().includes(player));
+     if(!rows.length)continue;
+     const section=node('section','');section.append(node('h2',(en?'Round ':'Ronde ')+round.n+(round.time?' · '+round.time:'')));
+     for(const row of rows){
+       const match=node('article','');match.append(node('strong',row.label));
+       const body=node('div','');row.teams.forEach((team,i)=>{if(i)body.append(node('small',en?'against':'tegen'));body.append(node('div',team.join(row.teams.length>1?' & ':', ')));});
+       if(row.score)body.append(node('b',row.score.map(x=>x??'–').join(' – ')));
+       match.append(body);section.append(match);
+     }
+     $('rounds').append(section);
+   }
+   for(const board of s.boards){
+     const section=node('section','');section.append(node('h2',board.title));
+     const table=node('table',''),head=table.insertRow();
+     for(const label of ['#',en?'Player':'Speler',board.unit])head.append(node('th',label));
+     for(const row of board.rows){const tr=table.insertRow();row.forEach(x=>tr.append(node('td',x)));}
+     section.append(table);$('rounds').append(section);
+   }
+ }
+ function update(s){
+   if(latest && s.at<=latest.at)return;
+   const selected=$('player').value; latest=s;document.documentElement.lang=s.en?'en':'nl';
+   const names=new Set(s.rounds.flatMap(r=>r.rows.flatMap(row=>row.teams.flat())));
+   $('label').textContent=s.en?'Show matches for':'Toon wedstrijden van';$('label').hidden=false;
+   $('player').replaceChildren(new Option(s.en?'Everyone':'Iedereen',''),...Array.from(names).sort((a,b)=>a.localeCompare(b)).map(n=>new Option(n,n)));
+   $('player').hidden=false;if(names.has(selected))$('player').value=selected;draw();
+ }
+ try{
+   const session=TossShare.parse(location.hash);
+   update(await TossShare.initial(session));
+   $('player').onchange=draw;
+   TossShare.listen(session,update,connected=>{online=connected;status();});
+ }catch{$('connection').textContent='Deze kijklink is onvolledig. Vraag de organisator de volledige link opnieuw te delen.';}
+})();
+</script></html>

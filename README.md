@@ -158,3 +158,11 @@ node --test tests/koc.test.cjs
   <em>Gemaakt voor gezellige én goed georganiseerde padelavonden.</em>
 </p>
 
+
+## Preview 3.0
+
+De standaardlink opent 2.8.0. Onderaan staat **Probeer de 3.0-preview**. De preview bewaart de lokale sessie apart. Een bestaand schema kan via de JSON-export van 2.8.0 worden ingeladen.
+
+Kies na het indelen **Schema delen → Kijklink maken**. Iedereen met de volledige link kan het schema, de rustbeurten en eventuele uitslagen en klassementen bekijken en op speler filteren. De link bevat de eerste gedeelde indeling. Wie de link doorstuurt, deelt die indeling ook.
+
+De organisator houdt het bewerken op het eigen apparaat. Zolang de planner open is, verstuurt hij wijzigingen versleuteld en ondertekend via ntfy.sh. De dienst bewaart updates tijdelijk. Na het verlopen van die updates kan een nieuw geopende link terugvallen op de oorspronkelijke indeling. Een kijklink verleent geen schrijfrechten.

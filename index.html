@@ -38,12 +38,12 @@
 
     /* Consolidated type scale — a handful of sizes reused everywhere,
        instead of a different size per element. */
-    --fs-2xs:11px;   /* table headers, tags, waiting/resting lists, tiny labels */
-    --fs-xs:12.5px;  /* hints, captions, secondary descriptions */
-    --fs-sm:13.5px;  /* compact data: table cells, chips, meta info */
-    --fs-base:15px;  /* body copy, inputs, and ALL clickable buttons/labels */
-    --fs-md:16.5px;  /* sub-headings, court labels, group headers */
-    --fs-lg:19px;    /* card/board headings, round numbers */
+    --fs-2xs:.875rem;   /* table headers, tags, waiting/resting lists, tiny labels */
+    --fs-xs:.9375rem;  /* hints, captions, secondary descriptions */
+    --fs-sm:1rem;  /* compact data: table cells, chips, meta info */
+    --fs-base:1.0625rem;  /* body copy, inputs, and ALL clickable buttons/labels */
+    --fs-md:1.1875rem;  /* sub-headings, court labels, group headers */
+    --fs-lg:1.375rem;    /* card/board headings, round numbers */
   }
 
   *{ box-sizing:border-box; }
@@ -1093,6 +1093,51 @@
     display:flex; gap:10px; margin:0 0 16px; flex-wrap:wrap;
   }
 
+  #panel3 .schedule-actions{
+    display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;
+  }
+  #panel3 .schedule-actions .btn{width:100%;height:100%;min-width:0;white-space:normal;line-height:1.25;padding:10px 8px;}
+  #rerollStatus:empty,.playcount-wrap:has(#playcountPanel[style*="none"]){display:none;}
+  @media(max-width:680px){#panel3 .schedule-actions{grid-template-columns:repeat(2,minmax(0,1fr));}}
+  @media(max-width:360px){#panel3 .schedule-actions .btn{font-size:.87rem;}}
+  .match-card{grid-template-columns:clamp(7.5rem,19%,15rem) minmax(0,1fr);}
+  .match-card .court-label{font:700 clamp(1.1875rem,2cqi,1.55rem)/1.18 var(--font-body, sans-serif);text-transform:none;overflow-wrap:anywhere;padding:10px;}
+  .match-body{display:grid;align-items:center;padding:9px clamp(6px,2cqi,22px);}
+  .teams-row{width:100%;max-width:54rem;margin-inline:auto;gap:clamp(6px,2cqi,22px);}
+  .team .players{font-size:clamp(1.1875rem,2.4cqi,1.7rem);line-height:1.22;}
+  .teams-row .team{text-align:right;}
+  .teams-row .team-right{text-align:left;}
+  .teams-row .vs{align-self:center;margin:0;}
+  @container(max-width:519px){
+    .match-card{grid-template-columns:clamp(3.2rem,16%,5rem) minmax(0,1fr);}
+    .match-card .court-label{padding:6px 4px;font-size:1.0625rem;}
+    .match-body{padding:6px 3px;}
+    .teams-row,.teams-row .team{gap:4px;}
+    .team .players{font-size:1.0625rem;}
+    .teams-row .vs{font-size:.875rem;}
+  }
+  @container(max-width:440px){
+    .teams-row{align-items:stretch;}
+    .teams-row .team{flex-direction:column;align-items:stretch;}
+    .teams-row .team .team-score{align-self:flex-start;}
+    .teams-row .team-right .team-score{align-self:flex-end;}
+  }
+  @container(max-width:330px){
+    .teams-row .vs{font-size:0;width:1px;background:var(--line);align-self:stretch;}
+    .teams-row .team{gap:3px;}
+  }
+  @media(min-width:881px) and (max-height:760px){
+    .live-presentation{padding-top:8px;padding-bottom:58px;}
+    .live-head{margin-bottom:6px;padding-bottom:4px;}
+    .live-section-head{margin-bottom:3px;}
+    .live-current .live-match-head,.live-upcoming .live-match-head{padding-block:3px;}
+    .live-current .live-match-body{padding-block:3px;}
+    .live-upcoming .live-match-body{padding-block:2px;}
+    .live-board td,.live-board th{padding-block:2px;}
+  }
+  #shareDialog{width:min(32rem,94vw);padding:1.3rem;color:var(--ink);border:1px solid var(--line);border-radius:12px;}
+  #shareDialog input{width:100%;padding:.55rem;margin-bottom:.75rem;font:inherit;}
+  #shareDialog [hidden]{display:none;}#shareDialog::backdrop{background:#193b5770;}
   /* ---------- Edit roster panel ---------- */
   .edit-status{
     background:var(--surface);
@@ -1447,7 +1492,7 @@
     <!-- Single names grid (Toss / Americano) -->
     <div id="namesSingleBlock">
       <div class="names-grid" id="namesGrid"></div>
-      <p class="panel-sub" style="margin:-10px 0 20px; font-size:12.5px;" data-i18n="blankNameHint">Laat een veld leeg — dan speelt "Speler N" mee.</p>
+      <p class="panel-sub" style="margin:-10px 0 20px; font-size:var(--fs-xs);" data-i18n="blankNameHint">Laat een veld leeg — dan speelt "Speler N" mee.</p>
     </div>
 
     <!-- Names grid per level (Split Toss: three levels) -->
@@ -1476,7 +1521,7 @@
           <label for="gevorderdResultsToggle" data-i18n="resultsToggleText">Resultaten bijhouden (zoals Americano)</label>
         </div>
       </div>
-      <p class="panel-sub" style="margin:-10px 0 20px; font-size:12.5px;" data-i18n="blankNameHint">Laat een veld leeg — dan speelt "Speler N" mee.</p>
+      <p class="panel-sub" style="margin:-10px 0 20px; font-size:var(--fs-xs);" data-i18n="blankNameHint">Laat een veld leeg — dan speelt "Speler N" mee.</p>
     </div>
 
     <details class="toss-start-options" id="tossStartOptions" hidden>
@@ -1512,13 +1557,13 @@
       <button class="btn btn-ghost" type="button" id="pdfBtn" data-i18n="pdfBtn">PDF downloaden</button>
       <button class="btn btn-ghost" id="saveBtn" data-i18n="saveBtn">💾 Speelschema opslaan</button>
       <button class="btn btn-ghost" id="presentBtn" data-i18n="presentBtn">Presentatiemodus</button>
+      <button type="button" class="btn btn-ghost" id="playcountToggleBtn" data-i18n="playcountToggleShow">📊 Speelverdeling bekijken</button>
     </div>
 
     <p id="rerollStatus" role="status"></p>
     <p class="score-unit" id="scheduleScoreUnit"></p>
     <div class="round-clock" data-round-clock hidden></div>
     <div class="playcount-wrap">
-      <button type="button" class="btn btn-ghost" id="playcountToggleBtn" data-i18n="playcountToggleShow">📊 Speelverdeling bekijken</button>
       <div class="playcount-panel" id="playcountPanel" style="display:none;">
         <div id="playcountTables"></div>
       </div>
@@ -1596,8 +1641,16 @@
     </div>
   </section>
 
+  <dialog id="shareDialog" aria-labelledby="shareTitle">
+    <h2 id="shareTitle" data-i18n="shareAction">Schema delen</h2><p id="shareInfo" role="status"></p>
+    <input id="shareUrl" type="url" readonly hidden data-i18n-aria-label="viewLink">
+    <div><button id="sharePublish" class="btn btn-primary" type="button" data-i18n="makeLink"></button>
+    <button id="shareCopy" class="btn btn-primary" type="button" data-i18n="copyLink" hidden></button>
+    <button id="shareClose" class="btn btn-ghost" type="button" data-i18n="closeShare"></button></div>
+  </dialog>
   <footer class="app-footer">
     <span id="appVersion">v2.8.0</span>
+    <a id="versionLink" href="?preview=3">Probeer de 3.0-preview</a>
     <details><summary data-i18n="whatsNew">Wat is nieuw?</summary>
       <ul>
         <li data-i18n="changeIllustrations">Nieuwe baanillustraties, marineblauw/lime en een puntenscore van 26–6.</li>
@@ -2054,6 +2107,7 @@
       changeKocEntry: 'KOC: vaste startbanen voor spelers 1 en 2 en optionele plaatsing op de laagste baan.',
       changeKocNames: 'KOC: dubbele namen direct herkennen en blokkeren.',
       changeKocRandom: 'KOC: meer variatie op de onderste banen en in de spelersvolgorde.',
+      shareAction:'Schema delen', viewLink:'Kijklink', makeLink:'Kijklink maken',copyLink:'Kijklink kopiëren',closeShare:'Sluiten',previewLink:'Probeer de 3.0-preview',stableLink:'Terug naar versie 2.8.0',
       changeAutosave: 'Automatisch bewaren en hervatten.', changePwa: 'Installeerbaar, offline en presentatiemodus.',
       updateAvailable: 'Er staat een nieuwe versie klaar.', updateReload: 'Vernieuwen',
       beginnerLabel: 'Zilver',
@@ -2413,6 +2467,7 @@
       changeKocEntry: 'KOC: fixed start courts for players 1 and 2, with optional placement on the lowest court.',
       changeKocNames: 'KOC: spot and block duplicate player names immediately.',
       changeKocRandom: 'KOC: more variation across lower courts and player display order.',
+      shareAction:'Share schedule',viewLink:'View link',makeLink:'Create view link',copyLink:'Copy view link',closeShare:'Close',previewLink:'Try the 3.0 preview',stableLink:'Back to version 2.8.0',
       changeAutosave: 'Automatic saving and session recovery.', changePwa: 'Installable, offline, and presentation mode.',
       updateAvailable: 'A new version is available.', updateReload: 'Refresh',
       beginnerLabel: 'Silver',
@@ -2477,6 +2532,8 @@
       el.setAttribute('aria-label', t(el.getAttribute('data-i18n-aria-label')));
     });
     document.documentElement.lang = state.lang;
+    const versionLink=document.getElementById('versionLink');
+    versionLink.href=previewV3?'./':'?preview=3';versionLink.textContent=t(previewV3?'stableLink':'previewLink');
     renderRoundRules();
     renderRoundSettings();
     paintRoundClocks(true);
@@ -2523,6 +2580,7 @@
     eyebrow.hidden = false;
   }
 
+  var previewV3 = new URLSearchParams(location.search).get("preview")==="3";
   var rehearsalMode = new URLSearchParams(window.location.search).get('rehearsal') === '1';
   var state = {
     step: 1,
@@ -3609,6 +3667,7 @@
 
   document.querySelectorAll('.format-btn').forEach(function(btn){
     btn.addEventListener('click', function(){
+      if(state.format!==btn.dataset.format)delete state.previewChannel;
       state.format = btn.getAttribute('data-format');
       if (!state.pools.length){
         presetCountsAutomatic = true;
@@ -6510,7 +6569,7 @@
       format: SAVE_FORMAT,
       version: SAVE_VERSION,
       savedAt: new Date().toISOString(),
-      state: JSON.parse(JSON.stringify(state))
+      state: JSON.parse(JSON.stringify(state,(k,v)=>k==="previewChannel"?undefined:v))
     };
   }
 
@@ -6663,6 +6722,7 @@
       return false;
     }
     loadError.classList.remove('visible');
+    delete data.state.previewChannel;
     applyLoadedState(data.state);
     scheduleAutosave();
     return true;
@@ -6836,7 +6896,7 @@
   // ---------- Local-first recovery ----------
   // No account or remote database: the organiser's own browser holds the
   // working copy, and the JSON export above remains a portable backup.
-  var AUTOSAVE_KEY = rehearsalMode ? 'padel-toss-americano-rehearsal-v2' : 'padel-toss-americano-session-v2';
+  var AUTOSAVE_KEY = previewV3 ? 'padel-toss-session-v3-preview' : rehearsalMode ? 'padel-toss-americano-rehearsal-v2' : 'padel-toss-americano-session-v2';
   var autosaveTimer = null;
   var autosaveSuspended = false;
   function formSnapshot(){
@@ -6855,6 +6915,7 @@
   function writeAutosave(){
     clearTimeout(autosaveTimer);
     if (autosaveSuspended || state.step === 0) return;
+    if (window.queueShareUpdate) window.queueShareUpdate();
     try {
       localStorage.setItem(AUTOSAVE_KEY, JSON.stringify({
         format: 'padel-toss-autosave', version: 2,
@@ -7919,7 +7980,109 @@
   setInterval(paintRoundClocks,250);
 
 
+  function viewSnapshot(){
+    const en=state.lang==='en', koc=state.format==='koc';
+    const rounds=[], boards=[];
+    function rest(names,label){return {label:(label||'')+t('printRest'),teams:[names]};}
+    if(koc){
+      const k=state.koc;
+      if(!k || !k.assignment)return null;
+      if(currentKocRound()){
+        for(const rd of k.roundPlan){
+          const rows=rd.matches.slice().reverse().map(m=>({label:courtName(m.court),teams:m.teams.map(team=>team.map(kocPlayerName)),score:m.score?.some(Number.isInteger)?m.score:null}));
+          if(rd.waiting.length)rows.push(rest(rd.waiting.map(kocPlayerName)));
+          rounds.push({n:rd.number,rows});
+        }
+      }else{
+        const rows=[],order=k.displayOrder||Object.keys(k.assignment).map(Number);
+        for(let c=k.courts;c>=1;c--){
+          const names=order.filter(i=>k.assignment[i]===c).map(kocPlayerName);
+          rows.push({label:courtName(c),teams:names.length===4 && k.roster.some(p=>p.level)?[names.slice(0,2),names.slice(2)]:[names]});
+        }
+        const waiting=kocWaitingNames(k);if(waiting.length)rows.push(rest(waiting));
+        rounds.push({n:1,rows});
+      }
+    }else{
+      if(!state.pools?.length)return null;
+      for(let n=1;n<=liveMaxRound();n++){
+        const rows=[];
+        for(const {pool,round} of liveMatchesForRound(n)){
+          const group=pool.label?poolDisplayLabel(pool)+' · ':'';
+          for(const court of round.courts){
+            const score=state.scores[scoreKey(pool.id,court.courtIndex,n)];
+            rows.push({label:group+courtName(court.courtIndex),teams:[court.team1,court.team2],score:pool.resultsEnabled && score && [score.t1,score.t2].some(Number.isInteger)?[score.t1,score.t2]:null});
+          }
+          if(round.resting.length)rows.push(rest(round.resting,group));
+        }
+        if(rows.length)rounds.push({n,time:roundTimeText(n),rows});
+      }
+      const groups=state.format==='americano' && !state.splitDone?[{id:null,resultsEnabled:true}]:state.pools.filter(p=>!state.splitDone || ['top','bottom'].includes(p.id));
+      for(const pool of groups.filter(p=>p.resultsEnabled)){
+        const totals=computeTotals(pool.id);
+        boards.push({title:(pool.id?poolDisplayLabel(pool)+' · ':'')+t('boardTitle'),unit:t(scoreMode()==='games'?'gameColumn':'thPts'),rows:rankPlayers(totals.totals,totals.h2h).map(p=>[p.rank,p.name,p.adjPoints])});
+      }
+    }
+    const titles={toss:'formatToss',splitToss:'formatSplitToss',americano:'formatAmericano',koc:'formatKoc'};
+    return {title:t(titles[state.format]),en,rounds,boards};
+  }
+
+  function setupSharing(){
+    const dlg=document.getElementById('shareDialog'),output=document.getElementById('shareUrl');
+    const info=document.getElementById('shareInfo'),send=document.getElementById('sharePublish');
+    let active=null,lastSent='',running=false,retry;
+    const say=(nl,en)=>state.lang==='en'?en:nl;
+    const key=id=>'padel-view-owner-'+id;
+    const sessionId=()=>state.previewChannel;
+    function remember(){if(active)localStorage.setItem(key(active.channel),JSON.stringify(active));}
+    function restore(){
+      if(active?.channel!==sessionId()){
+        active=null;lastSent='';
+        if(sessionId()){try{active=JSON.parse(localStorage.getItem(key(sessionId())));}catch{}}
+      }
+    }
+    async function sync(){
+      clearTimeout(retry);restore();
+      if(running || !active || !(state.step===3 || state.step===4))return;
+      const snapshot=viewSnapshot();if(!snapshot)return;
+      const data=JSON.stringify(snapshot),session=active;
+      if(data===lastSent)return;
+      running=true;let done=false;
+      try{
+        await TossShare.send(session,{...snapshot,at:Date.now()});
+        if(active===session){lastSent=data;info.textContent=say('Kijklink klaar. Wijzigingen worden tijdens het spelen gedeeld.','Link ready. Changes are shared during play.');}
+        done=true;
+      }catch{info.textContent=say('De link toont de beginstand. Live bijwerken lukt nu niet. De app probeert het opnieuw.','The link shows the initial schedule. Live updates are unavailable. Retrying.');}
+      finally{running=false;retry=setTimeout(sync,done?1500:30000);}
+    }
+    window.queueShareUpdate=()=>{clearTimeout(retry);retry=setTimeout(sync,1200);};
+    for(const id of ['presentBtn','kocPresent']){
+      const button=document.createElement('button');button.type='button';button.className='btn btn-ghost';button.dataset.i18n='shareAction';
+      button.textContent=t('shareAction');document.getElementById(id).after(button);
+      button.onclick=()=>{
+        restore();output.hidden=!active;output.value=active?TossShare.link(active):'';
+        document.getElementById('shareCopy').hidden=!active;send.hidden=!!active || !viewSnapshot();
+        info.textContent=viewSnapshot()?say('Iedereen met de link kan het schema bekijken. Tijdens het spelen verstuurt de app wijzigingen versleuteld via ntfy.sh.','Anyone with the link can view the schedule. During play the app sends encrypted updates via ntfy.sh.'):say('Maak eerst een indeling.','Generate a schedule first.');
+        dlg.showModal();
+      };
+    }
+    send.onclick=async()=>{
+      send.disabled=true;
+      try{
+        const snapshot=viewSnapshot();if(!snapshot)return;
+        active=await TossShare.create({...snapshot,at:Date.now()});remember();
+        state.previewChannel=active.channel;writeAutosave();lastSent='';
+        output.value=TossShare.link(active);output.hidden=false;send.hidden=true;document.getElementById('shareCopy').hidden=false;
+        info.textContent=say('Kijklink klaar. Verbinding maken…','Link ready. Connecting…');sync();
+      }catch{info.textContent=say('Delen lukt niet. Controleer of deze browser lokale opslag toestaat.','Sharing failed. Check whether local storage is available.');}
+      finally{send.disabled=false;}
+    };
+    document.getElementById('shareCopy').onclick=async()=>{try{await navigator.clipboard.writeText(output.value);info.textContent=say('Kijklink gekopieerd.','View link copied.');}catch{output.focus();output.select();}};
+    document.getElementById('shareClose').onclick=()=>dlg.close();
+    window.addEventListener('online',sync);
+  }
+
   // init
+  if(previewV3){document.getElementById("appVersion").textContent="v3.0.0-preview";import("./share-v3.js").then(setupSharing);}
   applyStaticTranslations();
   setupBulkNameTools();
   renderKoc();

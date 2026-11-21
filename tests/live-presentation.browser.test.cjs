@@ -259,7 +259,7 @@ test('v2.2: clean navigation and live KOC, Toss, Americano and split Toss', asyn
   await splitScores.locator('#generateBtn').click();
   await checkScorePlacement(splitScores.locator('.match-card').first(),'.team','.players',true);
   await splitScores.setViewportSize({width:414,height:844});
-  await checkScorePlacement(splitScores.locator('.match-card').first(),'.team','.players',true);
+  await checkScorePlacement(splitScores.locator('.match-card').first(),'.team','.players',false);
   if(screenshotDir)await splitScores.locator('.match-card').first().screenshot({path:path.join(screenshotDir,'mobile-score-card.png')});
   assert.equal(await splitScores.locator('#scheduleAuto').isEnabled(),false);
   const scoredFields=await splitScores.locator('#scheduleRound1 .team-score input').all();
@@ -301,15 +301,20 @@ test('v2.2: clean navigation and live KOC, Toss, Americano and split Toss', asyn
     assert.ok(row.labelBeside);
     if(index>0)assert.ok(row.left===rows[0].left&&row.top>rows[index-1].bottom);
   }
-  assert.ok(rows.at(-1).bottom-rows[0].top<=270,'four court rows occupy less than 270px');
+  assert.ok(rows.at(-1).bottom-rows[0].top<=420,'four readable matches fit in a normal desktop round');
+  for(const selector of ['.court-label','.players'])assert.ok(await courtRows.first().locator(selector).first().evaluate(el=>parseFloat(getComputedStyle(el).fontSize)>=17));
   await checkScorePlacement(courtRows.first(),'.team','.players',true);
   if(screenshotDir)await firstRound.screenshot({path:path.join(screenshotDir,'schedule-four-courts.png')});
   const firstScore=courtRows.first().locator('input[data-team="t1"]');
   await firstScore.fill('26');
   await firstScore.press('Tab');
   assert.equal(await courtRows.first().locator('input[data-team="t2"]').evaluate(input=>input===document.activeElement),true);
-  for(const [width,inline] of [[500,true],[414,true],[390,false],[320,false]]){
+  for(const [width,inline] of [[500,true],[414,false],[390,false],[320,false]]){
     await fourCourtAmericano.setViewportSize({width,height:844});
+    assert.ok(await courtRows.first().evaluate(card=>{
+      const rect=selector=>card.querySelector(selector).getBoundingClientRect();
+      return rect('.court-label').right<=rect('.match-body').left && rect('.team').right<=rect('.team-right').left && document.documentElement.scrollWidth<=innerWidth;
+    }),'court and both teams share one horizontal match row');
     await checkNamesFit(courtRows.locator('.players'));
     await checkScorePlacement(courtRows.first(),'.team','.players',inline);
   }
