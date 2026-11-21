@@ -226,6 +226,23 @@ test('v2.2: clean navigation and live KOC, Toss, Americano and split Toss', asyn
   assert.equal(await nextBelow(manyCourts),true,'the same draw fits stacked on the larger screen');
   await checkPresentationFits(manyCourts);
 
+  const five=await open('americano');
+  await five.setViewportSize({width:1280,height:720});
+  await five.locator('#courtsMoreSelect').selectOption('5');
+  await five.locator('#playerCountInput').fill('24');
+  await five.locator('#continueTo2').click();
+  await five.locator('#tossStartOptions summary').click();
+  const widths=await five.locator('.toss-court-fields:visible input').evaluateAll(fields=>fields.map(f=>Math.round(f.getBoundingClientRect().width)));
+  assert.equal(widths.length,5);
+  assert.ok(Math.max(...widths)-Math.min(...widths)<=1);
+  await five.locator('#generateBtn').click();
+  await five.locator('#presentBtn').click();
+  assert.equal(await five.locator('#liveCurrent .live-match:visible').count(),5);
+  assert.equal(await five.locator('#liveUpcoming').isVisible(),false);
+  await five.locator('#livePageNext').click();
+  assert.equal(await five.locator('#liveUpcoming .live-match:visible').count(),5);
+  await checkPresentationFits(five);
+
   const split=await open('splitToss',true);
   await split.getByRole('button',{name:'Namen',exact:true}).tap();
   await split.locator('#generateBtn').click();
@@ -401,7 +418,9 @@ test('v2.2: clean navigation and live KOC, Toss, Americano and split Toss', asyn
   assert.equal(await screenLabel.innerText(),firstScreen,'the screen stays while entering a score');
   assert.equal(await visibleField.evaluate(input=>input===document.activeElement),true);
   await visibleField.blur();
-  await fourCourtAmericano.clock.runFor(12100);
+  await fourCourtAmericano.clock.runFor(2200);
+  assert.match(await fourCourtAmericano.locator('#liveCountdown').innerText(),/over [78] s/);
+  await fourCourtAmericano.clock.runFor(8100);
   assert.equal(await screenLabel.innerText(),`Scherm 2 / ${screenTotal}`);
   await fourCourtAmericano.locator('#livePagePause').click();
   await fourCourtAmericano.clock.runFor(13000);

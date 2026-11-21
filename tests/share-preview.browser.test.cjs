@@ -38,7 +38,8 @@ test('Stable layout and isolated preview share one organizer-signed schedule acr
   assert.equal(await organizer.getByRole('button',{name:'Schema delen'}).count(),0);
   await organizer.locator('#versionLink').click();
   assert.equal(await organizer.locator('#appVersion').innerText(),'v3.0.0-preview');
-  await organizer.locator('.format-btn[data-format=americano]').click();await organizer.locator('#continueTo2').click();
+  await organizer.locator('.format-btn[data-format=americano]').click();
+  await organizer.locator('#playerCountInput').fill('12');await organizer.locator('#continueTo2').click();
   await organizer.locator('#generateBtn').click();
   let payload,channel;
   const real=process.env.PADEL_REAL_RELAY==='1';
@@ -61,16 +62,42 @@ test('Stable layout and isolated preview share one organizer-signed schedule acr
   await viewer.locator('#player').selectOption('');
   assert.ok(await viewer.locator('table').count());
   await organizer.locator('#shareClose').click();
-  await organizer.locator('.match-card input').first().fill('29');
-  await organizer.locator('.match-card input').nth(1).fill('18');
+  await organizer.locator('.match-card input').first().fill('638');
+  await organizer.locator('.match-card input').nth(1).fill('393');
   let score=false;
   for(let i=0;i<(real?160:30) && !score;i++){
     if(payload)await viewer.evaluate(({payload,channel})=>window.testStream.dispatchEvent(new MessageEvent('message',{data:JSON.stringify({event:'message',topic:channel,message:payload})})),{payload,channel});
-    score=await viewer.getByText('29–18',{exact:true}).count()>0;
+    score=await viewer.getByText('638–393',{exact:true}).count()>0;
     if(!score)await viewer.waitForTimeout(150);
   }
   assert.ok(score,'another phone sees the new score on the original URL');
   assert.equal(await viewer.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
   assert.deepEqual(await organizer.evaluate(()=>JSON.parse(localStorage.getItem('padel-toss-americano-session-v2')).state),JSON.parse(old).state);
+  const scored=viewer.locator('#rounds article').filter({has:viewer.locator('.score')}).first();
+  const player=await scored.locator('.names span').first().textContent();
+  await viewer.locator('#player').selectOption(player);
+  assert.equal(await scored.locator('.mine').first().textContent(),player);
+  const rests=await viewer.locator('article.rest .names span').allTextContents();
+  assert.ok(rests.length>0);
+  assert.ok(rests.every(name=>name===player));
+  assert.ok(await viewer.locator('.vs').first().textContent()==='vs');
+  assert.equal(await scored.locator('.score').evaluate(el=>getComputedStyle(el).whiteSpace),'nowrap');
+  await organizer.getByRole('button',{name:'Schema delen'}).last().click();
+  organizer.once('dialog',dialog=>dialog.accept());
+  await organizer.locator('#shareEnd').click();
+  await organizer.waitForFunction(()=>document.querySelector('#shareEnd').hidden);
+  if(!real)await viewer.evaluate(({payload,channel})=>window.testStream.dispatchEvent(new MessageEvent('message',{data:JSON.stringify({event:'message',topic:channel,message:payload})})),{payload,channel});
+  await viewer.locator('#connection.closed').waitFor();
+  assert.match(await viewer.locator('#connection').textContent(),/gesloten/);
+  if(real){
+    const lateViewer=await browser.newPage();
+    await lateViewer.goto(url);
+    await lateViewer.locator('#connection.closed').waitFor();
+    assert.ok(await lateViewer.getByText('638–393',{exact:true}).count());
+    await lateViewer.close();
+  }
+  await viewer.reload();
+  await viewer.locator('#connection.closed').waitFor();
+  assert.equal(await viewer.getByText('638–393',{exact:true}).count()>0,true);
   assert.deepEqual(errors,[]);
 });

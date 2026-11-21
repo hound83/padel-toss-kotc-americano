@@ -1,66 +1,95 @@
 <!doctype html>
-<html lang="nl"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="no-referrer">
+<html lang="nl"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="no-referrer">
 <title>Speelschema · Koriander Toss</title>
+<link rel="icon" href="./icon.svg">
 <style>
-*{box-sizing:border-box}body{margin:auto;max-width:60rem;background:#f1f6fa;color:#213b55;padding:1.2rem;font:1.05rem/1.5 system-ui,sans-serif}
-h1,h2,p{margin:.5rem 0} header{border-bottom:2px solid;padding-bottom:1rem}select{font:inherit;padding:.45rem;max-width:100%}section{margin:1rem 0}article{display:grid;grid-template-columns:minmax(8rem,24%) 1fr;gap:1rem;background:white;border:1px solid #d5e0e9;border-radius:.65rem;margin:.4rem 0;padding:.7rem;overflow-wrap:anywhere}article strong{font-size:1.15rem}small{font-size:.95rem}table{border-collapse:collapse;width:100%;background:white}td,th{padding:.35rem;text-align:left;border-bottom:1px solid #d5e0e9}label{display:block;font-weight:650;margin-top:1rem} #connection{color:#486078}.match{display:grid;grid-template-columns:minmax(0,1fr) 4ch minmax(0,1fr);align-items:center;gap:.65rem;overflow-wrap:anywhere;font-weight:650}.match>div{text-align:center}.match small{text-align:center}.single{align-self:center}
-@media(max-width:520px){body{padding:.55rem}article{grid-template-columns:clamp(3.2rem,18%,5rem) minmax(0,1fr);gap:.45rem;padding:.45rem}article strong{font-size:1.04rem;align-self:center}.match{gap:.25rem;font-size:1rem}.match small{font-size:.875rem}}
-article strong button{font:inherit;text-align:start;padding:0;border:0;background:transparent;color:inherit;cursor:pointer}
-@media(max-width:520px){article{grid-template-columns:clamp(3.5rem,20%,5rem) minmax(0,1fr);}article strong button{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}}
-dialog{max-width:90vw;overflow-wrap:anywhere;border:1px solid #d5e0e9;border-radius:.7rem}dialog button{font:inherit}
-</style>
-<header><h1 id="title">Speelschema</h1><p id="updated"></p><small id="connection" role="status">Kijklink openen…</small></header>
-<label id="label" for="player" hidden>Speler</label><select id="player" hidden></select><main id="rounds"></main>
+*{box-sizing:border-box}
+:root{--navy:#213b55;--line:#d5e0e9;--lime:#deec90;--muted:#516779}
+body{margin:0 auto;max-width:84rem;padding:clamp(.85rem,3vw,2rem);background:#f1f6fa;color:var(--navy);font:1.05rem/1.45 system-ui,sans-serif}
+header{display:flex;align-items:center;gap:1rem;border-bottom:2px solid var(--navy);padding-bottom:1rem}
+header img{width:clamp(2.6rem,6vw,4.2rem)}
+h1,h2,p{margin:0}h1{font-size:clamp(1.55rem,3.8vw,2.6rem);line-height:1.12;letter-spacing:-.03em}
+.meta{display:flex;flex-wrap:wrap;gap:.2rem 1rem;margin-top:.4rem;color:var(--muted);font-size:1rem}
+#connection.closed{color:var(--navy);font-weight:750;background:var(--lime);padding:0 .5rem;border-radius:.3rem}
+.filter{display:flex;align-items:center;flex-wrap:wrap;gap:.5rem .85rem;margin-block:1.2rem}
+label{font-weight:700}select,dialog button{font:inherit;color:inherit;background:white;border:1px solid #879bab;border-radius:.5rem;min-height:44px;padding:.4rem .8rem;max-width:100%}
+section{margin-block:1.25rem}h2{font-size:clamp(1.2rem,2vw,1.5rem);margin-bottom:.55rem}.round-time{display:inline-block;margin-inline-start:.6rem;font-size:.95rem;font-weight:600;color:var(--muted);white-space:nowrap}
+.courts{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,19rem),1fr));gap:.65rem}
+article,.board{border:1px solid var(--line);border-radius:.7rem;overflow:hidden;background:white;min-width:0}
+article h3{margin:0;background:var(--navy);color:white;padding:.4rem .8rem;font-size:1.08rem;overflow-wrap:anywhere}
+h3 button{color:inherit;background:none;border:0;text-align:start;padding:0;font:inherit;cursor:pointer}
+.match{display:grid;grid-template-columns:minmax(0,1fr) max-content minmax(0,1fr);align-items:center;gap:.45rem;padding:.7rem .45rem;text-align:center}
+.names{display:grid;gap:.22rem;overflow-wrap:anywhere;font-weight:650}.vs{color:var(--muted);font-size:.92rem}.score{white-space:nowrap;font-variant-numeric:tabular-nums;background:#e6edf4;color:var(--navy);border-radius:.4rem;padding:.18em .48em;font-weight:800}
+.mine{font-weight:800;text-decoration:underline;text-decoration-color:#788b26;text-decoration-thickness:2px;text-underline-offset:.18em}
+.single{padding:.65rem .85rem}.rest{grid-column:1/-1;background:#f6f8e9;display:flex;align-items:baseline;gap:.7rem;padding:.5rem .85rem}.rest h3{background:none;color:var(--navy);padding:0}.rest .single{padding:0}.rest .names{display:block;font-weight:500}.rest .names span+span::before{content:', '}
+.board{background:var(--navy);color:white;padding:1rem}.board h2{color:var(--lime)}table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}td,th{padding:.35rem .5rem;text-align:left;border-bottom:1px solid #476078}th:last-child,td:last-child{text-align:right}td:nth-child(2){overflow-wrap:anywhere}.board .mine{text-decoration-color:var(--lime)}
+dialog{max-width:90vw;overflow-wrap:anywhere;border:1px solid var(--line);border-radius:.7rem;color:var(--navy)}dialog::backdrop{background:#193b5770}
+</style></head><body>
+<header><img src="./icon.svg" alt=""><div><h1 id="title">Speelschema</h1><div class="meta"><span id="updated"></span><span id="connection" role="status">Kijklink openen…</span></div></div></header>
+<div class="filter"><label id="label" for="player" hidden>Speler</label><select id="player" hidden></select></div><main id="rounds"></main>
 <dialog id="courtDialog"><h2 id="courtName"></h2><form method="dialog"><button id="close">Sluiten</button></form></dialog>
 <script src="./share-v3.js"></script><script>
 (async()=>{
  const $=id=>document.getElementById(id);
- function node(tag,text){const el=document.createElement(tag);el.textContent=text;return el;}
- let latest,online=false;
- function status(){if(latest)$('connection').textContent=online?(latest.en?'Listening for updates':'Verbonden voor wijzigingen'):(latest.en?'Showing the saved schedule':'De opgeslagen indeling is zichtbaar');}
+ function node(tag,text='',className=''){const el=document.createElement(tag);el.textContent=text;el.className=className;return el;}
+ let latest,online=false,stream,cacheKey;
+ function status(){
+   const en=latest.en;
+   $('connection').classList.toggle('closed',!!latest.closed);
+   $('connection').textContent=latest.closed?(en?'Session closed · final results':'Kijksessie gesloten · eindstand'):
+     online?(en?'Connected for updates':'Verbonden voor wijzigingen'):(en?'Showing the saved schedule':'Opgeslagen schema');
+ }
  function draw(){
    const s=latest,en=s.en,player=$('player').value;
    $('title').textContent=s.title;
    $('updated').textContent=(en?'Updated ':'Bijgewerkt ')+new Date(s.at).toLocaleString(en?'en-GB':'nl-NL',{dateStyle:'short',timeStyle:'short'});
-   $('rounds').replaceChildren(); status();
+   $('rounds').replaceChildren();status();
    for(const round of s.rounds){
      const rows=round.rows.filter(row=>!player||row.teams.flat().includes(player));
      if(!rows.length)continue;
-     const section=node('section','');section.append(node('h2',(en?'Round ':'Ronde ')+round.n+(round.time?' · '+round.time:'')));
+     const section=node('section'), heading=node('h2',(en?'Round ':'Ronde ')+round.n);
+     if(round.time)heading.append(node('span',round.time,'round-time'));
+     const courts=node('div','','courts');section.append(heading,courts);
      for(const row of rows){
-       const match=node('article','');const label=node('strong','');
-       const caption=node(row.label.length>8?'button':'span',row.label);label.append(caption);match.append(label);
-       if(caption.tagName==='BUTTON'){caption.title=row.label;caption.onclick=()=>{$('courtName').textContent=row.label;$('close').textContent=en?'Close':'Sluiten';$('courtDialog').showModal();};}
-       const body=node('div','');body.className=row.teams.length===2?'match':'single';
+       const rest=row.rest??(row.teams.length===1 && /(?:^| · )(Rust|Rest)$/.test(row.label));
+       const card=node('article','',rest?'rest':''),label=node('h3');
+       const caption=node(row.label.length>8?'button':'span',row.label);label.append(caption);card.append(label);
+       if(caption.tagName==='BUTTON'){caption.onclick=()=>{$('courtName').textContent=row.label;$('close').textContent=en?'Close':'Sluiten';$('courtDialog').showModal();};}
+       const body=node('div','',row.teams.length===2?'match':'single');
        row.teams.forEach((team,i)=>{
-         if(i)body.append(node('small',row.score?row.score.map(x=>x??'–').join('–'):(en?'vs':'tegen')));
-         const names=node('div','');team.forEach(name=>names.append(node('div',name)));body.append(names);
+         if(i)body.append(row.score?node('strong',row.score.map(x=>x??'–').join('–'),'score'):node('span','vs','vs'));
+         const names=node('div','','names');
+         for(const name of team){if(!rest||!player||name===player)names.append(node('span',name,name===player?'mine':''));}
+         body.append(names);
        });
-       match.append(body);section.append(match);
+       card.append(body);courts.append(card);
      }
      $('rounds').append(section);
    }
    for(const board of s.boards){
-     const section=node('section','');section.append(node('h2',board.title));
-     const table=node('table',''),head=table.insertRow();
+     const section=node('section','','board');section.append(node('h2',board.title));
+     const table=node('table'),head=table.insertRow();
      for(const label of ['#',en?'Player':'Speler',board.unit])head.append(node('th',label));
-     for(const row of board.rows){const tr=table.insertRow();row.forEach(x=>tr.append(node('td',x)));}
+     for(const row of board.rows){const tr=table.insertRow();row.forEach((x,i)=>tr.append(node('td',x,i===1&&x===player?'mine':'')));}
      section.append(table);$('rounds').append(section);
    }
  }
  function update(s){
-   if(latest && s.at<=latest.at)return;
-   const selected=$('player').value; latest=s;document.documentElement.lang=s.en?'en':'nl';
+   if(latest?.closed || (latest && !s.closed && s.at<=latest.at))return;
+   const selected=$('player').value;latest=s;document.documentElement.lang=s.en?'en':'nl';
    const names=new Set(s.rounds.flatMap(r=>r.rows.flatMap(row=>row.teams.flat())));
    $('label').textContent=s.en?'Show matches for':'Toon wedstrijden van';$('label').hidden=false;
    $('player').replaceChildren(new Option(s.en?'Everyone':'Iedereen',''),...Array.from(names).sort((a,b)=>a.localeCompare(b)).map(n=>new Option(n,n)));
    $('player').hidden=false;if(names.has(selected))$('player').value=selected;draw();
+   if(s.closed){stream?.close?.();try{localStorage.setItem(cacheKey,JSON.stringify(s));}catch{}}
  }
  try{
-   const session=TossShare.parse(location.hash);
+   const session=TossShare.parse(location.hash);cacheKey='padel-view-final-'+session.channel;
    update(await TossShare.initial(session));
+   try{const final=JSON.parse(localStorage.getItem(cacheKey));if(final?.closed)update(final);}catch{}
    $('player').onchange=draw;
-   TossShare.listen(session,update,connected=>{online=connected;status();});
+   if(!latest.closed)stream=TossShare.listen(session,update,connected=>{online=connected;status();});
  }catch{$('connection').textContent='Deze kijklink is onvolledig. Vraag de organisator de volledige link opnieuw te delen.';}
 })();
-</script></html>
+</script></body></html>
