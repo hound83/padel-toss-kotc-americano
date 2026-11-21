@@ -91,13 +91,17 @@ Als de baanindeling groter is dan het scherm, verdeelt de presentatie de kaarten
 - Open **Speelverdeling bekijken** boven het schema voor het aantal wedstrijden per speler, opeenvolgende rustbeurten en terugkerende duo’s.
 - Zet de **Rondeklok** aan en kies de rondeduur. Een nieuwe KOC-klok staat op 20 minuten. Start elke klok handmatig. De ring loopt terug met de resterende tijd. In de KOC-presentatie staat de klok rechts onder de kop, boven de banen. Op smalle schermen neemt hij daar de beschikbare breedte in. Op nul kleurt het klokpaneel rood en verschijnt **Tijd om**. Tijdens het lopen kun je één minuut aftrekken of bijtellen. Reset zet de tijd terug op de begintijd van die ronde. De volgende ronde begint met de standaardduur en een stilstaande klok.
 
-## Extra startkeuzes bij Toss
+## Extra instellingen en speelschema
 
-Onder de namen staat **Extra instellingen voor Toss**, standaard ingeklapt. Met **Start** staat vast dat een speler in de eerste ronde speelt. Vink bij **Duo** twee spelers aan en kies **Startkoppel vastleggen** om hen de eerste ronde als partners te laten spelen. Er kunnen meerdere startkoppels worden vastgelegd. Deze keuzes blijven bewaard bij opslaan, hervatten en opnieuw genereren.
+Bij Toss, Gesplitste Toss en Americano staat **Extra instellingen** onder de namen. Kies eventueel een begintijd, rondeduur (standaard 20 minuten) en namen of nummers voor de banen. Bij Gesplitste Toss gelden de spelerskeuzes per groep.
 
-In hetzelfde menu staan een optionele **Starttijd**, de **Rondeduur** (standaard 20 minuten) en de **Baannummers**. Een ingevulde starttijd toont per ronde de begin- en eindtijd in het schema, de presentatiemodus en de afdruk. De rondes sluiten direct op elkaar aan. Baannummers kunnen bijvoorbeeld **2** en **3** zijn bij twee beschikbare banen. Deze instellingen blijven bewaard in opgeslagen sessies.
+**Start** garandeert een speelplek in ronde 1. Een bevestigd duo speelt de eerste ronde samen. Daarna probeert de planner beide spelers in dezelfde rondes te laten spelen en rusten. **Liefst vrij** is een voorkeur voor de laatste ronde. Banen vullen en twee opeenvolgende wachtrondes voorkomen gaan voor. Een optioneel speelniveau helpt de planner om evenwichtige koppels te kiezen. De organisator ziet de aanduidingen in de instellingen.
 
-Toss voorkomt twee opeenvolgende wachtrondes en verdeelt de speelbeurten zo gelijk mogelijk. Dit kan wanneer minstens de helft van de deelnemers per ronde speelt. Bij meer deelnemers toont de planner dat opeenvolgende wachtrondes onvermijdelijk zijn. Bij het aanpassen van deelnemers blijft de wachtverdeling van de al gespeelde rondes meetellen.
+**Opnieuw loten** maakt vanaf het schemablad een nieuwe indeling. Eerdere rondes en rondes tot en met de laatste ingevoerde uitslag blijven behouden, ook bij een gedeeltelijke score. De bestaande groepstoewijzing blijft gelden na een Americano-splitsing.
+
+**Schema afdrukken** opent het afdrukvenster. **PDF downloaden** slaat rechtstreeks een A4-bestand op. Beide bevatten de ronde, eventuele tijden, baanaanduidingen, spelers, ingevulde scores en rustbeurten. Een complete ronde blijft waar mogelijk op één pagina. Lange rondes krijgen een herhaalde rondekop. Beide acties werken ook offline.
+
+Bij KOC zijn baanaanduidingen en speelniveau beschikbaar onder **Extra instellingen**. De Rondeplanner gebruikt het niveau bij de start en vermindert het gewicht ervan in de eerste zes gespeelde wedstrijden.
 
 ## Speciaal voor KOC
 

@@ -34,15 +34,18 @@
     return first ? [[a,c],[b,d]] : [[a,d],[b,c]];
   }
 
-  function estimateKocStrength(games, playerCount, fitStrength, hintedPlayers){
-    if (hintedPlayers.length !== 2){
+  function estimateKocStrength(games, playerCount, fitStrength, hintedPlayers, levels){
+    if (hintedPlayers.length !== 2 && !levels.some(Boolean)){
       return games.length ? fitStrength(games, playerCount) : new Float64Array(playerCount);
     }
     const played = new Uint32Array(playerCount);
     games.forEach(game => game.players.forEach(player => {played[player]++;}));
     const hint = new Float64Array(playerCount);
-    hintedPlayers.forEach(player => {
+    (hintedPlayers.length === 2 ? hintedPlayers : []).forEach(player => {
       hint[player] = -.12 * Math.max(0, 1-played[player]/6);
+    });
+    levels.forEach((value,player) => {
+      if (value === -1 || value === 1) hint[player] = .15 * value * Math.max(0,1-played[player]/6);
     });
     // Fit the remaining score difference around the fading starting estimate.
     const adjusted = games.map(({players,margin}) => {
@@ -56,7 +59,7 @@
     return round.matches.every(match => match.score.every(validScore) && match.score[0] !== match.score[1]);
   }
 
-  function makeRound(number, byCourt, waiting, history, playerCount, fitStrength, random, {crossed = false, hintedPlayers = []}){
+  function makeRound(number, byCourt, waiting, history, playerCount, fitStrength, random, {crossed = false, hintedPlayers = [], levels = []}){
     const crossArrivals = crossed && number > 1;
     const games = [];
     const partnerCounts = new Map();
@@ -72,7 +75,7 @@
         if (index === history.length-1) recentPartners.add(key);
       });
     }));
-    const strength = estimateKocStrength(games,playerCount,fitStrength,hintedPlayers);
+    const strength = estimateKocStrength(games,playerCount,fitStrength,hintedPlayers,levels);
     const disadvantage = new Float64Array(playerCount);
     if (!crossArrivals) games.forEach(game => {
       const [a,b,c,d] = game.players;
