@@ -1103,6 +1103,7 @@
   .action-menu-items{position:absolute;z-index:5;inset:auto 0 auto auto;top:calc(100% + 4px);width:max-content;max-width:calc(100vw - 32px);padding:4px;background:var(--surface);border:1px solid var(--line);border-radius:8px;box-shadow:0 6px 20px #193b5724;}
   .action-menu:not([open]) .action-menu-items{display:none;}
   .action-menu-items .btn{display:block;width:100%;text-align:left;border:0;min-height:44px;padding:8px 14px;}
+  .export-icon{vertical-align:middle;margin-inline-end:.5em;}
   .action-menu-items [hidden],#editPlayersBtn[hidden]{display:none;}
   #editPlayersBtn{margin-bottom:14px;}
   #rerollStatus:empty,.playcount-wrap:has(#playcountPanel[style*="none"]){display:none;}
@@ -1255,6 +1256,20 @@
 <link rel="stylesheet" href="./visual-theme.css">
 </head>
 <body>
+<svg width="0" height="0" aria-hidden="true" focusable="false" style="position:absolute">
+  <symbol id="icon-print" viewBox="0 0 24 24">
+    <g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round">
+      <path d="M6 8V3h12v5M6 17H3V8h18v9h-3"/>
+      <path d="M6 14h12v7H6z"/>
+    </g>
+    <circle cx="17.5" cy="11" r="1" fill="currentColor"/>
+  </symbol>
+  <symbol id="icon-pdf" viewBox="0 0 24 24">
+    <path d="M4 2h10l6 6v14H4z M14 2v6h6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+    <rect x="1" y="10" width="21" height="10" rx="2" fill="currentColor"/>
+    <text x="11.5" y="17.8" text-anchor="middle" fill="white" font-family="Arial,sans-serif" font-weight="700" font-size="8">PDF</text>
+  </symbol>
+</svg>
 <div class="wrap">
 
   <div class="masthead">
@@ -1465,8 +1480,8 @@
         <summary class="btn btn-ghost" data-i18n="moreOptions">Meer opties</summary>
         <div class="action-menu-items">
           <button class="btn btn-ghost" id="kocCopy" type="button" data-i18n="kocCopy">Kopieer voor WhatsApp</button>
-          <button class="btn btn-ghost" type="button" id="kocPrint" data-i18n="printBtn"></button>
-          <button class="btn btn-ghost" type="button" id="kocPdf" data-i18n="pdfBtn"></button>
+          <button class="btn btn-ghost" type="button" id="kocPrint"><svg class="export-icon" width="22" height="22" aria-hidden="true" focusable="false"><use href="#icon-print"/></svg><span data-i18n="printBtn">Schema afdrukken</span></button>
+          <button class="btn btn-ghost" type="button" id="kocPdf"><svg class="export-icon" width="22" height="22" aria-hidden="true" focusable="false"><use href="#icon-pdf"/></svg><span data-i18n="pdfBtn">PDF downloaden</span></button>
           <button class="btn btn-ghost" id="kocSave" type="button" data-i18n="saveBtn">💾 Speelschema opslaan</button>
           <button class="btn btn-ghost" id="kocLoad" type="button" data-i18n="loadBtn">📂 Opgeslagen schema laden</button>
           <button class="btn btn-ghost" id="kocRoundReset" type="button" data-i18n="kocResetRounds" hidden></button>
@@ -1558,7 +1573,7 @@
       <summary data-i18n="extraSettings">Extra instellingen</summary>
       <div class="toss-plan-fields" id="tossSessionSettings"></div>
       <label id="prefGroupLabel" hidden><span data-i18n="prefGroup"></span> <select id="prefGroup"></select></label>
-      <p data-i18n="tossStartHelp">Start garandeert een plek in ronde 1. Leg met Duo twee partners vast voor de eerste ronde. Daarna probeert de planner hun speel- en rustbeurten gelijk te houden. Liefst vrij geldt voor de laatste ronde.</p>
+      <p data-i18n="tossStartHelp">Start garandeert een plek in ronde 1. Leg met Duo twee partners vast voor de eerste ronde. Daarna probeert de planner hun speel- en rustbeurten gelijk te houden. Met Laatste vrij krijgt een speler zo mogelijk rust in de laatste ronde.</p>
       <div class="toss-start-grid" id="tossStartGrid"></div>
       <button class="btn btn-ghost" id="tossAddPair" type="button" data-i18n="tossAddPair" disabled>Startkoppel vastleggen</button>
       <div class="toss-start-pairs" id="tossStartPairs"></div>
@@ -1585,8 +1600,8 @@
         <summary class="btn btn-ghost" data-i18n="moreOptions">Meer opties</summary>
         <div class="action-menu-items">
           <button type="button" class="btn btn-ghost" id="playcountToggleBtn" data-i18n="playcountToggleShow">📊 Speelverdeling bekijken</button>
-          <button class="btn btn-ghost" id="printBtn" data-i18n="printBtn">Schema afdrukken</button>
-          <button class="btn btn-ghost" type="button" id="pdfBtn" data-i18n="pdfBtn">PDF downloaden</button>
+          <button class="btn btn-ghost" id="printBtn"><svg class="export-icon" width="22" height="22" aria-hidden="true" focusable="false"><use href="#icon-print"/></svg><span data-i18n="printBtn">Schema afdrukken</span></button>
+          <button class="btn btn-ghost" type="button" id="pdfBtn"><svg class="export-icon" width="22" height="22" aria-hidden="true" focusable="false"><use href="#icon-pdf"/></svg><span data-i18n="pdfBtn">PDF downloaden</span></button>
           <button class="btn btn-ghost" id="saveBtn" data-i18n="saveBtn">💾 Speelschema opslaan</button>
         </div>
       </details>
@@ -1852,13 +1867,13 @@
       tossRoundMinutes: "Rondeduur (min)",
       tossCourtNumbers: "Baanaanduidingen", extraSettings:"Extra instellingen", prefGroup:"Groep", prefLevel:"Speelniveau",
       prefNeutral:"Geen aanduiding",prefBeginner:"Beginner",prefStrong:"Sterk",
-      tossStartRest:"Liefst vrij",tossStartRestAria:"{name} liefst vrij in de laatste ronde",
+      tossStartRest:"Laatste vrij",tossStartRestAria:"Laatste vrij voor {name}, indien mogelijk",
       pdfBtn:"PDF downloaden",rerollBtn:"Opnieuw loten",rerollDone:"Opnieuw geloot vanaf ronde {n}.",rerollNone:"Alle rondes zijn al gespeeld of bevatten een uitslag.", printRest:"Rust",
       tossStartTimeError: "Vul een geldige starttijd in of laat de starttijd leeg.",
       tossRoundMinutesError: "Kies een rondeduur van 1 tot en met 240 minuten.",
       tossCourtNumbersError: "Geef elke baan een unieke naam of een uniek nummer (maximaal 40 tekens).",
       tossStartTitle: "Extra instellingen voor Toss",
-      tossStartHelp: "Vink Start aan bij spelers die zeker in ronde 1 moeten spelen. Selecteer bij Duo twee spelers en leg het startkoppel vast. Deze spelers spelen automatisch in ronde 1.",
+      tossStartHelp: "Start garandeert een plek in ronde 1. Leg met Duo twee partners vast voor de eerste ronde. Daarna probeert de planner hun speel- en rustbeurten gelijk te houden. Met Laatste vrij krijgt een speler zo mogelijk rust in de laatste ronde.",
       tossStartPlay: "Start",
       tossStartPair: "Duo",
       tossStartPlayAria: "Speelt zeker in ronde 1: {name}",
@@ -2210,13 +2225,13 @@
       tossRoundMinutes: "Round duration (min)",
       tossCourtNumbers: "Court names or numbers", extraSettings:"Extra settings", prefGroup:"Group", prefLevel:"Player level",
       prefNeutral:"Unspecified",prefBeginner:"Beginner",prefStrong:"Strong",
-      tossStartRest:"Prefer rest",tossStartRestAria:"{name} prefers to rest in the final round",
+      tossStartRest:"Final round off",tossStartRestAria:"Final round off for {name}, if possible",
       pdfBtn:"Download PDF",rerollBtn:"Redraw schedule",rerollDone:"Redrawn from round {n}.",rerollNone:"All rounds have been played or have a score.", printRest:"Rest",
       tossStartTimeError: "Enter a valid start time or leave it empty.",
       tossRoundMinutesError: "Choose a round duration between 1 and 240 minutes.",
       tossCourtNumbersError: "Give each court a unique name or number (up to 40 characters).",
       tossStartTitle: "Extra settings for Toss",
-      tossStartHelp: "Start guarantees a place in round 1. Confirm two players as a pair to start as partners. Later the planner tries to give them the same playing and resting rounds. Prefer rest applies to the final round.",
+      tossStartHelp: "Start guarantees a place in round 1. Confirm two players as a pair to start as partners. Later the planner tries to give them the same playing and resting rounds. Select Final round off to give a player a break in the last round if possible.",
       tossStartPlay: "Start",
       tossStartPair: "Pair",
       tossStartPlayAria: "Must play in round 1: {name}",
