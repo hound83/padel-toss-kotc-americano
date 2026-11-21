@@ -56,12 +56,14 @@ test('Stable layout and isolated preview share one organizer-signed schedule acr
   if(!real) await mobile.addInitScript(()=>{window.EventSource=class extends EventTarget{constructor(){super();window.testStream=this;}};});
   await viewer.goto(url,{waitUntil:'domcontentloaded'});
   await viewer.locator('#rounds article').first().waitFor();
-  assert.equal(await viewer.locator('#rounds input, #rounds button').count(),0);
+  assert.equal(await viewer.locator('#rounds input, #rounds button:not(.person)').count(),0);
   await viewer.locator('#player').selectOption({index:1});
   assert.equal(await viewer.locator('#rounds section').first().locator('article').count(),1);
   await viewer.locator('#player').selectOption('');
   assert.ok(await viewer.locator('table').count());
   await organizer.locator('#shareClose').click();
+  await organizer.locator('#scheduleRound2 input').first().fill('21');
+  await organizer.locator('#scheduleRound2 input').nth(1).fill('17');
   await organizer.locator('.match-card input').first().fill('638');
   await organizer.locator('.match-card input').nth(1).fill('393');
   let score=false;
@@ -74,14 +76,50 @@ test('Stable layout and isolated preview share one organizer-signed schedule acr
   assert.equal(await viewer.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
   assert.deepEqual(await organizer.evaluate(()=>JSON.parse(localStorage.getItem('padel-toss-americano-session-v2')).state),JSON.parse(old).state);
   const scored=viewer.locator('#rounds article').filter({has:viewer.locator('.score')}).first();
-  const player=await scored.locator('.names span').first().textContent();
-  await viewer.locator('#player').selectOption(player);
+  const player=await scored.locator('.names .person').first().textContent();
+  await scored.getByRole('button',{name:player,exact:true}).click();
+  assert.equal(await viewer.locator('#player').inputValue(),player);
+  await viewer.locator('#everyone').click();
+  await viewer.locator('.board').getByRole('button',{name:player,exact:true}).click();
+  assert.equal(await viewer.locator('#player').inputValue(),player);
   assert.equal(await scored.locator('.mine').first().textContent(),player);
-  const rests=await viewer.locator('article.rest .names span').allTextContents();
+  const rests=await viewer.locator('article.rest .names .person').allTextContents();
   assert.ok(rests.length>0);
   assert.ok(rests.every(name=>name===player));
   assert.ok(await viewer.locator('.vs').first().textContent()==='vs');
-  assert.equal(await scored.locator('.score').evaluate(el=>getComputedStyle(el).whiteSpace),'nowrap');
+  assert.equal(await scored.locator('.score:visible').evaluate(el=>getComputedStyle(el).whiteSpace),'nowrap');
+  const autosave=()=>organizer.evaluate(()=>JSON.parse(localStorage.getItem('padel-toss-session-v3-preview')).state);
+  const original=await autosave();
+  await organizer.locator('#stepsNav [data-step="2"]').click();
+  const slot=Number(player.match(/\d+/)[0])-1;
+  const nameInput=organizer.locator('#namesGrid input').nth(slot);
+  assert.equal(await organizer.locator('#applySchedule2').isVisible(),false);
+  await nameInput.fill('Verworpen naam');
+  await organizer.locator('#cancelToScheduleBtn2').click();
+  assert.deepEqual((await autosave()).pools,original.pools);
+  await organizer.locator('#stepsNav [data-step="2"]').click();
+  assert.equal(await nameInput.inputValue(),'');
+  await nameInput.fill('Jan-Bart-Willem');
+  await organizer.locator('#applySchedule2').click();
+  const changed=await autosave();
+  assert.deepEqual(changed.scores,original.scores);
+  assert.deepEqual(changed.live,original.live);
+  assert.equal(changed.previewChannel,original.previewChannel);
+  assert.deepEqual(changed.pools,JSON.parse(JSON.stringify(original.pools,(key,value)=>value===player?'Jan-Bart-Willem':value)));
+  for(let i=0;i<(real?160:40) && await viewer.locator('#player').inputValue()!== 'Jan-Bart-Willem';i++){
+    if(payload)await viewer.evaluate(({payload,channel})=>window.testStream.dispatchEvent(new MessageEvent('message',{data:JSON.stringify({event:'message',topic:channel,message:payload})})),{payload,channel});
+    await viewer.waitForTimeout(150);
+  }
+  assert.equal(await viewer.locator('#player').inputValue(),'Jan-Bart-Willem');
+  assert.equal(await viewer.locator('.board .mine').innerText(),'Jan-Bart-Willem');
+  await organizer.locator('#stepsNav [data-step="2"]').click();
+  await organizer.locator('#roundsPlus').click();
+  assert.equal(await organizer.locator('#applySchedule2').isVisible(),false);
+  await organizer.locator('#generateBtn').click();
+  assert.match(await organizer.locator('#confirmModalText').textContent(),/ingevulde score: 2/);
+  await organizer.locator('#confirmCancelBtn').click();
+  await organizer.locator('#cancelToScheduleBtn2').click();
+  assert.deepEqual((await autosave()).scores,original.scores);
   await organizer.getByRole('button',{name:'Schema delen'}).last().click();
   organizer.once('dialog',dialog=>dialog.accept());
   await organizer.locator('#shareEnd').click();
@@ -100,4 +138,34 @@ test('Stable layout and isolated preview share one organizer-signed schedule acr
   await viewer.locator('#connection.closed').waitFor();
   assert.equal(await viewer.getByText('638–393',{exact:true}).count()>0,true);
   assert.deepEqual(errors,[]);
+});
+
+test('Viewer keeps both teams in place for small and large results',async t=>{
+  const browser=await chromium.launch();
+  t.after(()=>browser.close());
+  const page=await browser.newPage();
+  const root=path.join(__dirname,'..');
+  await page.route('https://viewer.test/**',route=>{
+    const file=path.basename(new URL(route.request().url()).pathname);
+    return route.fulfill({path:path.join(root,file),contentType:file.endsWith('html')?'text/html':file.endsWith('js')?'text/javascript':'image/svg+xml'});
+  });
+  await page.goto('https://viewer.test/kijken.html');
+  const url=await page.evaluate(async()=>{
+    const teams=[['Jan-Bart-Willem','Marjolein'],['Alexander','Annabel']];
+    const rounds=[null,[99,99],[969,350]].map((score,i)=>({n:i+1,rows:[{label:'Baan 1',teams,score}]}));
+    return TossShare.link(await TossShare.create({title:'Toss',at:Date.now(),rounds,boards:[]}));
+  });
+  await page.goto('about:blank');
+  await page.route('https://ntfy.sh/**',route=>route.abort());
+  await page.goto(url);
+  await page.locator('.match').first().waitFor();
+  for(const width of [320,390,1280]){
+    await page.setViewportSize({width,height:800});
+    const columns=await page.locator('.match').evaluateAll(rows=>rows.map(row=>
+      [...row.querySelectorAll('.names')].map(col=>[col.offsetWidth,col.getBoundingClientRect().x])));
+    assert.deepEqual(columns[0],columns[1]);
+    assert.deepEqual(columns[1],columns[2]);
+    assert.equal(await page.locator('article').nth(1).locator('.head-score').isVisible(),width<500);
+    assert.equal(await page.locator('article').nth(2).locator('.head-score').isVisible(),true);
+  }
 });

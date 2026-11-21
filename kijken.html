@@ -13,7 +13,7 @@ h1,h2,p{margin:0}h1{font-size:clamp(1.55rem,3.8vw,2.6rem);line-height:1.12;lette
 .meta{display:flex;flex-wrap:wrap;gap:.2rem 1rem;margin-top:.4rem;color:var(--muted);font-size:1rem}
 #connection.closed{color:var(--navy);font-weight:750;background:var(--lime);padding:0 .5rem;border-radius:.3rem}
 .filter{display:flex;align-items:center;flex-wrap:wrap;gap:.5rem .85rem;margin-block:1.2rem}
-label{font-weight:700}select,dialog button{font:inherit;color:inherit;background:white;border:1px solid #879bab;border-radius:.5rem;min-height:44px;padding:.4rem .8rem;max-width:100%}
+label{font-weight:700}select,.filter button,dialog button{font:inherit;color:inherit;background:white;border:1px solid #879bab;border-radius:.5rem;min-height:44px;padding:.4rem .8rem;max-width:100%}
 section{margin-block:1.25rem}h2{font-size:clamp(1.2rem,2vw,1.5rem);margin-bottom:.55rem}.round-time{display:inline-block;margin-inline-start:.6rem;font-size:.95rem;font-weight:600;color:var(--muted);white-space:nowrap}
 .courts{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,19rem),1fr));gap:.65rem}
 article,.board{border:1px solid var(--line);border-radius:.7rem;overflow:hidden;background:white;min-width:0}
@@ -25,11 +25,20 @@ h3 button{color:inherit;background:none;border:0;text-align:start;padding:0;font
 .single{padding:.65rem .85rem}.rest{grid-column:1/-1;background:#f6f8e9;display:flex;align-items:baseline;gap:.7rem;padding:.5rem .85rem}.rest h3{background:none;color:var(--navy);padding:0}.rest .single{padding:0}.rest .names{display:block;font-weight:500}.rest .names span+span::before{content:', '}
 .board{background:var(--navy);color:white;padding:1rem}.board h2{color:var(--lime)}table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}td,th{padding:.35rem .5rem;text-align:left;border-bottom:1px solid #476078}th:last-child,td:last-child{text-align:right}td:nth-child(2){overflow-wrap:anywhere}.board .mine{text-decoration-color:var(--lime)}
 dialog{max-width:90vw;overflow-wrap:anywhere;border:1px solid var(--line);border-radius:.7rem;color:var(--navy)}dialog::backdrop{background:#193b5770}
+article{container-type:inline-size}
+article h3{display:flex;align-items:center;justify-content:space-between;gap:.55rem}
+.match{grid-template-columns:minmax(0,1fr) 6ch minmax(0,1fr)}
+.names{min-width:0}.person{max-width:100%;min-width:0;color:inherit;font:inherit;background:none;border:0;padding:0;cursor:pointer}
+.match .person,.single .person{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.person:focus-visible{outline:2px solid currentColor;outline-offset:-2px}.person:hover{text-decoration:underline}
+.person.mine{font-weight:800}.rest .person+.person{margin-inline-start:.6em}
+.head-score,.with-score .vs{display:none}.wide-score .head-score,.wide-score .vs{display:inline-block}.wide-score .middle .score{display:none}
+@container(max-width:26rem){.head-score,.with-score .vs{display:inline-block}.middle .score{display:none}.match{grid-template-columns:minmax(0,1fr) 2ch minmax(0,1fr)}}
 </style></head><body>
 <header><img src="./icon.svg" alt=""><div><h1 id="title">Speelschema</h1><div class="meta"><span id="updated"></span><span id="connection" role="status">Kijklink openen…</span></div></div></header>
-<div class="filter"><label id="label" for="player" hidden>Speler</label><select id="player" hidden></select></div><main id="rounds"></main>
+<div class="filter"><label id="label" for="player" hidden>Speler</label><select id="player" hidden></select><button id="everyone" hidden type="button">Toon iedereen</button></div><main id="rounds"></main>
 <dialog id="courtDialog"><h2 id="courtName"></h2><form method="dialog"><button id="close">Sluiten</button></form></dialog>
-<script src="./share-v3.js"></script><script>
+<script src="./name-hint.js"></script><script src="./share-v3.js"></script><script>
 (async()=>{
  const $=id=>document.getElementById(id);
  function node(tag,text='',className=''){const el=document.createElement(tag);el.textContent=text;el.className=className;return el;}
@@ -40,8 +49,18 @@ dialog{max-width:90vw;overflow-wrap:anywhere;border:1px solid var(--line);border
    $('connection').textContent=latest.closed?(en?'Session closed · final results':'Kijksessie gesloten · eindstand'):
      online?(en?'Connected for updates':'Verbonden voor wijzigingen'):(en?'Showing the saved schedule':'Opgeslagen schema');
  }
+ function selectPlayer(name,focus){
+   $('player').value=name;draw();
+   if(focus)$('player').focus({preventScroll:true});
+ }
+ function person(name,selected){
+   const button=node('button',name,'person'+(name===selected?' mine':''));
+   button.type='button';button.title=name;button.onclick=()=>selectPlayer(name,true);
+   return button;
+ }
  function draw(){
    const s=latest,en=s.en,player=$('player').value;
+   $('everyone').textContent=en?'Show everyone':'Toon iedereen';$('everyone').hidden=!player;
    $('title').textContent=s.title;
    $('updated').textContent=(en?'Updated ':'Bijgewerkt ')+new Date(s.at).toLocaleString(en?'en-GB':'nl-NL',{dateStyle:'short',timeStyle:'short'});
    $('rounds').replaceChildren();status();
@@ -57,10 +76,17 @@ dialog{max-width:90vw;overflow-wrap:anywhere;border:1px solid var(--line);border
        const caption=node(row.label.length>8?'button':'span',row.label);label.append(caption);card.append(label);
        if(caption.tagName==='BUTTON'){caption.onclick=()=>{$('courtName').textContent=row.label;$('close').textContent=en?'Close':'Sluiten';$('courtDialog').showModal();};}
        const body=node('div','',row.teams.length===2?'match':'single');
+       let score;
+       if(row.score){
+         score=row.score.map(x=>x??'–').join('–');
+         card.classList.add('with-score');
+         if(row.score.some(x=>x>99))card.classList.add('wide-score');
+         label.append(node('strong',score,'score head-score'));
+       }
        row.teams.forEach((team,i)=>{
-         if(i)body.append(row.score?node('strong',row.score.map(x=>x??'–').join('–'),'score'):node('span','vs','vs'));
+         if(i){const mid=node('div','','middle');mid.append(node('span','vs','vs'));if(score)mid.append(node('strong',score,'score'));body.append(mid);}
          const names=node('div','','names');
-         for(const name of team){if(!rest||!player||name===player)names.append(node('span',name,name===player?'mine':''));}
+         for(const name of team){if(!rest||!player||name===player)names.append(person(name,player));}
          body.append(names);
        });
        card.append(body);courts.append(card);
@@ -71,24 +97,25 @@ dialog{max-width:90vw;overflow-wrap:anywhere;border:1px solid var(--line);border
      const section=node('section','','board');section.append(node('h2',board.title));
      const table=node('table'),head=table.insertRow();
      for(const label of ['#',en?'Player':'Speler',board.unit])head.append(node('th',label));
-     for(const row of board.rows){const tr=table.insertRow();row.forEach((x,i)=>tr.append(node('td',x,i===1&&x===player?'mine':'')));}
+     for(const row of board.rows){const tr=table.insertRow();row.forEach((x,i)=>{const td=tr.insertCell();if(i===1)td.append(person(x,player));else td.textContent=x;});}
      section.append(table);$('rounds').append(section);
    }
  }
  function update(s){
    if(latest?.closed || (latest && !s.closed && s.at<=latest.at))return;
-   const selected=$('player').value;latest=s;document.documentElement.lang=s.en?'en':'nl';
+   const selected=$('player').value,oldId=latest?.playerIds?.[selected];latest=s;document.documentElement.lang=s.en?'en':'nl';
    const names=new Set(s.rounds.flatMap(r=>r.rows.flatMap(row=>row.teams.flat())));
    $('label').textContent=s.en?'Show matches for':'Toon wedstrijden van';$('label').hidden=false;
    $('player').replaceChildren(new Option(s.en?'Everyone':'Iedereen',''),...Array.from(names).sort((a,b)=>a.localeCompare(b)).map(n=>new Option(n,n)));
-   $('player').hidden=false;if(names.has(selected))$('player').value=selected;draw();
+   $('player').hidden=false;const renamed=oldId && Object.keys(s.playerIds||{}).find(n=>s.playerIds[n]===oldId);
+   $('player').value=renamed || (names.has(selected)?selected:'');draw();
    if(s.closed){stream?.close?.();try{localStorage.setItem(cacheKey,JSON.stringify(s));}catch{}}
  }
  try{
    const session=TossShare.parse(location.hash);cacheKey='padel-view-final-'+session.channel;
    update(await TossShare.initial(session));
    try{const final=JSON.parse(localStorage.getItem(cacheKey));if(final?.closed)update(final);}catch{}
-   $('player').onchange=draw;
+   $('player').onchange=draw;$('everyone').onclick=()=>selectPlayer('',true);
    if(!latest.closed)stream=TossShare.listen(session,update,connected=>{online=connected;status();});
  }catch{$('connection').textContent='Deze kijklink is onvolledig. Vraag de organisator de volledige link opnieuw te delen.';}
 })();
