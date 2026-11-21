@@ -27,8 +27,14 @@ test('Stable layout and isolated preview share one organizer-signed schedule acr
   await organizer.waitForTimeout(400);
   const old=await organizer.evaluate(()=>localStorage.getItem('padel-toss-americano-session-v2'));
   assert.ok(old);
-  const widths=await organizer.locator('#panel3 .schedule-actions button:visible').evaluateAll(nodes=>nodes.map(el=>el.offsetWidth));
-  assert.ok(Math.max(...widths)-Math.min(...widths)<=1);
+  assert.deepEqual(await organizer.locator('#panel3 .schedule-actions > button:visible').allTextContents(),['Opnieuw loten','Presentatiemodus']);
+  const menu=organizer.locator('#panel3 .action-menu');
+  await menu.locator('summary').focus();
+  await organizer.keyboard.press('Enter');
+  assert.equal(await menu.locator('#pdfBtn').isVisible(),true);
+  await organizer.keyboard.press('Escape');
+  assert.equal(await menu.locator('#pdfBtn').isVisible(),false);
+  assert.equal(await menu.locator('summary').evaluate(el=>el===document.activeElement),true);
   assert.equal(await organizer.getByRole('button',{name:'Schema delen'}).count(),0);
   await organizer.locator('#versionLink').click();
   assert.equal(await organizer.locator('#appVersion').innerText(),'v3.0.0-preview');

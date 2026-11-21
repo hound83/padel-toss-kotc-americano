@@ -55,6 +55,7 @@ test('real browser: KOC setup, entrants, absence, language, reload and mobile la
   assert.ok(cards.every(court=>!court.includes('Indelen op baan 1')), 'incoming markers are private setup-only labels');
 
   await context.grantPermissions(['clipboard-read','clipboard-write'],{origin});
+  await page.locator('.action-bar:visible summary').click();
   await page.locator('#kocCopy').click();
   const copied = await page.evaluate(() => navigator.clipboard.readText());
   assert.match(copied,/King of the Court/);
@@ -62,6 +63,7 @@ test('real browser: KOC setup, entrants, absence, language, reload and mobile la
   assert.ok(!copied.includes('Indelen op baan 1'),'copying for WhatsApp never reveals incoming markers');
 
   const downloadEvent = page.waitForEvent('download');
+  await page.locator('.action-bar:visible summary').click();
   await page.locator('#kocSave').click();
   const download = await downloadEvent;
   const savedPath = await download.path();
@@ -176,12 +178,14 @@ test('real browser: KOC setup, entrants, absence, language, reload and mobile la
   assert.match(await waitingCard.innerText(),/verliezende duo op baan 1/);
 
   await mobile.grantPermissions(['clipboard-read','clipboard-write'],{origin});
+  await mobilePage.locator('.action-bar:visible summary').click();
   await mobilePage.locator('#kocCopy').tap();
   const waitingCopy=await mobilePage.evaluate(()=>navigator.clipboard.readText());
   assert.ok(waitingCopy.includes('Wachtduo bij de start: '+waitingPlayers.join(', ')));
   assert.match(waitingCopy,/verliezende duo op baan 1/);
 
   const waitingDownload=mobilePage.waitForEvent('download');
+  await mobilePage.locator('.action-bar:visible summary').click();
   await mobilePage.locator('#kocSave').tap();
   const waitingPath=await (await waitingDownload).path();
   await mobilePage.locator('#kocPresent').tap();
@@ -313,7 +317,7 @@ test('real browser: KOC setup, entrants, absence, language, reload and mobile la
     if(!('serviceWorker' in navigator))return false;
     await navigator.serviceWorker.ready;
     const keys = await caches.keys();
-    return keys.includes('padel-toss-americano-v280-preview3') &&
+    return keys.includes('padel-toss-americano-v280-actions3') &&
       !keys.includes('padel-toss-americano-v202');
   });
 });

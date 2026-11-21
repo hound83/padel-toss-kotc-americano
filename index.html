@@ -321,7 +321,7 @@
   .schedule-quality-card h4{margin:0 0 5px;}
   .schedule-quality-card ul{max-height:180px;overflow:auto;margin:0;padding-left:20px;}
   .schedule-quality-card p{margin:0;}
-  .koc-round-teams{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;padding:8px;}
+  .koc-round-teams{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:clamp(8px,2vw,22px);padding:8px;}
   .koc-round-team{display:flex;flex-direction:column;min-width:0;align-items:center;text-align:center;}
   .koc-round-team ul{padding:0 2px 6px;width:100%;}
   .koc-round-team li{font-size:var(--fs-base);padding:5px 0;}
@@ -390,7 +390,7 @@
   .live-current .live-match-head small{color:#D6E5F3;}
   .live-match-body{padding:15px;display:grid;grid-template-columns:minmax(0,1fr) 24px minmax(0,1fr);gap:8px;align-items:center;}
   .live-team{display:grid;gap:5px;min-width:0;}
-  .live-team.right{text-align:right;}
+  .live-team,.live-team.right{text-align:center;}
   .live-team span{font-weight:700;overflow-wrap:anywhere;font-size:var(--fs-base);}
   .live-vs{text-align:center;color:var(--ink-soft);font-size:var(--fs-xs);}
   .live-current .live-team span{font-size:clamp(var(--fs-base),1.45vw,var(--fs-lg));}
@@ -1093,24 +1093,33 @@
   table.playcount-table .out-tag-pc{ font-family:var(--font-mono); font-size:var(--fs-2xs); color:var(--coral); margin-left:6px; }
   table.playcount-table .added-tag{ font-family:var(--font-mono); font-size:var(--fs-2xs); color:var(--ball-dark); margin-left:6px; }
 
-  .schedule-actions{
-    display:flex; gap:10px; margin:0 0 16px; flex-wrap:wrap;
-  }
-
-  #panel3 .schedule-actions{
-    display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;
-  }
-  #panel3 .schedule-actions .btn{width:100%;height:100%;min-width:0;white-space:normal;line-height:1.25;padding:10px 8px;}
+  .action-bar{display:flex;align-items:stretch;flex-wrap:wrap;gap:8px;margin-bottom:16px;}
+  .action-bar > .btn,.action-menu summary{padding:9px 16px;min-height:44px;}
+  .action-menu{position:relative;max-width:100%;}
+  .action-menu summary{display:flex;align-items:center;justify-content:center;gap:.6em;list-style:none;height:100%;}
+  .action-menu summary::-webkit-details-marker{display:none;}
+  .action-menu summary::after{content:'';width:.45em;height:.45em;border:solid currentColor;border-width:0 2px 2px 0;transform:translateY(-.1em) rotate(45deg);}
+  .action-menu[open] summary::after{transform:translateY(.1em) rotate(225deg);}
+  .action-menu-items{position:absolute;z-index:5;inset:auto auto auto 0;top:calc(100% + 4px);width:max-content;max-width:calc(100vw - 32px);padding:4px;background:var(--surface);border:1px solid var(--line);border-radius:8px;box-shadow:0 6px 20px #193b5724;}
+  .action-menu-items .btn{display:block;width:100%;text-align:left;border:0;min-height:44px;padding:8px 14px;}
+  .action-menu-items [hidden],#editPlayersBtn[hidden]{display:none;}
+  #editPlayersBtn{margin-bottom:14px;}
   #rerollStatus:empty,.playcount-wrap:has(#playcountPanel[style*="none"]){display:none;}
-  @media(max-width:680px){#panel3 .schedule-actions{grid-template-columns:repeat(2,minmax(0,1fr));}}
-  @media(max-width:360px){#panel3 .schedule-actions .btn{font-size:.87rem;}}
+  @media(max-width:680px){
+    .action-bar{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));}
+    .action-bar > .btn,.action-menu summary{padding-inline:6px;white-space:normal;}
+    .action-menu:nth-child(even) .action-menu-items{left:auto;right:0;}
+  }
   .match-card{grid-template-columns:clamp(7.5rem,19%,15rem) minmax(0,1fr);}
   .match-card .court-label{font:700 clamp(1.1875rem,2cqi,1.55rem)/1.18 var(--font-body, sans-serif);text-transform:none;overflow-wrap:anywhere;padding:10px;}
   .match-body{display:grid;align-items:center;padding:9px clamp(6px,2cqi,22px);}
   .teams-row{width:100%;max-width:54rem;margin-inline:auto;gap:clamp(6px,2cqi,22px);}
   .team .players{font-size:clamp(1.1875rem,2.4cqi,1.7rem);line-height:1.22;}
-  .teams-row .team{text-align:right;}
-  .teams-row .team-right{text-align:left;}
+  /* Each team owns a name column and a score slot, even in recreational rounds. */
+  .teams-row .team{display:grid;grid-template-columns:minmax(0,1fr) 56px;text-align:center;}
+  .teams-row .team-right{grid-template-columns:56px minmax(0,1fr);}
+  .team-right .team-names{grid-column:2;grid-row:1;}
+  .team-right .team-score{grid-column:1;grid-row:1;}
   .teams-row .vs{align-self:center;margin:0;}
   @container(max-width:519px){
     .match-card{grid-template-columns:clamp(4rem,20%,5rem) minmax(0,1fr);}
@@ -1122,9 +1131,13 @@
   }
   @container(max-width:519px){
     .teams-row{align-items:stretch;}
-    .teams-row .team{flex-direction:column;align-items:stretch;}
+    .teams-row .team{display:flex;flex-direction:column;align-items:stretch;}
     .teams-row .team .team-score{align-self:flex-start;}
     .teams-row .team-right .team-score{align-self:flex-end;}
+  }
+  @container(min-width:520px) and (max-width:720px){
+    .teams-row .team{gap:4px;grid-template-columns:minmax(0,1fr) 48px;}
+    .teams-row .team-right{grid-template-columns:48px minmax(0,1fr);}
   }
   @media(max-width:360px){.wrap:has(#panel3.visible){padding-inline:6px;}}
   @container(max-width:330px){
@@ -1443,16 +1456,20 @@
         <p class="koc-dup-warning" id="kocWaitingError" role="alert" hidden></p>
       </div>
     </div>
-    <div class="koc-actions">
-      <button class="btn btn-ghost" id="kocBack" type="button" data-i18n="backToModes">← Speelvormen</button>
+    <div class="koc-actions action-bar">
       <button class="btn btn-primary" id="kocRoll" type="button" data-i18n="kocRoll">🎲 Genereer startindeling</button>
-      <button class="btn btn-ghost" id="kocRoundReset" type="button" data-i18n="kocResetRounds" hidden></button>
-      <button class="btn btn-ghost" id="kocCopy" type="button" data-i18n="kocCopy">Kopieer voor WhatsApp</button>
-      <button class="btn btn-ghost" type="button" id="kocPrint" data-i18n="printBtn"></button>
-      <button class="btn btn-ghost" type="button" id="kocPdf" data-i18n="pdfBtn"></button>
-      <button class="btn btn-ghost" id="kocSave" type="button" data-i18n="saveBtn">💾 Speelschema opslaan</button>
-      <button class="btn btn-ghost" id="kocLoad" type="button" data-i18n="loadBtn">📂 Opgeslagen schema laden</button>
       <button class="btn btn-ghost" id="kocPresent" type="button" data-i18n="presentBtn">Presentatiemodus</button>
+      <details class="action-menu">
+        <summary class="btn btn-ghost" data-i18n="moreOptions">Meer opties</summary>
+        <div class="action-menu-items">
+          <button class="btn btn-ghost" id="kocCopy" type="button" data-i18n="kocCopy">Kopieer voor WhatsApp</button>
+          <button class="btn btn-ghost" type="button" id="kocPrint" data-i18n="printBtn"></button>
+          <button class="btn btn-ghost" type="button" id="kocPdf" data-i18n="pdfBtn"></button>
+          <button class="btn btn-ghost" id="kocSave" type="button" data-i18n="saveBtn">💾 Speelschema opslaan</button>
+          <button class="btn btn-ghost" id="kocLoad" type="button" data-i18n="loadBtn">📂 Opgeslagen schema laden</button>
+          <button class="btn btn-ghost" id="kocRoundReset" type="button" data-i18n="kocResetRounds" hidden></button>
+        </div>
+      </details>
     </div>
     <p class="koc-help" id="kocStatus" aria-live="polite"></p>
 
@@ -1471,6 +1488,7 @@
   <section class="panel" id="panel2">
     <h2 class="panel-title" data-i18n="p2Title">Namen invoeren</h2>
     <p class="panel-sub" id="panel2Sub"></p>
+    <button class="btn btn-ghost" hidden type="button" id="editPlayersBtn" data-i18n="editPlayersBtn">✎ Spelers wijzigen</button>
 
     <div class="settings-row">
       <div class="field-group">
@@ -1558,16 +1576,18 @@
 
   <!-- STEP 3 -->
   <section class="panel" id="panel3">
-    <div class="schedule-actions">
-      <button class="btn btn-ghost" id="backToSettingsBtn" data-i18n="backToSettingsBtn">← Instellingen wijzigen</button>
-      <button class="btn btn-ghost" id="editPlayersBtn" data-i18n="editPlayersBtn">✎ Spelers wijzigen</button>
-      <button class="btn btn-ghost" id="startOverBtn" data-i18n="startOverBtn">↺ Opnieuw beginnen</button>
+    <div class="schedule-actions action-bar">
       <button class="btn btn-primary" type="button" id="rerollBtn" data-i18n="rerollBtn">Opnieuw loten</button>
-      <button class="btn btn-ghost" id="printBtn" data-i18n="printBtn">Schema afdrukken</button>
-      <button class="btn btn-ghost" type="button" id="pdfBtn" data-i18n="pdfBtn">PDF downloaden</button>
-      <button class="btn btn-ghost" id="saveBtn" data-i18n="saveBtn">💾 Speelschema opslaan</button>
       <button class="btn btn-ghost" id="presentBtn" data-i18n="presentBtn">Presentatiemodus</button>
-      <button type="button" class="btn btn-ghost" id="playcountToggleBtn" data-i18n="playcountToggleShow">📊 Speelverdeling bekijken</button>
+      <details class="action-menu">
+        <summary class="btn btn-ghost" data-i18n="moreOptions">Meer opties</summary>
+        <div class="action-menu-items">
+          <button type="button" class="btn btn-ghost" id="playcountToggleBtn" data-i18n="playcountToggleShow">📊 Speelverdeling bekijken</button>
+          <button class="btn btn-ghost" id="printBtn" data-i18n="printBtn">Schema afdrukken</button>
+          <button class="btn btn-ghost" type="button" id="pdfBtn" data-i18n="pdfBtn">PDF downloaden</button>
+          <button class="btn btn-ghost" id="saveBtn" data-i18n="saveBtn">💾 Speelschema opslaan</button>
+        </div>
+      </details>
     </div>
 
     <p id="rerollStatus" role="status"></p>
@@ -1959,7 +1979,6 @@
       cancelToScheduleBtn: '← Terug naar schema',
       generateBtn: 'Genereer schema →',
       editPlayersBtn: '✎ Spelers wijzigen',
-      startOverBtn: '↺ Opnieuw beginnen',
       saveBtn: '💾 Speelschema opslaan',
       loadBtn: '📂 Opgeslagen schema laden',
       loadErrNotJson: 'Dit bestand kon niet gelezen worden. Kies het .json-bestand dat je eerder met \'Speelschema opslaan\' hebt gemaakt.',
@@ -2118,7 +2137,7 @@
       changeKocEntry: 'KOC: vaste startbanen voor spelers 1 en 2 en optionele plaatsing op de laagste baan.',
       changeKocNames: 'KOC: dubbele namen direct herkennen en blokkeren.',
       changeKocRandom: 'KOC: meer variatie op de onderste banen en in de spelersvolgorde.',
-      shareAction:'Schema delen', viewLink:'Kijklink', makeLink:'Kijklink maken',copyLink:'Kijklink kopiëren',closeShare:'Sluiten',previewLink:'Probeer de 3.0-preview',stableLink:'Terug naar versie 2.8.0',
+      moreOptions:'Meer opties', shareAction:'Schema delen', viewLink:'Kijklink', makeLink:'Kijklink maken',copyLink:'Kijklink kopiëren',closeShare:'Sluiten',previewLink:'Probeer de 3.0-preview',stableLink:'Terug naar versie 2.8.0',
       changeAutosave: 'Automatisch bewaren en hervatten.', changePwa: 'Installeerbaar, offline en presentatiemodus.',
       updateAvailable: 'Er staat een nieuwe versie klaar.', updateReload: 'Vernieuwen',
       beginnerLabel: 'Zilver',
@@ -2145,7 +2164,6 @@
       editPoolBeginner: 'Zilver',
       editPoolErvaren: 'Goud',
       editPoolGevorderd: 'Platina',
-      backToSettingsBtn: '← Instellingen wijzigen',
       modalRegenerateText: 'Een nieuw schema maken vervangt het huidige schema en alle ingevulde scores. Weet je het zeker?',
       confirmRegenerateBtn: 'Ja, nieuw schema maken',
       dupNameError: 'Dubbele namen zijn niet toegestaan — gemarkeerd hieronder.',
@@ -2319,7 +2337,6 @@
       cancelToScheduleBtn: '← Back to schedule',
       generateBtn: 'Generate schedule →',
       editPlayersBtn: '✎ Edit players',
-      startOverBtn: '↺ Start over',
       saveBtn: '💾 Save schedule',
       loadBtn: '📂 Load saved schedule',
       loadErrNotJson: 'This file could not be read. Pick the .json file you created earlier with \'Save schedule\'.',
@@ -2478,7 +2495,7 @@
       changeKocEntry: 'KOC: fixed start courts for players 1 and 2, with optional placement on the lowest court.',
       changeKocNames: 'KOC: spot and block duplicate player names immediately.',
       changeKocRandom: 'KOC: more variation across lower courts and player display order.',
-      shareAction:'Share schedule',viewLink:'View link',makeLink:'Create view link',copyLink:'Copy view link',closeShare:'Close',previewLink:'Try the 3.0 preview',stableLink:'Back to version 2.8.0',
+      moreOptions:'More options', shareAction:'Share schedule',viewLink:'View link',makeLink:'Create view link',copyLink:'Copy view link',closeShare:'Close',previewLink:'Try the 3.0 preview',stableLink:'Back to version 2.8.0',
       changeAutosave: 'Automatic saving and session recovery.', changePwa: 'Installable, offline, and presentation mode.',
       updateAvailable: 'A new version is available.', updateReload: 'Refresh',
       beginnerLabel: 'Silver',
@@ -2505,7 +2522,6 @@
       editPoolBeginner: 'Silver',
       editPoolErvaren: 'Gold',
       editPoolGevorderd: 'Platinum',
-      backToSettingsBtn: '← Change settings',
       modalRegenerateText: 'Generating a new schedule replaces the current one and any scores you\'ve entered. Are you sure?',
       confirmRegenerateBtn: 'Yes, generate new schedule',
       dupNameError: 'Duplicate names aren\'t allowed — marked below.',
@@ -3489,6 +3505,26 @@
     return a === b ? String(a) : (a + '\u2013' + b);
   }
 
+  document.querySelectorAll('.action-menu').forEach(function(menu){
+    const summary = menu.querySelector('summary');
+    function close(){
+      menu.open = false;
+      summary.focus({preventScroll:true});
+    }
+    menu.addEventListener('keydown', function(event){
+      if(event.key === 'Escape' && menu.open){event.preventDefault();close();}
+    });
+    menu.addEventListener('focusout', function(event){
+      if(event.relatedTarget && !menu.contains(event.relatedTarget)) menu.open = false;
+    });
+    // Restore focus before the action opens a dialog or starts printing.
+    menu.addEventListener('click', function(event){
+      if(event.target.closest('button'))close();
+    }, true);
+    document.addEventListener('click', function(event){
+      if(menu.open && !menu.contains(event.target)) menu.open = false;
+    });
+  });
   // ---------- step nav ----------
   function renderStepNavigation(){
     var nav = document.getElementById('stepsNav');
@@ -3520,7 +3556,10 @@
     renderAppTitle();
     renderRoundRules();
     if (n === 1 || n === 4) renderRoundSettings();
-    if (n === 2) renderTossStartOptions();
+    if (n === 2){
+      document.getElementById('editPlayersBtn').hidden = !state.pools.length;
+      renderTossStartOptions();
+    }
     paintRoundClocks();
     if (n === 0){
       document.querySelectorAll('.format-btn').forEach(function(button){
@@ -6240,7 +6279,8 @@
     editRoundsPlayedOverride = {};
     renderEditStatus();
     if (isSplit) renderEditRosterSplit(); else renderEditRoster();
-    document.getElementById('panel3').classList.remove('visible');
+    state.step = 3;
+    document.getElementById('panel2').classList.remove('visible');
     panelEdit.classList.add('visible');
     renderStepNavigation();
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -6825,16 +6865,6 @@
     clearAutosave();
   }
 
-  document.getElementById('startOverBtn').addEventListener('click', function(){
-    showConfirmModal(t('modalStartOverText'), t('confirmStartOverBtn'), doStartOver);
-  });
-
-  document.getElementById('backToSettingsBtn').addEventListener('click', function(){
-    // Just viewing/adjusting settings isn't destructive by itself — the warning
-    // only fires if they actually regenerate (see runGenerate/generateBtn above).
-    goToStep(2);
-  });
-
   document.getElementById('rerollBtn').addEventListener('click',rerollSchedule);
   function schedulePages(){
     var rounds = [];
@@ -6913,7 +6943,6 @@
   }
   document.getElementById('backToModes').addEventListener('click', backToModePicker);
   document.getElementById('mastheadBack').addEventListener('click', backToModePicker);
-  document.getElementById('kocBack').addEventListener('click', backToModePicker);
 
   // ---------- Local-first recovery ----------
   // No account or remote database: the organiser's own browser holds the

@@ -68,6 +68,7 @@ test('PDF and print have distinct actions, and a direct redraw preserves entered
     }
     await page.evaluate(()=>window.print=()=>window.printCalls=(window.printCalls||0)+1);
     const download=page.waitForEvent('download');
+    await page.locator('.action-bar:visible summary').click();
     await page.locator(koc?'#kocPdf':'#pdfBtn').tap();
     const file=await download;
     assert.ok(file.suggestedFilename().endsWith('.pdf'));
@@ -79,6 +80,7 @@ test('PDF and print have distinct actions, and a direct redraw preserves entered
     assert.ok(pdf.includes(Buffer.from('Centercourt').toString('hex')));
     if(!koc) assert.ok(pdf.includes(Buffer.from('21:00').toString('hex')));
     assert.equal(await page.evaluate(()=>window.printCalls||0),0);
+    await page.locator('.action-bar:visible summary').click();
     await page.locator(koc?'#kocPrint':'#printBtn').tap();
     assert.equal(await page.evaluate(()=>window.printCalls),1);
     await page.emulateMedia({media:'print'});

@@ -59,6 +59,7 @@ test('Toss times and court numbers appear in schedule, print and presentation an
   assert.deepEqual(await page.locator('#scheduleRound1 .court-label').allTextContents(),['Baan 2','Baan 3']);
   async function save(){
     const downloaded=page.waitForEvent('download');
+    await page.locator('.action-bar:visible summary').click();
     await page.locator('#saveBtn').click();
     return JSON.parse(fs.readFileSync(await (await downloaded).path(),'utf8'));
   }
@@ -77,7 +78,7 @@ test('Toss times and court numbers appear in schedule, print and presentation an
   await page.reload();
   await page.locator('#resumeContinue').click();
   assert.equal(await page.locator('#scheduleRound1 .round-time').innerText(),'11:00–11:20');
-  await page.locator('#backToSettingsBtn').click();
+  await page.locator('#stepsNav [data-step="2"]').click();
   if(!await options.getAttribute('open'))await options.locator('summary').click();
   await page.locator('#tossRoundMinutes').fill('15');
   await page.getByRole('button',{name:'Terug naar schema',exact:false}).last().click();
@@ -86,7 +87,7 @@ test('Toss times and court numbers appear in schedule, print and presentation an
   await page.locator('#loadFileInput').setInputFiles({name:'plan.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(saved))});
   await page.waitForFunction(()=>document.querySelector('#scheduleRound2 .round-time')?.textContent==='11:20\u201311:40');
   assert.equal(await page.locator('#scheduleRound2 .round-time').innerText(),'11:20–11:40');
-  await page.locator('#backToSettingsBtn').click();
+  await page.locator('#stepsNav [data-step="2"]').click();
   if(!await options.getAttribute('open'))await options.locator('summary').click();
   await page.locator('#generateBtn').click();
   await page.locator('#confirmYesBtn').click();

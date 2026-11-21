@@ -90,7 +90,7 @@ test('paste one name per line in KOC, Toss, Americano, Split Toss and roster edi
   await useList(koc, 'bulkKoc', sixteen.join('\n'));
   assert.equal(await koc.locator('#kocRoll').isEnabled(), true);
   await koc.locator('#kocRoll').click();
-  await koc.locator('#kocBack').click();
+  await koc.locator('#mastheadBack').click();
   await koc.locator('#confirmYesBtn').click();
   await koc.locator('.format-btn[data-format="koc"]').click();
   await koc.locator('#bulkKoc .bulk-entry-trigger').click();
@@ -122,6 +122,7 @@ test('paste one name per line in KOC, Toss, Americano, Split Toss and roster edi
 
   // Existing scores/player identity remain untouched when appending through
   // the edit screen; duplicate new names are caught by existing validation.
+  await toss.locator('#stepsNav [data-step="2"]').click();
   await toss.locator('#editPlayersBtn').click();
   const beforeEdit = await toss.locator('#editRosterList .edit-row input').evaluateAll(els => els.map(el => el.value));
   await useList(toss, 'bulkEditSingle', 'Iris\nJoris');
@@ -134,6 +135,7 @@ test('paste one name per line in KOC, Toss, Americano, Split Toss and roster edi
   assert.equal(await toss.locator('#editError').isVisible(), false);
   await toss.locator('#editApplyBtn').click();
   assert.equal(await toss.locator('#panel3').isVisible(), true);
+  await toss.locator('#stepsNav [data-step="2"]').click();
   await toss.locator('#editPlayersBtn').click();
   assert.equal(await toss.locator('#editRosterList .edit-row').count(), 10);
 
@@ -166,6 +168,7 @@ test('paste one name per line in KOC, Toss, Americano, Split Toss and roster edi
   assert.equal(await split.locator('#step2DupError').isVisible(),false);
   await split.locator('#generateBtn').click();
   assert.equal(await split.locator('#panel3').isVisible(),true);
+  await split.locator('#stepsNav [data-step="2"]').click();
   await split.locator('#editPlayersBtn').click();
   await useList(split,'bulkEditBeginner','Nieuwe Z1\nNieuwe Z2');
   assert.equal(await split.locator('#editRosterListBeginner .edit-row').count(),6);

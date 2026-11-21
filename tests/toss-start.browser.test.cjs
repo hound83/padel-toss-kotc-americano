@@ -63,6 +63,7 @@ test('Toss first-round choices survive generating, language, storage and roster 
   await page.locator('#generateBtn').click();
   async function save(){
     const promise=page.waitForEvent('download');
+    await page.locator('.action-bar:visible summary').click();
     await page.locator('#saveBtn').click();
     return JSON.parse(fs.readFileSync(await (await promise).path(),'utf8'));
   }
@@ -76,7 +77,7 @@ test('Toss first-round choices survive generating, language, storage and roster 
   const generated=await save();check(generated);
   await page.reload();
   await page.locator('#resumeContinue').click();
-  await page.locator('#backToSettingsBtn').click();
+  await page.locator('#stepsNav [data-step="2"]').click();
   await details.locator('summary').click();
   assert.equal(await page.locator('#tossStartPairs button').count(),2);
   assert.equal(await details.locator('[data-player="23"][data-choice="Play"]').isChecked(),true);
@@ -84,6 +85,7 @@ test('Toss first-round choices survive generating, language, storage and roster 
   await page.locator('#confirmYesBtn').click();
   const regenerated=await save();check(regenerated);
   // Freeze round 1, add a participant, and retain its waiting history.
+  await page.locator('#stepsNav [data-step="2"]').click();
   await page.locator('#editPlayersBtn').click();
   const renamed=regenerated.state.activeRoster.indexOf('Benjamin');
   await page.locator('#editRosterList .edit-row input').nth(renamed).fill('Ben');
@@ -107,7 +109,7 @@ test('Toss first-round choices survive generating, language, storage and roster 
   // Older saves without the optional field still restore.
   delete generated.state.tossStart;
   await page.locator('#loadFileInput').setInputFiles({name:'older-session.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(generated))});
-  await page.locator('#backToSettingsBtn').click();
+  await page.locator('#stepsNav [data-step="2"]').click();
   if(!await details.getAttribute('open'))await details.locator('summary').click();
   assert.equal(await page.locator('#tossStartPairs button').count(),0);
   await page.locator('#backTo1').click();
