@@ -1116,13 +1116,16 @@
     .team .players{font-size:1.0625rem;}
     .teams-row .vs{font-size:.875rem;}
   }
-  @container(max-width:440px){
+  @container(max-width:519px){
     .teams-row{align-items:stretch;}
     .teams-row .team{flex-direction:column;align-items:stretch;}
     .teams-row .team .team-score{align-self:flex-start;}
     .teams-row .team-right .team-score{align-self:flex-end;}
   }
+  @media(max-width:360px){.wrap:has(#panel3.visible){padding-inline:6px;}}
   @container(max-width:330px){
+    .match-card{grid-template-columns:2.9rem minmax(0,1fr);}
+    .team .players{font-size:1rem;}
     .teams-row .vs{font-size:0;width:1px;background:var(--line);align-self:stretch;}
     .teams-row .team{gap:3px;}
   }

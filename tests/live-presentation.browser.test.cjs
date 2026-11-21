@@ -74,7 +74,7 @@ test('v2.2: clean navigation and live KOC, Toss, Americano and split Toss', asyn
       text.selectNodeContents(el);
       return text.getClientRects().length!==1||text.getBoundingClientRect().width>el.getBoundingClientRect().width+1;
     }).map(el=>el.textContent));
-    assert.deepEqual(wrapped,[],'first names fit on one line');
+    assert.deepEqual(wrapped,[],'first names fit on one line at '+await names.first().evaluate(el=>innerWidth+' / '+Math.round(el.getBoundingClientRect().width)));
   }
   async function checkLiveCourtRows(page,expected){
     for(const area of ['#liveCurrent','#liveUpcoming']){
@@ -309,7 +309,7 @@ test('v2.2: clean navigation and live KOC, Toss, Americano and split Toss', asyn
   await firstScore.fill('26');
   await firstScore.press('Tab');
   assert.equal(await courtRows.first().locator('input[data-team="t2"]').evaluate(input=>input===document.activeElement),true);
-  for(const [width,inline] of [[500,true],[414,false],[390,false],[320,false]]){
+  for(const [width,inline] of [[500,false],[414,false],[390,false],[320,false]]){
     await fourCourtAmericano.setViewportSize({width,height:844});
     assert.ok(await courtRows.first().evaluate(card=>{
       const rect=selector=>card.querySelector(selector).getBoundingClientRect();

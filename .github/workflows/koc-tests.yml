@@ -26,6 +26,11 @@ jobs:
         run: timeout 120s node --test --test-timeout=60000 --test-reporter=spec tests/*.browser.test.cjs
         env:
           PADEL_SCREENSHOT_DIR: test-results
+      - name: Check preview updates over the public relay
+        if: github.event_name == 'pull_request'
+        run: node --test tests/share-preview.browser.test.cjs
+        env:
+          PADEL_REAL_RELAY: '1'
       - name: Verify the published GitHub Pages release
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: node tests/live-site.smoke.cjs

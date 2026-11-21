@@ -35,7 +35,8 @@ test('Stable layout and isolated preview share one organizer-signed schedule acr
   await organizer.locator('.format-btn[data-format=americano]').click();await organizer.locator('#continueTo2').click();
   await organizer.locator('#generateBtn').click();
   let payload,channel;
-  await organizer.route('https://ntfy.sh/**',async route=>{
+  const real=process.env.PADEL_REAL_RELAY==='1';
+  if(!real) await organizer.route('https://ntfy.sh/**',async route=>{
     channel=new URL(route.request().url()).pathname.slice(1);payload=route.request().postData();
     await route.fulfill({status:200,body:'{}'});
   });
@@ -45,8 +46,8 @@ test('Stable layout and isolated preview share one organizer-signed schedule acr
   const url=await organizer.locator('#shareUrl').inputValue();
   const errors=[];viewer.on('pageerror',err=>errors.push(err.message));
   // Browser transport is deterministic here. Production uses the same signed envelope over SSE.
-  await mobile.addInitScript(()=>{window.EventSource=class extends EventTarget{constructor(){super();window.testStream=this;}};});
-  await viewer.goto(url);
+  if(!real) await mobile.addInitScript(()=>{window.EventSource=class extends EventTarget{constructor(){super();window.testStream=this;}};});
+  await viewer.goto(url,{waitUntil:'domcontentloaded'});
   await viewer.locator('#rounds article').first().waitFor();
   assert.equal(await viewer.locator('#rounds input, #rounds button').count(),0);
   await viewer.locator('#player').selectOption({index:1});
@@ -57,7 +58,7 @@ test('Stable layout and isolated preview share one organizer-signed schedule acr
   await organizer.locator('.match-card input').first().fill('29');
   await organizer.locator('.match-card input').nth(1).fill('18');
   let score=false;
-  for(let i=0;i<30 && !score;i++){
+  for(let i=0;i<(real?160:30) && !score;i++){
     if(payload)await viewer.evaluate(({payload,channel})=>window.testStream.dispatchEvent(new MessageEvent('message',{data:JSON.stringify({event:'message',topic:channel,message:payload})})),{payload,channel});
     score=await viewer.getByText('29 – 18',{exact:true}).count()>0;
     if(!score)await viewer.waitForTimeout(150);
