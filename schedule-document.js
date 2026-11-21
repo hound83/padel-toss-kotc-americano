@@ -41,7 +41,7 @@ window.ScheduleDocument = (function(){
         page.push({x:margin,y:y+13,size:13,bold:true,text:round.heading}); y+=26;
       };
       const total = 26+rows.reduce((n,r)=>n+r.height,0);
-      if (y>margin+42 && (total<=bottom-margin-42 ? y+total>bottom : y+26+(rows[0]?.height||0)>bottom)) nextPage();
+      if (y>margin+42 && y+total>bottom) nextPage();
       heading();
       for (const row of rows){
         if (y+row.height>bottom && row.height<=bottom-margin-68){ nextPage();heading(); }

@@ -4780,7 +4780,8 @@
         })) frozen = Math.max(frozen,rd.round);
       });
     });
-    var changed = false;
+    var updates = [];
+    var failure = '';
     state.pools.forEach(function(pool){
       var offset = pool.rounds.findIndex(function(rd){return rd.round > frozen;});
       if (offset < 0) return;
@@ -4794,18 +4795,26 @@
         var end = remaining.findIndex(function(rd){return JSON.stringify(rosterOf(rd)) !== signature;});
         var segment = end < 0 ? remaining : remaining.slice(0,end);
         var opts = poolOptions(roster,levelIndexById(pool.id));
+        var starters = new Set(opts.firstRoundPlayers.concat(opts.firstRoundPairs.flat()));
+        var places = segment[0].courts.length*4;
+        if (segment[0].round === 1 && starters.size > places){
+          failure = tf('tossStartTooMany',{n:starters.size,slots:places});
+          return;
+        }
         var rounds = generateGlobalSchedule(roster,segment.length,segment[0].round-1,segment.map(function(rd){return rd.courts.length;}),
           computeHistorySeed(history,roster),opts);
         rounds.forEach(function(rd,i){
           rd.courts.forEach(function(c,j){c.courtIndex = segment[i].courts[j].courtIndex;});
-          pool.rounds[offset+i] = rd;
+          updates.push({pool:pool,index:offset+i,round:rd});
         });
         history.push(...rounds);
         offset += segment.length;
-        changed = true;
       }
     });
+    if (failure){document.getElementById('rerollStatus').textContent = failure; return;}
+    var changed = updates.length > 0;
     if (changed){
+      updates.forEach(function(update){update.pool.rounds[update.index] = update.round;});
       renderSchedule(); renderLeaderboard();
       if (playcountVisible) renderPlayCounts();
       scheduleAutosave();
@@ -6292,7 +6301,7 @@
     var startOptions = poolOptions(newRosterForPool,levelIndexById(pool.id));
     var forcedCount = cutRound === 1 ? new Set(startOptions.firstRoundPlayers.concat(startOptions.firstRoundPairs.flat())).size : 0;
     var startingCourts = Array.isArray(courtsForRegen) ? courtsForRegen[0] : courtsForRegen;
-    var startingSlots = usableCourts(newRosterForPool.length,startingCourts)*4;
+    var startingSlots = startingCourts <= 0 ? 0 : usableCourts(newRosterForPool.length,startingCourts)*4;
     if (forcedCount > startingSlots){
       editError.textContent = tf('tossStartTooMany',{n:forcedCount,slots:startingSlots});
       editError.classList.add('visible');
@@ -6453,8 +6462,9 @@
 
   document.getElementById('editApplyBtn').addEventListener('click', function(){
     if (checkEditDuplicates()) return;
+    var beforeEdit = structuredClone(state);
     var ok = state.format === 'splitToss' ? applySplitRosterEdits() : applySingleRosterEdits();
-    if (!ok) return;
+    if (!ok){state = beforeEdit; return;}
 
     renderMeta();
     renderSchedule();
