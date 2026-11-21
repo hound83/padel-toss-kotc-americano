@@ -34,15 +34,117 @@ article h3{display:flex;align-items:center;justify-content:space-between;gap:.55
 .person.mine{font-weight:800}.rest .person+.person{margin-inline-start:.6em}
 .head-score,.with-score .vs{display:none}.wide-score .head-score,.wide-score .vs{display:inline-block}.wide-score .middle .score{display:none}
 @container(max-width:26rem){.head-score,.with-score .vs{display:inline-block}.middle .score{display:none}.match{grid-template-columns:minmax(0,1fr) 2ch minmax(0,1fr)}}
+.entry-action{display:block;margin:0 auto .65rem;background:var(--navy);color:white;border:0;border-radius:.45rem;padding:.45rem .8rem;font:inherit;min-height:44px;cursor:pointer}
+#entryHint,#entryStatus{margin-block:.5rem;color:var(--navy)}#entryStatus:empty{display:none}
+#entryDialog{width:min(27rem,92vw);padding:1.15rem}#entryForm{display:grid;gap:.8rem}#entryForm label{display:grid;gap:.25rem;font-weight:650}
+#entryForm input{min-width:0;width:100%;font:inherit;font-size:1.25rem;padding:.45rem;border:1px solid #879bab;border-radius:.45rem}
+#entryForm .actions{display:flex;flex-wrap:wrap;gap:.45rem}#entrySend{background:var(--navy);color:white}
 </style></head><body>
 <header><img src="./icon.svg" alt=""><div><h1 id="title">Speelschema</h1><div class="meta"><span id="updated"></span><span id="connection" role="status">Kijklink openen…</span></div></div></header>
-<div class="filter"><label id="label" for="player" hidden>Speler</label><select id="player" hidden></select><button id="everyone" hidden type="button">Toon iedereen</button></div><main id="rounds"></main>
+<div class="filter"><label id="label" for="player" hidden>Speler</label><select id="player" hidden></select><button id="everyone" hidden type="button">Toon iedereen</button></div>
+<p id="entryHint" hidden></p><p id="entryStatus" role="status"></p><main id="rounds"></main>
+<dialog id="entryDialog" aria-labelledby="entryTitle">
+  <form id="entryForm">
+    <h2 id="entryTitle"></h2>
+    <label><span id="entryTeam0"></span><input id="entryScore0" type="number" min="0" step="1" inputmode="numeric" required></label>
+    <label><span id="entryTeam1"></span><input id="entryScore1" type="number" min="0" step="1" inputmode="numeric" required></label>
+    <p id="entryError" role="alert"></p>
+    <div class="actions"><button id="entrySend" type="submit"></button><button id="entryCancel" type="button"></button></div>
+  </form>
+</dialog>
 <dialog id="courtDialog"><h2 id="courtName"></h2><form method="dialog"><button id="close">Sluiten</button></form></dialog>
 <script src="./name-hint.js"></script><script src="./share-v3.js"></script><script>
 (async()=>{
  const $=id=>document.getElementById(id);
  function node(tag,text='',className=''){const el=document.createElement(tag);el.textContent=text;el.className=className;return el;}
- let latest,online=false,stream,cacheKey;
+ const short=location.pathname.match(/^\/s\/([^/]*)\/?$/)?.[1];
+ const shortPath=short!==undefined;let revision=0,restrictedPlayer=null,reloading=false;
+ let latest,online=false,stream,cacheKey,inbox,editing;
+ const shortEndpoint='/api/s/'+encodeURIComponent(short || '');
+ async function reload(){
+   if(reloading)return;reloading=true;
+   try{
+     const headers=revision?{'If-None-Match':String(revision)}:{};
+     const response=await fetch(shortEndpoint,{headers,cache:'no-store',referrerPolicy:'no-referrer'});
+     if(response.status===304){online=true;status();return;}
+     if(!response.ok){
+       if(response.status===404){
+         stream?.close();latest=null;inbox=null;$('rounds').replaceChildren();
+         for(const id of ['player','label','everyone','entryHint'])$(id).hidden=true;
+         if($('entryDialog').open)$('entryDialog').close();$('entryStatus').textContent='';
+       }
+       $('connection').textContent=response.status===429?'Te veel pogingen. Probeer het over een kwartier opnieuw.':response.status===404?'Deze link is verlopen, ingetrokken of ongeldig. Vraag de organisator om een nieuwe link.':'Verbinden lukt nog niet. Probeer het opnieuw.';
+       return;
+     }
+     const data=await response.json();online=true;receive(data);
+   }catch{online=false;$('connection').textContent=latest?say('Geen verbinding. Laatst geladen stand.','Offline. Last loaded results.'):'Geen verbinding met de sessie.';}
+   finally{reloading=false;}
+ }
+ function receive(data){
+   if(data.revision<=revision)return;
+   revision=data.revision;inbox=data.role==='view'?null:true;restrictedPlayer=data.role==='personal'?data.player:null;
+   update(data.view);
+ }
+ const pending=new Map();
+ const say=(nl,en)=>latest.en?en:nl;
+ function currentRow(slot){return latest.rounds.flatMap(rd=>rd.rows).find(r=>r.slot===slot);}
+ function entryStatus(){
+   $('entryHint').hidden=!inbox || latest.closed || !!$('player').value;
+   $('entryHint').textContent=say('Kies je naam om je uitslag in te vullen.','Choose your name to enter your score.');
+   if(!inbox)return;
+   for(const [slot,entry] of pending){
+     const row=currentRow(slot);
+     if(!latest.closed && row?.ticket===entry.ticket)continue;
+     const confirmed=row?.score?.every((value,i)=>value===entry.score[i]);
+     $('entryStatus').textContent=confirmed ? say('Uitslag verwerkt','Score recorded')+' · '+row.score.join('–') :
+       say('De wedstrijd is gewijzigd of gesloten. Bekijk de laatste stand.','The match has changed or closed. Check the latest score.');
+     pending.delete(slot);
+   }
+   if(editing && (latest.closed || currentRow(editing.slot)?.ticket!==editing.ticket)){
+     $('entryDialog').close();
+     $('entryStatus').textContent=say('De wedstrijd is gewijzigd of gesloten. Bekijk de laatste stand.','The match has changed or closed. Check the latest score.');
+   }
+ }
+ function editScore(row,n){
+   editing={slot:row.slot,ticket:row.ticket,player:latest.playerIds[$('player').value]};
+   $('entryTitle').textContent=say('Ronde ','Round ')+n+' · '+row.label;
+   row.teams.forEach((team,i)=>{
+     $('entryTeam'+i).textContent=team.join(' & ')+' · '+(latest.entryMode==='games'?'Games':say('Punten','Points'));
+     $('entryScore'+i).value='';
+   });
+   $('entrySend').textContent=say('Uitslag versturen','Send score');$('entrySend').disabled=false;
+   $('entryCancel').textContent=say('Annuleren','Cancel');$('entryError').textContent='';
+   $('entryDialog').showModal();
+ }
+ $('entryCancel').onclick=()=>$('entryDialog').close();
+ $('entryDialog').addEventListener('close',()=>{editing=null;});
+ $('entryForm').onsubmit=async event=>{
+   event.preventDefault();
+   const target=editing;
+   if(!target || !inbox || latest.closed || currentRow(target.slot)?.ticket!==target.ticket)return;
+   const score=[0,1].map(i=>$('entryScore'+i).valueAsNumber);
+   if(!score.every(v=>Number.isSafeInteger(v) && v>=0)){
+     $('entryError').textContent=say('Vul voor beide duo’s een geheel getal in.','Enter a whole number for each pair.');return;
+   }
+   if(latest.entryMode==='koc' && score[0]===score[1]){
+     $('entryError').textContent=say('Bij gelijkspel eerst een beslissende rally spelen.','At a tie, play a deciding rally first.');return;
+   }
+   const entry={...target,score};
+   $('entrySend').disabled=true; pending.set(entry.slot,entry);
+   try{
+     const response=await fetch(shortEndpoint,{method:'POST',headers:{'Content-Type':'application/json'},
+       body:JSON.stringify(entry),cache:'no-store',referrerPolicy:'no-referrer'});
+     if(!response.ok)throw Object.assign(new Error('score'),{status:response.status});
+     if(editing===target)$('entryDialog').close();receive(await response.json());
+     $('entryStatus').textContent=say('Uitslag opgeslagen','Score saved')+' · '+score.join('–');
+   }catch(error){
+     pending.delete(entry.slot);
+     if(error.status===409 || error.status===403 || error.status===404){
+       if(editing===target)$('entryDialog').close();await reload();
+       $('entryStatus').textContent=say('De wedstrijd is al ingevuld of gewijzigd. Controleer de laatste stand.','The match was already scored or changed. Check the latest results.');
+     }else if(editing===target)$('entryError').textContent=say('Versturen lukt nu niet. Probeer het opnieuw.','Could not send. Please try again.');
+   }finally{if(editing===target)$('entrySend').disabled=false;}
+ };
  function status(){
    const en=latest.en;
    $('connection').classList.toggle('closed',!!latest.closed);
@@ -50,20 +152,22 @@ article h3{display:flex;align-items:center;justify-content:space-between;gap:.55
      online?(en?'Connected for updates':'Verbonden voor wijzigingen'):(en?'Showing the saved schedule':'Opgeslagen schema');
  }
  function selectPlayer(name,focus){
+   if(restrictedPlayer)return;
    $('player').value=name;draw();
    if(focus)$('player').focus({preventScroll:true});
  }
  function person(name,selected){
+   if(restrictedPlayer)return node('span',name,'person'+(name===selected?' mine':''));
    const button=node('button',name,'person'+(name===selected?' mine':''));
    button.type='button';button.title=name;button.onclick=()=>selectPlayer(name,true);
    return button;
  }
  function draw(){
    const s=latest,en=s.en,player=$('player').value;
-   $('everyone').textContent=en?'Show everyone':'Toon iedereen';$('everyone').hidden=!player;
+   $('everyone').textContent=en?'Show everyone':'Toon iedereen';$('everyone').hidden=!player || !!restrictedPlayer;
    $('title').textContent=s.title;
    $('updated').textContent=(en?'Updated ':'Bijgewerkt ')+new Date(s.at).toLocaleString(en?'en-GB':'nl-NL',{dateStyle:'short',timeStyle:'short'});
-   $('rounds').replaceChildren();status();
+   $('rounds').replaceChildren();status();entryStatus();
    for(const round of s.rounds){
      const rows=round.rows.filter(row=>!player||row.teams.flat().includes(player));
      if(!rows.length)continue;
@@ -89,7 +193,12 @@ article h3{display:flex;align-items:center;justify-content:space-between;gap:.55
          for(const name of team){if(!rest||!player||name===player)names.append(person(name,player));}
          body.append(names);
        });
-       card.append(body);courts.append(card);
+       card.append(body);
+       if(inbox && !s.closed && player && row.ticket && row.teams.flat().includes(player) && !pending.has(row.slot)){
+         const edit=node('button',en?'Enter score':'Uitslag invullen','entry-action');
+         edit.type='button';edit.onclick=()=>editScore(row,round.n);card.append(edit);
+       }
+       courts.append(card);
      }
      $('rounds').append(section);
    }
@@ -102,16 +211,37 @@ article h3{display:flex;align-items:center;justify-content:space-between;gap:.55
    }
  }
  function update(s){
-   if(latest?.closed || (latest && !s.closed && s.at<=latest.at))return;
+   if(!shortPath && (latest?.closed || (latest && !s.closed && s.at<=latest.at)))return;
    const selected=$('player').value,oldId=latest?.playerIds?.[selected];latest=s;document.documentElement.lang=s.en?'en':'nl';
    const names=new Set(s.rounds.flatMap(r=>r.rows.flatMap(row=>row.teams.flat())));
    $('label').textContent=s.en?'Show matches for':'Toon wedstrijden van';$('label').hidden=false;
    $('player').replaceChildren(new Option(s.en?'Everyone':'Iedereen',''),...Array.from(names).sort((a,b)=>a.localeCompare(b)).map(n=>new Option(n,n)));
    $('player').hidden=false;const renamed=oldId && Object.keys(s.playerIds||{}).find(n=>s.playerIds[n]===oldId);
-   $('player').value=renamed || (names.has(selected)?selected:'');draw();
-   if(s.closed){stream?.close?.();try{localStorage.setItem(cacheKey,JSON.stringify(s));}catch{}}
+   const fixed=restrictedPlayer && Object.keys(s.playerIds || {}).find(n=>s.playerIds[n]===restrictedPlayer);
+   $('player').value=fixed || renamed || (names.has(selected)?selected:'');$('player').disabled=!!restrictedPlayer;draw();
+   if(s.closed){stream?.close?.();if(!shortPath)try{localStorage.setItem(cacheKey,JSON.stringify(s));}catch{}}
  }
  try{
+   $('player').onchange=draw;$('everyone').onclick=()=>selectPlayer('',true);
+   if(shortPath){
+     const playerRefreshMs=30_000;
+     let timer;
+     function refreshIfVisible(){if(!document.hidden)reload();}
+     function visibilityChanged(){
+       clearInterval(timer);
+       if(document.hidden)return;
+       timer=setInterval(refreshIfVisible,playerRefreshMs);
+       reload();
+     }
+     stream={close(){
+       clearInterval(timer);
+       window.removeEventListener('online',refreshIfVisible);
+       document.removeEventListener('visibilitychange',visibilityChanged);
+     }};
+     window.addEventListener('online',refreshIfVisible);
+     document.addEventListener('visibilitychange',visibilityChanged);
+     visibilityChanged();return;
+   }
    const session=TossShare.parse(location.hash);cacheKey='padel-view-final-'+session.channel;
    update(await TossShare.initial(session));
    try{const final=JSON.parse(localStorage.getItem(cacheKey));if(final?.closed)update(final);}catch{}

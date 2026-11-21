@@ -1,0 +1,38 @@
+{
+  "name": "padel-toss-kotc-americano",
+  "main": "sessions/worker.mjs",
+  "compatibility_date": "2026-03-01",
+  "workers_dev": true,
+  "observability": {
+    "enabled": false
+  },
+  "build": {
+    "command": "node scripts/build-session-site.mjs"
+  },
+  "assets": {
+    "directory": "./sessions/.generated/public",
+    "binding": "ASSETS",
+    "run_worker_first": true,
+    "html_handling": "none"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "koriander-sessies"
+    }
+  ],
+  "rules": [
+    {
+      "type": "Text",
+      "globs": [
+        "**/*.sql"
+      ],
+      "fallthrough": true
+    }
+  ],
+  "triggers": {
+    "crons": [
+      "17 * * * *"
+    ]
+  }
+}

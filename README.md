@@ -166,3 +166,21 @@ De standaardlink opent 2.8.0. Onderaan staat **Probeer de 3.0-preview**. De prev
 Kies na het indelen **Schema delen → Kijklink maken**. Iedereen met de volledige link kan het schema, de rustbeurten en eventuele uitslagen en klassementen bekijken en op speler filteren. De link bevat de eerste gedeelde indeling. Wie de link doorstuurt, deelt die indeling ook.
 
 De organisator houdt het bewerken op het eigen apparaat. Zolang de planner open is, verstuurt hij wijzigingen versleuteld en ondertekend via ntfy.sh. De dienst bewaart updates tijdelijk. Met **Schema delen → Kijksessie beëindigen** verstuurt de organisator de eindstand. Kijkers zien dat de sessie is gesloten. Hun browser bewaart de ontvangen eindstand voor een volgend bezoek. Wie de link pas opent nadat de dienst de updates heeft verwijderd, ziet de oorspronkelijke indeling. Een kijklink verleent geen schrijfrechten.
+
+## Preview 3.1 met gedeelde score-invoer
+
+Open de planner op de sessiesite, maak een indeling en kies **Schema delen** en **Sessie online zetten**. Kopieer **Beheerlink** naar je eigen telefoon. Zodra de sessie online staat kan de laptop dicht. Op de telefoon staan dezelfde banen, rondes, scorevelden, timer en deelknoppen. Met de beheerlink kan iedereen de sessie beheren, dus deel deze alleen met een medeorganisator die dit ook mag.
+
+De kijklink en invullinks hebben de vorm `/s/7KDM-P4WX`. Hoofdletters en het streepje zijn optioneel. Bij Americano, scoregroepen van de Gesplitste Toss en de KOC-rondeplanner kan de organisator kiezen voor één invullink voor de hele groep of een link per speler. Met de groepslink kiest iedere speler zelf een naam. De eerste uitslag telt. De organisator kan deze aanpassen in de planner. Bij een overstap naar een andere invoeroptie vervallen de eerdere invullinks. De kijklink blijft beschikbaar. Gewone Toss en KOC-startindeling hebben alleen een kijklink.
+
+Op een kijk- of invullink wordt de stand direct opgehaald bij openen of terugkomen. Zolang de pagina zichtbaar is, controleert deze iedere 30 seconden op wijzigingen. Bij het versturen van een uitslag krijgt de speler direct een bevestiging.
+
+Zeven dagen na de laatste wijziging verlopen de online links. Bekijken verlengt de termijn niet. Na **Sessie beëindigen** sluit de invoer direct en is de eindstand nog zeven dagen beschikbaar. Verlopen sessies en codes worden elk uur opgeruimd. Een lokale JSON-export blijft bij de organisator.
+
+### Sessiesite draaien
+
+GitHub Pages bedient de statische 2.8- en 3.0-versies. De sessiesite voor 3.1 serveert de planner en de database-API op hetzelfde domein. Een installatie kan meerdere tossavonden bedienen. Namen en sessies gaan pas online bij **Sessie online zetten**.
+
+- Voor Cloudflare Workers en D1 staat de configuratie in `wrangler.jsonc`. Publiceer met een aangemeld Cloudflare-account via `npx wrangler@4 deploy`. Wrangler verpakt de publieke bestanden en koppelt de D1-database. De Worker maakt bij het eerste gebruik de tabellen aan. De Cron Trigger ruimt verlopen gegevens op.
+- Op een eigen host met Node.js 22.13 of nieuwer draait `node sessions/local.mjs` dezelfde sessiedienst met SQLite. Geef `SESSION_DB` een pad op permanente opslag. De standaardpoort is 8787. Zet er voor publiek gebruik een HTTPS-proxy voor. De browser maakt de beheerlink en spelerslinks op de publieke hostnaam. Bij gebruik achter een proxy groepeert de Node-server de limiet voor ongeldige codes per direct verbonden IP-adres.
+- De server- en browsertests staan in `tests/sessions.test.cjs` en `tests/sessions.browser.test.cjs`. De browsertest gebruikt uitsluitend fictieve spelers en een tijdelijke database.
