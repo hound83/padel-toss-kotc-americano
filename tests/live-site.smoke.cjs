@@ -103,9 +103,18 @@ const assert=require('node:assert/strict');
     const preview=await host.newPage(), watcher=await guest.newPage();
     await preview.goto(url);
     await preview.locator('#versionLink').click();
+    await preview.waitForURL(link=>link.searchParams.get('preview')==='3');
+    await preview.waitForFunction(()=>document.querySelector('#appVersion').textContent==='v3.0.0-preview');
     assert.equal(await preview.locator('#appVersion').innerText(),'v3.0.0-preview');
     await preview.locator('.format-btn[data-format=americano]').click();
     await preview.locator('#continueTo2').click();await preview.locator('#generateBtn').click();
+    await preview.locator('#presentBtn').click();
+    const stacked=await preview.locator('#liveCurrent').evaluate(current=>{
+      const next=document.querySelector('#liveUpcoming');
+      return !next.hidden && next.getBoundingClientRect().top>=current.getBoundingClientRect().bottom;
+    });
+    assert.ok(stacked,'the published scheduler stacks the next round below the current round');
+    await preview.locator('#presentExit').click();
     await preview.getByRole('button',{name:'Schema delen'}).click();
     await preview.locator('#sharePublish').click();
     await preview.waitForFunction(()=>document.querySelector('#shareUrl').value.length>0);

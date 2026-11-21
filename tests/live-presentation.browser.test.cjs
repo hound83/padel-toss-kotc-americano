@@ -175,15 +175,11 @@ test('v2.2: clean navigation and live KOC, Toss, Americano and split Toss', asyn
   const roundLayout=await toss.locator('#liveLayout').evaluate(layout=>{
     const now=layout.querySelector('#liveCurrent');
     const next=layout.querySelector('#liveUpcoming');
-    const first=now.querySelector('.live-match').getBoundingClientRect();
-    const upcoming=next.querySelector('.live-match').getBoundingClientRect();
-    return {
-      currentWider:now.offsetWidth>next.offsetWidth,
-      upcomingCompact:upcoming.width<first.width&&upcoming.height<first.height
-    };
+    return {sameWidth:now.offsetWidth===next.offsetWidth,
+      stacked:next.getBoundingClientRect().top>=now.getBoundingClientRect().bottom};
   });
-  assert.deepEqual(roundLayout,{currentWider:true,upcomingCompact:true});
-  await checkLiveCourtRows(toss,[2,2]);
+  assert.deepEqual(roundLayout,{sameWidth:true,stacked:true});
+  await checkLiveCourtRows(toss,[4]);
   await checkNamesFit(toss.locator('#liveCurrent .live-team span, #liveUpcoming .live-team span'));
   const screenshotDir=process.env.PADEL_SCREENSHOT_DIR;
   if(screenshotDir){
@@ -204,10 +200,31 @@ test('v2.2: clean navigation and live KOC, Toss, Americano and split Toss', asyn
   await toss.setViewportSize({width:1060,height:900});
   await toss.locator('#presentBtn').click();
   assert.equal(await toss.locator('#liveRoundLabel').innerText(),'Ronde 3 / 7');
-  await checkLiveCourtRows(toss,[1,1,1,1]);
+  await checkLiveCourtRows(toss,[2,2]);
   await checkNamesFit(toss.locator('#liveCurrent .live-team span, #liveUpcoming .live-team span'));
   if(screenshotDir)await toss.screenshot({path:path.join(screenshotDir,'presentation-four-courts-narrow.png')});
   await toss.locator('#presentExit').click();
+
+  const manyCourts=await open('toss');
+  await manyCourts.setViewportSize({width:1200,height:680});
+  await manyCourts.locator('#courtsMoreSelect').selectOption('8');
+  await manyCourts.locator('#playerCountInput').fill('36');
+  await manyCourts.locator('#continueTo2').click();
+  await manyCourts.locator('#generateBtn').click();
+  await manyCourts.locator('#presentBtn').click();
+  const nextBelow=page=>page.evaluate(()=>{
+    const current=document.querySelector('#liveCurrent').getBoundingClientRect();
+    const next=document.querySelector('#liveUpcoming').getBoundingClientRect();
+    return next.top>=current.bottom;
+  });
+  assert.equal(await nextBelow(manyCourts),false,'eight courts use columns on a short projector');
+  assert.equal(await manyCourts.locator('#livePageTools').isVisible(),false);
+  await manyCourts.locator('#presentExit').click();
+  await manyCourts.waitForFunction(()=>!document.fullscreenElement);
+  await manyCourts.setViewportSize({width:1600,height:900});
+  await manyCourts.locator('#presentBtn').click();
+  assert.equal(await nextBelow(manyCourts),true,'the same draw fits stacked on the larger screen');
+  await checkPresentationFits(manyCourts);
 
   const split=await open('splitToss',true);
   await split.getByRole('button',{name:'Namen',exact:true}).tap();
