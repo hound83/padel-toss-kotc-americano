@@ -5,9 +5,13 @@
 *{box-sizing:border-box}body{margin:auto;max-width:60rem;background:#f1f6fa;color:#213b55;padding:1.2rem;font:1.05rem/1.5 system-ui,sans-serif}
 h1,h2,p{margin:.5rem 0} header{border-bottom:2px solid;padding-bottom:1rem}select{font:inherit;padding:.45rem;max-width:100%}section{margin:1rem 0}article{display:grid;grid-template-columns:minmax(8rem,24%) 1fr;gap:1rem;background:white;border:1px solid #d5e0e9;border-radius:.65rem;margin:.4rem 0;padding:.7rem;overflow-wrap:anywhere}article strong{font-size:1.15rem}small{font-size:.95rem}table{border-collapse:collapse;width:100%;background:white}td,th{padding:.35rem;text-align:left;border-bottom:1px solid #d5e0e9}label{display:block;font-weight:650;margin-top:1rem} #connection{color:#486078}.match{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:.65rem;overflow-wrap:anywhere;font-weight:650}.match>div:first-child{text-align:right}.match small{text-align:center}.single{align-self:center}
 @media(max-width:520px){body{padding:.55rem}article{grid-template-columns:clamp(3.2rem,18%,5rem) minmax(0,1fr);gap:.45rem;padding:.45rem}article strong{font-size:1.04rem;align-self:center}.match{gap:.25rem;font-size:1rem}.match small{font-size:.875rem}}
+article strong button{font:inherit;text-align:start;padding:0;border:0;background:transparent;color:inherit;cursor:pointer}
+@media(max-width:520px){article{grid-template-columns:clamp(3.5rem,20%,5rem) minmax(0,1fr);}article strong button{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}}
+dialog{max-width:90vw;overflow-wrap:anywhere;border:1px solid #d5e0e9;border-radius:.7rem}dialog button{font:inherit}
 </style>
 <header><h1 id="title">Speelschema</h1><p id="updated"></p><small id="connection" role="status">Kijklink openen…</small></header>
 <label id="label" for="player" hidden>Speler</label><select id="player" hidden></select><main id="rounds"></main>
+<dialog id="courtDialog"><h2 id="courtName"></h2><form method="dialog"><button id="close">Sluiten</button></form></dialog>
 <script src="./share-v3.js"></script><script>
 (async()=>{
  const $=id=>document.getElementById(id);
@@ -24,7 +28,9 @@ h1,h2,p{margin:.5rem 0} header{border-bottom:2px solid;padding-bottom:1rem}selec
      if(!rows.length)continue;
      const section=node('section','');section.append(node('h2',(en?'Round ':'Ronde ')+round.n+(round.time?' · '+round.time:'')));
      for(const row of rows){
-       const match=node('article','');match.append(node('strong',row.label));
+       const match=node('article','');const label=node('strong','');
+       const caption=node(row.label.length>8?'button':'span',row.label);label.append(caption);match.append(label);
+       if(caption.tagName==='BUTTON'){caption.title=row.label;caption.onclick=()=>{$('courtName').textContent=row.label;$('close').textContent=en?'Close':'Sluiten';$('courtDialog').showModal();};}
        const body=node('div','');body.className=row.teams.length===2?'match':'single';
        row.teams.forEach((team,i)=>{
          if(i)body.append(node('small',row.score?row.score.map(x=>x??'–').join('–'):(en?'vs':'tegen')));
