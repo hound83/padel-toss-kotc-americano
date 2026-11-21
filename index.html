@@ -1101,14 +1101,17 @@
   .action-menu summary::after{content:'';width:.45em;height:.45em;border:solid currentColor;border-width:0 2px 2px 0;transform:translateY(-.1em) rotate(45deg);}
   .action-menu[open] summary::after{transform:translateY(.1em) rotate(225deg);}
   .action-menu-items{position:absolute;z-index:5;inset:auto auto auto 0;top:calc(100% + 4px);width:max-content;max-width:calc(100vw - 32px);padding:4px;background:var(--surface);border:1px solid var(--line);border-radius:8px;box-shadow:0 6px 20px #193b5724;}
+  .action-menu:not([open]) .action-menu-items{display:none;}
   .action-menu-items .btn{display:block;width:100%;text-align:left;border:0;min-height:44px;padding:8px 14px;}
   .action-menu-items [hidden],#editPlayersBtn[hidden]{display:none;}
   #editPlayersBtn{margin-bottom:14px;}
   #rerollStatus:empty,.playcount-wrap:has(#playcountPanel[style*="none"]){display:none;}
   @media(max-width:680px){
-    .action-bar{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));}
-    .action-bar > .btn,.action-menu summary{padding-inline:6px;white-space:normal;}
-    .action-menu:nth-child(even) .action-menu-items{left:auto;right:0;}
+    .action-bar{position:relative;}
+    .action-bar > .btn,.action-bar > details{flex:1 1 auto;min-width:0;}
+    .action-bar > .btn,.action-menu summary{padding-inline:10px;white-space:normal;}
+    .action-menu{position:static;}
+    .action-menu-items{left:0;right:0;width:auto;max-width:none;}
   }
   .match-card{grid-template-columns:clamp(7.5rem,19%,15rem) minmax(0,1fr);}
   .match-card .court-label{font:700 clamp(1.1875rem,2cqi,1.55rem)/1.18 var(--font-body, sans-serif);text-transform:none;overflow-wrap:anywhere;padding:10px;}
