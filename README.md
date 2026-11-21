@@ -95,7 +95,7 @@ Als de baanindeling groter is dan het scherm, verdeelt de presentatie de kaarten
 
 Bij Toss, Gesplitste Toss en Americano staat **Extra instellingen** onder de namen. Kies eventueel een begintijd, rondeduur (standaard 20 minuten) en namen of nummers voor de banen. Bij Gesplitste Toss gelden de spelerskeuzes per groep.
 
-**Start** garandeert een speelplek in ronde 1. Een bevestigd duo speelt de eerste ronde samen. Daarna probeert de planner beide spelers in dezelfde rondes te laten spelen en rusten. **Liefst vrij** is een voorkeur voor de laatste ronde. Banen vullen en twee opeenvolgende wachtrondes voorkomen gaan voor. Een optioneel speelniveau helpt de planner om evenwichtige koppels te kiezen. De organisator ziet de aanduidingen in de instellingen.
+**Start** garandeert een speelplek in ronde 1. Een bevestigd duo speelt de eerste ronde samen. Daarna probeert de planner beide spelers in dezelfde rondes te laten spelen en rusten. Met **Laatste vrij** krijgt een speler zo mogelijk rust in de laatste ronde. Banen vullen en twee opeenvolgende wachtrondes voorkomen gaan voor. Een optioneel speelniveau helpt de planner om evenwichtige koppels te kiezen. De organisator ziet de aanduidingen in de instellingen.
 
 **Opnieuw loten** maakt vanaf het schemablad een nieuwe indeling. Eerdere rondes en rondes tot en met de laatste ingevoerde uitslag blijven behouden, ook bij een gedeeltelijke score. De bestaande groepstoewijzing blijft gelden na een Americano-splitsing.
 
