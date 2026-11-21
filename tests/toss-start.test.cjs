@@ -97,3 +97,38 @@ test('other formats keep their existing scheduler selection path',()=>{
   const b=scheduler(25)(names,7,0,2,null,{});
   assert.deepEqual(a,b);
 });
+
+const settingsSource=html.slice(html.indexOf('  function tossSessionSettings('),html.indexOf('  function renderTossSessionSettings('));
+const settingsFor=state=>new Function('state',settingsSource+'\nreturn {error:tossSessionError,time:roundTimeText,court:displayedCourtNumber,settings:tossSessionSettings};')(state);
+
+test('Toss times use exact duration and cross midnight explicitly',()=>{
+  const settings=settingsFor({format:'toss',courts:2,tossPlan:{startTime:'23:50',roundMinutes:20,courtNumbers:[2,3]}});
+  assert.equal(settings.time(1),'23:50\u201300:10 (+1)');
+  assert.equal(settings.time(2),'00:10 (+1)\u201300:30 (+1)');
+  assert.equal(settings.court(1),2);
+  assert.equal(settings.court(2),3);
+  assert.equal(settings.error(),'');
+});
+test('older Toss sessions keep default court numbers and hide times',()=>{
+  const state={format:'toss',courts:2};
+  const settings=settingsFor(state);
+  assert.equal(settings.time(1),'');
+  assert.equal(settings.court(2),2);
+  assert.equal(settings.settings().roundMinutes,20);
+  state.format='americano';
+  state.tossPlan={startTime:'11:00',roundMinutes:20,courtNumbers:[2,3]};
+  assert.equal(settings.time(1),'');
+  assert.equal(settings.court(1),1);
+});
+test('Toss validates time, duration and duplicate court numbers',()=>{
+  const state={format:'toss',courts:2,tossPlan:{startTime:'24:00',roundMinutes:20,courtNumbers:[2,3]}};
+  const settings=settingsFor(state);
+  assert.equal(settings.error(),'tossStartTimeError');
+  state.tossPlan.startTime='11:00';
+  state.tossPlan.roundMinutes=0;
+  assert.equal(settings.error(),'tossRoundMinutesError');
+  state.tossPlan.roundMinutes=20;
+  state.tossPlan.courtNumbers=[3,3];
+  assert.equal(settings.error(),'tossCourtNumbersError');
+  assert.equal(settings.time(1),'');
+});
