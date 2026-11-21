@@ -439,6 +439,10 @@
   }
   .live-rounds:not(.side-by-side) .live-upcoming .live-team span,
   .live-rounds:not(.side-by-side) .live-upcoming .live-match-head{font-size:var(--fs-base);}
+  @container (min-width:1240px) and (max-width:1499px){
+    .club-size .live-match .live-match-body{grid-template-columns:minmax(0,1fr) 16px minmax(0,1fr);column-gap:3px;}
+    .club-size .live-match .live-team span{font-size:1.125rem;}
+  }
   @media(min-height:761px){
     @container (min-width:1240px){
       .club-size .live-match .live-match-head{font-size:var(--fs-md);padding:10px 14px;}
