@@ -20,7 +20,7 @@ test('an organizer can close the laptop, players score, and the organizer contin
     origin='http://127.0.0.1:'+server.address().port;
     t.after(()=>new Promise(resolve=>{server.closeAllConnections();server.close(resolve);}));
   }
-  const browser=await chromium.launch();t.after(()=>browser.close());
+  const browser=await chromium.launch({executablePath:process.env.CHROMIUM_EXECUTABLE_PATH});t.after(()=>browser.close());
   const errors=[];
   async function device(mobile=false){
     const ctx=await browser.newContext({serviceWorkers:'block',...(mobile?{viewport:{width:390,height:844},hasTouch:true}:{})});
@@ -34,12 +34,18 @@ test('an organizer can close the laptop, players score, and the organizer contin
     return {page,ctx};
   }
   const laptop=await device(),organizer=laptop.page;
-  await organizer.goto(origin);assert.equal(await organizer.locator('#appVersion').innerText(),'v3.1.0-preview');
+  await organizer.goto(origin);assert.equal(await organizer.locator('#appVersion').innerText(),'v3.1.0');
   await organizer.locator('.format-btn[data-format=americano]').click();
   await organizer.locator('#continueTo2').click();await organizer.locator('#generateBtn').click();
   await organizer.getByRole('button',{name:'Schema delen'}).last().click();
   await organizer.locator('#sharePublish').click();
   await organizer.locator('#ownerUrl:visible').waitFor();
+  const organizerPoll=req=>req.method()==='GET' && new URL(req.url()).pathname==='/api/manage';
+  await organizer.waitForResponse(res=>organizerPoll(res.request()) && res.status()===304);
+  // The next poll starts only after the previous one finished updating the open dialog.
+  await organizer.waitForRequest(organizerPoll);
+  assert.ok(await organizer.locator('#entryMode').isEnabled(),'score entry stays available after an organizer poll');
+  assert.ok(await organizer.locator('#shareEnd').isEnabled(),'ending the session stays available after an organizer poll');
   await organizer.locator('#entryMode').selectOption('group');
   await organizer.locator('#entryUrl:visible').waitFor();
   const viewLink=await organizer.locator('#shareUrl').inputValue(),entryLink=await organizer.locator('#entryUrl').inputValue();

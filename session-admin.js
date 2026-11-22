@@ -147,17 +147,17 @@
           }
         }
         if(download.hidden)announce(meta?.closed?say('Sessie beëindigd. Dit is de eindstand.','Session closed. These are the final results.'):'');
-        draw();
       }catch(error){
         if(generation!==sequence)return;
         if(error.status===409){
           const saved=app.snapshot();
           try{const remote=await request('/api/manage');if(generation!==sequence)return;
-            restore(remote);conflict(saved);clearPending();draw();
+            restore(remote);conflict(saved);clearPending();
           }catch(failure){unavailable(failure);}
         }else unavailable(error);
       }finally{
         busy=false;
+        if(generation===sequence)draw();
         if(generation===sequence && !missing && !meta?.closed)schedule(queued?100:3500);
         queued=false;
       }

@@ -8234,7 +8234,7 @@
 
   // init
   if(entryPreview){
-    document.getElementById('appVersion').textContent='v3.1.0-preview';
+    document.getElementById('appVersion').textContent=hostedSessions?'v3.1.0':'v3.1.0-preview';
     PadelSessions.setup({
       hosted:hostedSessions, language:()=>state.lang,
       snapshot:()=>{if(editSession || ![3,4].includes(state.step))return null;const view=viewSnapshot();return view ? {state,view} : null;},
