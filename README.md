@@ -169,7 +169,7 @@ De organisator houdt het bewerken op het eigen apparaat. Zolang de planner open 
 
 ## Versie 3.1 met gedeelde score-invoer
 
-Open de [Koriander-sessiesite](https://padel-toss-kotc-americano.hound83.workers.dev/), maak een indeling en kies **Schema delen** en **Sessie online zetten**. Kopieer **Beheerlink** naar je eigen telefoon. Zodra de sessie online staat kan de laptop dicht. Op de telefoon staan dezelfde banen, rondes, scorevelden, timer en deelknoppen. Met de beheerlink kan iedereen de sessie beheren, dus deel deze alleen met een medeorganisator die dit ook mag.
+Open de [Koriander-sessiesite](https://padel.hound83.workers.dev/), maak een indeling en kies **Schema delen** en **Sessie online zetten**. Kopieer **Beheerlink** naar je eigen telefoon. Zodra de sessie online staat kan de laptop dicht. Op de telefoon staan dezelfde banen, rondes, scorevelden, timer en deelknoppen. Met de beheerlink kan iedereen de sessie beheren, dus deel deze alleen met een medeorganisator die dit ook mag.
 
 De kijklink en invullinks hebben de vorm `/s/7KDM-P4WX`. Hoofdletters en het streepje zijn optioneel. Bij Americano, scoregroepen van de Gesplitste Toss en de KOC-rondeplanner kan de organisator kiezen voor één invullink voor de hele groep of een link per speler. Met de groepslink kiest iedere speler zelf een naam. De eerste uitslag telt. De organisator kan deze aanpassen in de planner. Bij een overstap naar een andere invoeroptie vervallen de eerdere invullinks. De kijklink blijft beschikbaar. Gewone Toss en KOC-startindeling hebben alleen een kijklink.
 
