@@ -30,12 +30,32 @@ test('signup poll through the real planner, mobile visitor, password and live fo
   const id=new URL(host.url()).pathname.split('/').pop(),publicUrl=url+'/aanmelden/'+id;
   await player.goto(publicUrl);await player.getByLabel('Jouw naam').fill('Mila');await player.getByRole('button',{name:'Ja, ik doe mee'}).click();await player.getByText('Je staat bij Deelnemers.').waitFor();
   await visitor.goto(publicUrl);await visitor.locator('#groups').getByText('Mila').waitFor();assert.equal(await visitor.getByRole('button',{name:'Mijn aanmelding intrekken'}).count(),0);
+  visitor.on('dialog',d=>d.accept());
+  await visitor.getByLabel('Jouw naam').fill('Testreserve');
+  await visitor.getByRole('button',{name:'Alleen reserve',exact:true}).click();
+  await visitor.getByText('Je staat bij Reserve.').waitFor();
+  await visitor.getByRole('button',{name:'Mijn aanmelding intrekken'}).click();await visitor.getByText('Je aanmelding is ingetrokken.').waitFor();
+  assert.ok(await visitor.locator('#groups').getByText('Mila',{exact:true}).isVisible());
   assert.match(await player.locator('#art').getAttribute('src'),/mode-koc\.svg/);
   assert.ok(await player.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
   for(let i=1;i<=7;i++){const res=await host.request.post(url+'/api/polls/'+id,{headers:{'X-Signup-Key':randomBytes(32).toString('hex')},data:{name:'Test '+i,answer:'yes'}});assert.equal(res.status(),200);}
   await host.reload();await host.getByRole('button',{name:'Wijzig Test 7',exact:true}).click();
   await host.getByLabel('Plek',{exact:true}).selectOption('2');await host.getByRole('button',{name:'Opslaan',exact:true}).click();
   await host.waitForFunction(()=>document.querySelector('[data-place=in] li:nth-child(2) .person')?.textContent.startsWith('Test 7'));
+  const playing=host.locator('[data-place=in]');
+  await playing.locator('li').filter({hasText:'Test 6'}).dragTo(host.locator('[data-place=reserve]'));
+  await host.locator('[data-place=reserve] li').filter({hasText:'Test 6'}).waitFor();
+  await host.getByRole('button',{name:'Wijzig Test 6',exact:true}).click();
+  await host.getByLabel('Verplaats naar',{exact:true}).selectOption('in');
+  await host.getByLabel('Plek',{exact:true}).selectOption('8');
+  await host.getByRole('button',{name:'Opslaan',exact:true}).click();await playing.locator('li').filter({hasText:'Test 6'}).waitFor();
+  if(process.env.PADEL_SCREENSHOT_DIR){
+    const fs=require('node:fs/promises'),path=require('node:path');
+    await fs.mkdir(process.env.PADEL_SCREENSHOT_DIR,{recursive:true});
+    await host.screenshot({path:path.join(process.env.PADEL_SCREENSHOT_DIR,'poll-beheer-desktop.png'),fullPage:true});
+    await player.reload();await player.locator('#groups').getByText('Test 6',{exact:true}).waitFor();
+    await player.screenshot({path:path.join(process.env.PADEL_SCREENSHOT_DIR,'poll-aanmelden-mobiel.png'),fullPage:true});
+  }
   await visitor.goto(url+'/beheer/'+id);await visitor.getByLabel('Beheerwachtwoord').waitFor();assert.equal(await visitor.getByRole('button',{name:'Speler toevoegen'}).count(),0);
   await visitor.getByLabel('Beheerwachtwoord').fill(password);await visitor.getByRole('button',{name:'Inloggen'}).click();await visitor.getByRole('button',{name:'Speler toevoegen'}).waitFor();
   host.on('dialog',d=>d.accept());await host.getByRole('button',{name:'Ga indelen'}).click();

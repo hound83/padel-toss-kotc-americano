@@ -64,7 +64,11 @@
     e.preventDefault();if(pending)return;
     $('submitEdit').disabled=true;
     try{await dialogAction();$('dialog').close();}
-    catch(error){$('dialogError').textContent=friendly(error);}
+    catch(error){
+      if(error.message==='changed' || error.status===401){
+        $('dialog').close();$('message').textContent=friendly(error);
+      }else $('dialogError').textContent=friendly(error);
+    }
     finally{$('submitEdit').disabled=false;}
   };
   function configFields(root,initial,onChange){
