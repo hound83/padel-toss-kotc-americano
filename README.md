@@ -167,6 +167,16 @@ Kies na het indelen **Schema delen → Kijklink maken**. Iedereen met de volledi
 
 De organisator houdt het bewerken op het eigen apparaat. Zolang de planner open is, verstuurt hij wijzigingen versleuteld en ondertekend via ntfy.sh. De dienst bewaart updates tijdelijk. Met **Schema delen → Kijksessie beëindigen** verstuurt de organisator de eindstand. Kijkers zien dat de sessie is gesloten. Hun browser bewaart de ontvangen eindstand voor een volgend bezoek. Wie de link pas opent nadat de dienst de updates heeft verwijderd, ziet de oorspronkelijke indeling. Een kijklink verleent geen schrijfrechten.
 
+## Versie 3.2 met aanmeldpoll
+
+Op de [sessiesite](https://padel.hound83.workers.dev/) opent **Aanmeldpoll maken** een avond met een speelvorm, datum, tijden, banen en capaciteit. Kies een eigen beheerwachtwoord (minimaal acht tekens) en deel de **groepslink** via WhatsApp. Iedereen met die link ziet tijdens de open aanmelding de lijst. Spelers hebben geen account nodig. Ze kunnen op dezelfde browser hun eigen reactie wijzigen of intrekken. Bij een ander apparaat of gewiste browsergegevens kan de organisator helpen.
+
+De eerste **Ja**-aanmeldingen vullen de plekken. De overige **Ja**-reacties komen op de wachtlijst, op tijdstip van aanmelding bij die groep. Bij een vrijgekomen plek schuift eerst de wachtlijst door en vervolgens de eerste beschikbare expliciete reserve. Een bewuste reserve blijft tot een afmelding of een beheerbesluit op de reservelijst. Opnieuw aansluiten bij een groep geeft een nieuwe plek achteraan.
+
+Open **Beheer** met het wachtwoord. Voeg een speler toe of kies bij een naam **Wijzig** voor naam, lijst en exacte positie. Op een computer kan ook worden gesleept. **Alleen na akkoord** houdt iemand buiten de automatische indeling. Dat oordeel is alleen voor beheerders zichtbaar. De beheerder kan het voor dezelfde speelvorm in toekomstige edities bewaren, een naamgenoot beoordelen en voor één avond afwijken.
+
+**Ga indelen** sluit de aanmelding en verbergt de lijsten voor bezoekers. De bestaande planner opent met de bevestigde deelnemers. Bij Gesplitste Toss kun je de speelgroep vooraf kiezen. **Publiceer op de aanmeldlink** maakt het speelschema bereikbaar vanaf dezelfde groepslink. Beheer van een al gepubliceerd speelschema verloopt via **Open planner**. **Herhaal volgende week** neemt de instellingen en het wachtwoord mee naar een verse aanmeldlijst. Een openbare poll vervalt veertien dagen na de speeldatum of laatste wijziging, afhankelijk van welke later is. Online speelsessies hebben hun eigen bewaartermijn.
+
 ## Versie 3.1 met gedeelde score-invoer
 
 Open de [Koriander-sessiesite](https://padel.hound83.workers.dev/), maak een indeling en kies **Schema delen** en **Sessie online zetten**. Kopieer **Beheerlink** naar je eigen telefoon. Zodra de sessie online staat kan de laptop dicht. Op de telefoon staan dezelfde banen, rondes, scorevelden, timer en deelknoppen. Met de beheerlink kan iedereen de sessie beheren, dus deel deze alleen met een medeorganisator die dit ook mag.

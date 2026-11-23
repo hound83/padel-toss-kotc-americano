@@ -1397,6 +1397,7 @@
         <img class="mode-illustration" id="splitTossIllustration" src="./assets/mode-split.svg" width="420" height="355" alt="" aria-hidden="true" decoding="async">
       </button>
     </div>
+    <a class="btn btn-ghost" id="pollHome" href="/aanmaken" hidden>Aanmeldpoll maken</a>
   </section>
 
   <!-- STEP 1 -->
@@ -1788,10 +1789,10 @@
 <section id="livePresentation" class="live-presentation" hidden aria-label="Live presentation">
   <div class="live-content">
     <header class="live-head">
-      <div>
+      <div class="live-format-heading"><img id="liveArt" alt="" width="90" height="65"><div>
         <h1 class="live-title" id="liveTitle" tabindex="-1"></h1>
         <p class="live-subtitle" id="liveSubtitle"></p>
-      </div>
+      </div></div>
       <div class="round-tools" id="liveRoundTools" role="group" data-i18n-aria-label="roundNavigation">
         <button type="button" id="livePrev" data-round-action="previous" data-i18n-aria-label="roundPrevious">←</button>
         <span class="round-tools-label" id="liveRoundLabel" role="status"></span>
@@ -1893,6 +1894,7 @@
 <script src="./schedule-document.js"></script>
 <script src="./round-planner.js"></script>
 <script src="./ranking.js"></script>
+<script src="./poll-common.js"></script>
 <script src="./session-admin.js"></script>
 <script>
 (function(){
@@ -2652,6 +2654,10 @@
     document.documentElement.lang = state.lang;
     const versionLink=document.getElementById('versionLink');
     versionLink.href=previewV3?(hostedSessions?'/?preview=2.8':'./'):'?preview=3';versionLink.textContent=t(previewV3?'stableLink':'previewLink');
+    const pollHome=document.getElementById('pollHome');
+    pollHome.hidden=!hostedSessions || !entryPreview;
+    pollHome.textContent=state.lang==='en'?'Create a signup poll':'Aanmeldpoll maken';
+    pollHome.href='/aanmaken?lang='+state.lang;
     const entryNav = document.getElementById('entryVersionLink');
     entryNav.hidden = !hostedSessions && !entryPreview;
     entryNav.href = entryPreview ? '?preview=3' : '?preview=3.1';
@@ -2704,6 +2710,8 @@
 
   var previewVersion = new URLSearchParams(location.search).get('preview');
   var hostedSessions = !!document.querySelector('meta[name="koriander-sessions"]');
+  var signupId = new URLSearchParams(location.search).get('poll');
+  if(!hostedSessions || !/^[a-f0-9]{14}$/.test(signupId||''))signupId=null;
   var entryPreview = previewVersion === '3.1' || (hostedSessions && !previewVersion);
   var previewV3 = entryPreview || previewVersion === '3';
   var rehearsalMode = new URLSearchParams(window.location.search).get('rehearsal') === '1';
@@ -6962,7 +6970,7 @@
   // ---------- Local-first recovery ----------
   // No account or remote database: the organiser's own browser holds the
   // working copy, and the JSON export above remains a portable backup.
-  var AUTOSAVE_KEY = entryPreview ? (location.pathname.includes('/b/') ? 'padel-toss-managed-'+location.pathname.split('/').pop().slice(0,12) : 'padel-toss-session-v31-preview') : previewV3 ? 'padel-toss-session-v3-preview' : rehearsalMode ? 'padel-toss-americano-rehearsal-v2' : 'padel-toss-americano-session-v2';
+  var AUTOSAVE_KEY = signupId ? 'padel-poll-draft-'+signupId : entryPreview ? (location.pathname.includes('/b/') ? 'padel-toss-managed-'+location.pathname.split('/').pop().slice(0,12) : 'padel-toss-session-v31-preview') : previewV3 ? 'padel-toss-session-v3-preview' : rehearsalMode ? 'padel-toss-americano-rehearsal-v2' : 'padel-toss-americano-session-v2';
   var autosaveTimer = null;
   var autosaveSuspended = false;
   function formSnapshot(){
@@ -7487,9 +7495,9 @@
     if (!document.body.classList.contains('presentation-mode'))return;
     var root=document.getElementById('livePresentation'), koc=state.format==='koc';
     root.dataset.format = state.format;
+    document.getElementById('liveArt').src=TossPoll.art(state.format,state.lang==='en');
     var current=koc?0:liveCurrentRound();
     document.getElementById('liveTitle').textContent=
-      (koc?'👑 ':state.format==='splitToss'?'🗂️ ':state.format==='americano'?'🏆 ':'🎾 ')+
       t(koc?'formatKoc':state.format==='splitToss'?'formatSplitToss':
         state.format==='americano'?'formatAmericano':'formatToss');
     var kocRound = koc && currentKocRound();
@@ -8148,7 +8156,7 @@
       }
     }
     if(newTickets)scheduleAutosave();
-    const snapshot={title:t(titles[state.format]),en,rounds,boards,playerIds:state.viewerIds};
+    const snapshot={title:t(titles[state.format]),format:state.format,en,rounds,boards,playerIds:state.viewerIds};
     if(entryPreview)snapshot.entryMode=koc?'koc':scoreMode();
     return snapshot;
   }
@@ -8234,9 +8242,9 @@
 
   // init
   if(entryPreview){
-    document.getElementById('appVersion').textContent=hostedSessions?'v3.1.0':'v3.1.0-preview';
+    document.getElementById('appVersion').textContent=hostedSessions?'v3.2.0':'v3.1.0-preview';
     PadelSessions.setup({
-      hosted:hostedSessions, language:()=>state.lang,
+      hosted:hostedSessions, language:()=>state.lang, poll:()=>state.signupPoll, hasDraw:()=>state.format==='koc'?!!state.koc?.assignment:state.step===3 && !!state.pools.length,
       snapshot:()=>{if(editSession || ![3,4].includes(state.step))return null;const view=viewSnapshot();return view ? {state,view} : null;},
       editing:()=>!!editSession || document.getElementById('kocEditDialog')?.open || document.body.classList.contains('presentation-mode') && !!document.activeElement?.matches('input'),
       restore:doc=>{applyLoadedState(doc);if(document.body.classList.contains('presentation-mode'))renderLivePresentation();writeAutosave();},
@@ -8249,11 +8257,65 @@
   goToStep(0);
   try {
     var existing = JSON.parse(localStorage.getItem(AUTOSAVE_KEY));
-    if (!location.pathname.includes('/b/') && existing && existing.format === 'padel-toss-autosave' && existing.version === 2 &&
+    if (!signupId && !location.pathname.includes('/b/') && existing && existing.format === 'padel-toss-autosave' && existing.version === 2 &&
         validateSaveData({format:SAVE_FORMAT,version:SAVE_VERSION,state:existing.state}) === null){
       resumeOverlay.classList.add('visible');
     }
   } catch(e){}
+  if(signupId && !location.pathname.startsWith('/b/'))openSignupDraft(signupId);
+
+  async function openSignupDraft(id){
+    const say=(nl,en)=>state.lang==='en'?en:nl;
+    const manage='/beheer/'+id;
+    const banner=document.createElement('aside');
+    banner.className='session-notice';
+    const message=document.createElement('span'),back=document.createElement('a');
+    back.href=manage;back.className='btn btn-ghost';back.textContent=say('Naar aanmeldlijst','Back to signups');
+    banner.append(message,back);document.body.prepend(banner);
+    try{
+      const data=await TossPoll.api('/'+id+'/admin',undefined,{token:TossPoll.token(id)});
+      if(data.phase==='open'){location.replace(manage);return;}
+      if(data.plannerKey){location.replace('/b/'+data.plannerKey);return;}
+      const config=data.settings,players=data.entries.filter(e=>e.place==='in');
+      const names=players.map(e=>e.name);
+      const signature=TossPoll.rosterSignature(data);
+      const saved=JSON.parse(localStorage.getItem(AUTOSAVE_KEY));
+      if(saved?.state?.signupPoll?.id===id && (saved.state.signupPoll.signature===signature ||
+          !confirm(say('De aanmeldlijst is gewijzigd. Een nieuw concept maken met de huidige deelnemers?',
+            'Signups changed. Start a new draft using the current players?'))) && restoreAutosave(saved)){
+        message.textContent=say('Concept van de aanmeldpoll geopend.','Signup draft restored.');return;
+      }
+      const groups=[[],[],[]];
+      if(config.format==='splitToss'){
+        players.forEach(e=>{if(Number.isInteger(e.level))groups[e.level].push(e.name);});
+        players.forEach(e=>{if(!Number.isInteger(e.level))groups[groups[0].length<=groups[1].length?0:1].push(e.name);});
+      }
+      const koc=config.format==='koc';
+      if(names.length<4 || (koc && names.length>config.courts*4+2) ||
+          (config.format==='splitToss' && !levelCountsValid(groups.map(a=>a.length)))){
+        message.textContent=say('Controleer de bezetting in de aanmeldlijst. Minimaal vier spelers, bij Gesplitste Toss minimaal vier per actieve groep. KOC biedt vier plekken per baan plus een wachtduo.',
+          'Check attendance in the signup list. At least four players, or four per active Split Toss group. KOC supports four per court plus one waiting pair.');return;
+      }
+      document.querySelector('.format-btn[data-format="'+config.format+'"]').click();
+      state.signupPoll={id,signature};state.courts=config.courts;presetCountsAutomatic=false;syncCourtSelection();
+      if(koc){
+        state.koc.courts=config.courts;state.koc.waitingEnabled=names.length>config.courts*4;
+        ensureKocRoster();applyBulkKocNames(names);
+      }else{
+        if(config.format==='splitToss'){
+          state.levelNames=groups;state.levelCounts=groups.map(list=>list.length);
+          levelCountInputs.forEach((field,i)=>field.value=state.levelCounts[i]);
+        }else{state.names=names;state.playerCount=names.length;playerCountInput.value=names.length;}
+        tossSessionSettings().startTime=config.start;
+        renderCourtsPreview();continueTo2Btn.click();
+      }
+      message.textContent=say('Bevestigde deelnemers overgenomen.','Confirmed players imported.');
+      writeAutosave();
+    }catch(error){
+      if(error.status===401){location.replace(manage);return;}
+      message.textContent=say('Aanmeldlijst ophalen lukt niet. Open het beheer om opnieuw te proberen.','Could not load signups. Open the organizer page to retry.');
+    }
+  }
 
   } catch (err) {
     try {

@@ -1,0 +1,25 @@
+// Verify the Cloudflare release without creating a poll or touching a real signup.
+const assert=require('node:assert/strict');
+const {chromium}=require('playwright');
+(async()=>{
+  const base=process.env.PADEL_POLL_SITE_URL;
+  const browser=await chromium.launch();
+  try{
+    const page=await browser.newPage({viewport:{width:390,height:844},hasTouch:true});
+    let live=false;
+    for(let i=0;i<36;i++){
+      await page.goto(base);
+      if(await page.locator('#appVersion').innerText()==='v3.2.0' && await page.locator('#pollHome').isVisible()){live=true;break;}
+      await new Promise(resolve=>setTimeout(resolve,5000));
+    }
+    assert.ok(live,'the production planner serves 3.2');
+    await page.locator('#pollHome').click();
+    for(const [format,file] of [['toss','toss'],['koc','koc'],['americano','americano'],['splitToss','split']]){
+      await page.getByLabel('Speelvorm',{exact:true}).selectOption(format);
+      await page.waitForFunction(file=>{const img=document.querySelector('#art');return img.src.endsWith('/mode-'+file+'.svg') && img.complete && img.naturalWidth>0;},file);
+    }
+    const missing=await page.request.get(new URL('/api/polls/00000000000000',base).href);
+    assert.equal(missing.status(),404);assert.deepEqual(await missing.json(),{error:'missing'});
+    console.log('Cloudflare production serves Toss 3.2, its four mode illustrations and the signup API.');
+  }finally{await browser.close();}
+})().catch(err=>{console.error(err);process.exitCode=1;});

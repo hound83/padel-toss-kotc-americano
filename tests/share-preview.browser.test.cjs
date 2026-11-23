@@ -146,7 +146,8 @@ test('Viewer keeps both teams in place for small and large results',async t=>{
   const page=await browser.newPage();
   const root=path.join(__dirname,'..');
   await page.route('https://viewer.test/**',route=>{
-    const file=path.basename(new URL(route.request().url()).pathname);
+    const pathname=new URL(route.request().url()).pathname;
+    const file=path.join(pathname.startsWith('/assets/')?'assets':'',path.basename(pathname));
     return route.fulfill({path:path.join(root,file),contentType:file.endsWith('html')?'text/html':file.endsWith('js')?'text/javascript':'image/svg+xml'});
   });
   await page.goto('https://viewer.test/kijken.html');

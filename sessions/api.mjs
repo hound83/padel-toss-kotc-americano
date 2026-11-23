@@ -1,3 +1,4 @@
+import {pollApi,pollCleanup} from './polls.mjs';
 import createRanking from '../ranking.js';
 
 const WEEK = 7 * 86400000;
@@ -41,7 +42,8 @@ function validDocument(doc){
   return {state,view};
 }
 function guest(row,link){
-  const view=JSON.parse(row.document).view;
+  const {state,view}=JSON.parse(row.document);
+  view.format=state.format;
   for(const rd of view.rounds)for(const match of rd.rows){
     if(row.closed || link.role==='view' || (link.role==='personal' && !match.teams.flat().some(n=>view.playerIds[n]===link.player))) delete match.ticket;
   }
@@ -175,13 +177,14 @@ async function manage(db,request,now){
   return json(await ownerInfo(db,{...row,revision:row.revision+1,mode,epoch,closed,expires:now+WEEK}));
 }
 export async function cleanup(db,now=Date.now()){
-  await db.batch([query(db,'DELETE FROM links WHERE session_id IN (SELECT id FROM sessions WHERE expires<=?)',now),
+  await db.batch([...pollCleanup(db,now),query(db,'DELETE FROM links WHERE session_id IN (SELECT id FROM sessions WHERE expires<=?)',now),
     query(db,'DELETE FROM sessions WHERE expires<=?',now),query(db,'DELETE FROM limits WHERE expires<=?',now)]);
 }
 export async function api(request,db,now=Date.now()){
   try{
     const url=new URL(request.url),path=url.pathname,origin=request.headers.get('Origin');
     if(origin && origin!==url.origin && request.method!=='GET')fail(403,'origin');
+    if(path==='/api/polls' || path.startsWith('/api/polls/'))return await pollApi(request,db,now,{json,requestJson,counter});
     if(path==='/api/sessions' && request.method==='POST')return await create(db,request,now);
     if(path==='/api/manage')return await manage(db,request,now);
     const part=path.match(/^\/api\/s\/([^/]{1,14})$/);

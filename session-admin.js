@@ -48,6 +48,15 @@
       if(!response.ok)throw Object.assign(new Error('session'),{status:response.status});
       return response.json();
     }
+    const pollButtons=[];
+    let publishedPoll=null;
+    function drawPollButtons(){
+      const poll=app.poll?.();
+      for(const b of pollButtons){
+        b.hidden=!poll || !app.hasDraw();b.disabled=busy || publishedPoll===poll?.id;
+        b.textContent=publishedPoll && publishedPoll===poll?.id?say('Gepubliceerd voor deelnemers','Published for players'):say('Publiceer op de aanmeldlink','Publish to the signup link');
+      }
+    }
     let finalState=null;
     function setMeta(value){meta={revision:value.revision,expires:value.expires,mode:value.mode,closed:value.closed,links:value.links};}
     function restore(remote){
@@ -66,7 +75,7 @@
         'No connection to the session. Local changes are waiting to sync.'));
     }
     function draw(){
-      if(!dialog.open)return;
+      drawPollButtons();if(!dialog.open)return;
       const doc=app.snapshot(), fields=!!meta,closed=!!meta?.closed;
       const canEnter=!!doc?.view.rounds.some(rd=>rd.rows.some(row=>row.slot));
       $('sharePublish').hidden=fields || !doc;$('sharePublish').disabled=!app.hosted || busy;
@@ -171,13 +180,37 @@
         else unavailable(error);
       }finally{busy=false;draw();if(secret && !meta?.closed)schedule(queued?10:800);queued=false;}
     }
-    $('sharePublish').onclick=()=>action(async()=>{
-      if(secret || !app.hosted)return;
-      const doc=app.snapshot();if(!doc)return;
-      const signature=JSON.stringify(doc),result=await request('/api/sessions',doc);
-      secret=result.secret;setMeta(result);base=signature;history.replaceState(null,'','/b/'+secret);
-      app.save();announce('');
-    });
+    async function publish(){
+      const doc=app.snapshot();if(!doc || !app.hosted)return;
+      const poll=app.poll?.();let admin,token;
+      if(poll){
+        try{
+          token=TossPoll.token(poll.id);
+          admin=await TossPoll.api('/'+poll.id+'/admin',undefined,{token});
+          if(admin.phase==='open')throw Error('reopened');
+          if(admin.phase==='published' && admin.plannerKey!==secret)throw Error('other-plan');
+          if(TossPoll.rosterSignature(admin)!==poll.signature && !confirm(say('De aanmeldlijst is gewijzigd. Dit concept toch publiceren?','Signups changed. Publish this draft anyway?')))return;
+        }catch(error){
+          announce(error.status===401?say('Log opnieuw in via het pollbeheer om te publiceren.','Sign in to the poll again to publish.'):
+            say('Open het pollbeheer om de actuele indeling te controleren.','Open the poll organizer page to check the latest schedule.'));
+          const back=document.createElement('a');back.href='/beheer/'+poll.id;back.className='btn btn-ghost';back.textContent=say('Pollbeheer','Poll settings');message.append(' ',back);return;
+        }
+      }
+      if(!secret){
+        const signature=JSON.stringify(doc),result=await request('/api/sessions',doc);
+        secret=result.secret;setMeta(result);base=signature;history.replaceState(null,'','/b/'+secret);
+        app.save();announce('');
+      }
+      if(poll){
+        try{
+          await TossPoll.api('/'+poll.id+'/admin',{action:'publish',revision:admin.revision,sessionKey:secret},{token});
+          publishedPoll=poll.id;announce(say('Het speelschema staat op de groepslink.','The schedule is now on the group link.'));
+        }catch(error){
+          announce(say('Het schema is opgeslagen. Publiceer opnieuw om de groepslink bij te werken.','The schedule is saved. Publish again to update the group link.'));
+        }
+      }
+    }
+    $('sharePublish').onclick=()=>action(publish);
     $('entryMode').onchange=async()=>{
       const mode=$('entryMode').value;modePending=mode;draw();
       await action(async()=>{
@@ -208,9 +241,13 @@
       const button=document.createElement('button');button.type='button';button.className='btn btn-ghost';
       button.dataset.i18n='shareAction';button.textContent=say('Schema delen','Share schedule');
       $(id).after(button);
+      const publishButton=document.createElement('button');publishButton.type='button';publishButton.className='btn btn-primary';publishButton.hidden=true;
+      pollButtons.push(publishButton);button.after(publishButton);publishButton.onclick=()=>action(publish);
       button.onclick=()=>{dialog.showModal();draw();if(meta && meta.mode!=='view' && !meta.closed)action(getEntryLink);};
     }
+    document.addEventListener('click',()=>{if(app.poll?.())requestAnimationFrame(drawPollButtons);});
     window.queueShareUpdate=()=>{
+      drawPollButtons();
       if(applying || !secret || !meta)return;
       const doc=app.snapshot();
       if(meta.closed){
