@@ -5,15 +5,18 @@ window.TossPoll=(()=>{
     const file=modes[mode]?.[2];
     return file?'./assets/mode-'+file+(file==='split' && en?'-en':'')+'.svg':'./icon.svg';
   }
+  function preference(key,value){
+    try{if(value!==undefined)localStorage.setItem(key,value);return localStorage.getItem(key);}catch{return null;}
+  }
   const tokenKey=id=>'toss-poll-admin-'+id;
-  function token(id){return sessionStorage.getItem(tokenKey(id));}
+  function token(id){try{return sessionStorage.getItem(tokenKey(id));}catch{return null;}}
   function remember(id,value){if(value)sessionStorage.setItem(tokenKey(id),value);else sessionStorage.removeItem(tokenKey(id));}
   function personalKey(create){
     const storage='toss-poll-own-device';
-    let value=localStorage.getItem(storage);
+    let value=preference(storage);
     if(!value && create){
       value=Array.from(crypto.getRandomValues(new Uint8Array(32)),v=>v.toString(16).padStart(2,'0')).join('');
-      localStorage.setItem(storage,value);
+      if(!preference(storage,value))throw Error('storage');
     }
     return value;
   }
@@ -29,5 +32,5 @@ window.TossPoll=(()=>{
     return data;
   }
   function rosterSignature(data){return JSON.stringify([data.settings,data.entries.filter(e=>e.place==='in').map(e=>[e.name,e.level??null])]);}
-  return {modes,art,token,remember,personalKey,api,rosterSignature};
+  return {modes,art,token,remember,personalKey,api,rosterSignature,preference};
 })();

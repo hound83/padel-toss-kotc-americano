@@ -7498,7 +7498,6 @@
     document.getElementById('liveArt').src=TossPoll.art(state.format,state.lang==='en');
     var current=koc?0:liveCurrentRound();
     document.getElementById('liveTitle').textContent=
-      (koc?'👑 ':state.format==='splitToss'?'🗂️ ':state.format==='americano'?'🏆 ':'🎾 ')+
       t(koc?'formatKoc':state.format==='splitToss'?'formatSplitToss':
         state.format==='americano'?'formatAmericano':'formatToss');
     var kocRound = koc && currentKocRound();

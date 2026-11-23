@@ -3,7 +3,7 @@
   const P=window.TossPoll, $=id=>document.getElementById(id);
   const match=location.pathname.match(/^\/(aanmelden|beheer)\/([a-f0-9]{14})/);
   const id=match?.[2],admin=match?.[1]==='beheer',base=id?'/'+id:'';
-  let en=new URLSearchParams(location.search).get('lang')==='en' || localStorage.getItem('toss-poll-lang')==='en';
+  let en=new URLSearchParams(location.search).get('lang')==='en' || P.preference('toss-poll-lang')==='en';
   let current=null, pending=false, sequence=0, dialogAction, dragId, editor=null;
   const say=(nl,english)=>en?english:nl;
   const modeName=mode=>P.modes[mode]?.[en?1:0]||'Padel';
@@ -43,7 +43,7 @@
   function dateText(s){return new Intl.DateTimeFormat(en?'en-GB':'nl-NL',{weekday:'long',day:'numeric',month:'long',timeZone:'UTC'}).format(new Date(s.date+'T12:00:00Z'));}
   function places(){return {in:say('Deelnemers','Playing'),wait:say('Wachtlijst · Ja','Waiting · Yes'),reserve:say('Reserve','Standby'),review:say('Alleen na akkoord','Needs approval'),out:say('Afgemeld','Unavailable')};}
   function friendly(err){
-    const labels={duplicate:say('Die naam staat al op de lijst. Gebruik ook een achternaam of initiaal.','That name is taken. Add an initial or last name.'),
+    const labels={storage:say('Sta lokale opslag toe om je eigen reactie te kunnen beheren, of vraag de organisator je aan te melden.','Enable browser storage to manage your own response, or ask the organizer to sign you up.'),duplicate:say('Die naam staat al op de lijst. Gebruik ook een achternaam of initiaal.','That name is taken. Add an initial or last name.'),
       login:say('Inloggen vereist. Controleer het beheerwachtwoord.','Sign in with the organizer password.'),
       settings:say('Controleer datum, tijden, banen en aantal plekken.','Check the date, times, courts and places.'),
       field:say('Controleer de ingevulde velden.','Check the fields.'),locked:say('De aanmelding is gesloten.','Signups have closed.'),
@@ -100,13 +100,13 @@
     const pw=field(form,say('Kies een beheerwachtwoord','Choose an organizer password'),input('password'));pw.autocomplete='new-password';pw.required=true;pw.minLength=8;pw.maxLength=128;
     form.append(el('small',say('Minimaal 8 tekens. Bewaar dit voor beheer op een ander apparaat.','At least 8 characters. Keep this for managing on another device.')));
     const go=el('button',say('Aanmelding openen','Open signups'),'primary');go.type='submit';actions(form,go);
-    const last=localStorage.getItem('toss-poll-last');if(/^[a-f0-9]{14}$/.test(last))actions(section,link(say('Vorige poll beheren','Manage previous poll'),'/beheer/'+last));
+    const last=P.preference('toss-poll-last');if(/^[a-f0-9]{14}$/.test(last))actions(section,link(say('Vorige poll beheren','Manage previous poll'),'/beheer/'+last));
     form.onsubmit=async e=>{e.preventDefault();if(pending)return;pending=true;go.disabled=true;
       try{const r=await P.api('',{settings:read(),password:pw.value});rememberAdmin(r);location.assign('/beheer/'+r.id);}
       catch(error){$('message').textContent=friendly(error);}finally{pending=false;go.disabled=false;}};
     content.replaceChildren(section);
   }
-  function rememberAdmin(r){P.remember(r.id,r.token);localStorage.setItem('toss-poll-last',r.id);}
+  function rememberAdmin(r){P.remember(r.id,r.token);P.preference('toss-poll-last',r.id);}
   function login(){
     content.replaceChildren();const section=card(say('Inloggen voor beheer','Organizer sign-in')),form=el('form');
     const pw=field(form,say('Beheerwachtwoord','Organizer password'),input('password'));pw.required=true;pw.autocomplete='current-password';
@@ -123,14 +123,15 @@
     const mine=data.mine;
     if(!editor){
       const section=card(say('Jouw reactie','Your response')),form=el('form');
-      const name=field(form,say('Jouw naam','Your name'),input('text',mine?.name||localStorage.getItem('toss-poll-name')||''));
+      const name=field(form,say('Jouw naam','Your name'),input('text',mine?.name||P.preference('toss-poll-name')||''));
       name.id='myName';name.autocomplete='given-name';name.maxLength=50;name.required=true;
       const controls=el('div',undefined,'actions'),own=el('p',undefined,'own-state');own.id='ownStatus';
       for(const [key,nl,english] of [['yes','Ja, ik doe mee','Yes, I’m playing'],['reserve','Alleen reserve','Standby only'],['no','Ik kan niet','Unavailable']]){
         const b=button(say(nl,english),()=>vote(key));b.dataset.answer=key;controls.append(b);
       }
       const cancel=button(say('Mijn aanmelding intrekken','Withdraw my signup'),()=>{if(confirm(say('Je eigen aanmelding intrekken?','Withdraw your own signup?')))vote('cancel');});
-      form.onsubmit=e=>{e.preventDefault();vote('yes');};form.append(controls,own,cancel);section.append(form);
+      form.onsubmit=e=>{e.preventDefault();vote('yes');};form.append(controls,own,cancel);
+      form.append(el('p',say('Vol? Dan komt ‘Ja’ op de wachtlijst, vóór ‘Alleen reserve’.','Full? A ‘Yes’ joins the waitlist ahead of standby volunteers.'),'hint'));section.append(form);
       const jump=el('a',say('Bekijk alle aanmeldingen','View all signups'),'inline-link');jump.href='#groups';section.append(jump);
       editor={section,form,name,controls,own,cancel};content.prepend(section);
     }
@@ -143,7 +144,7 @@
     pending=true;sequence++;editor.controls.inert=true;
     try{
       const data=await P.api(base,{name:editor.name.value.trim(),answer},{person:P.personalKey(true)});
-      localStorage.setItem('toss-poll-name',editor.name.value.trim());publicPage(data);$('message').textContent=say('Je reactie is opgeslagen.','Your response has been saved.');
+      P.preference('toss-poll-name',editor.name.value.trim());publicPage(data);$('message').textContent=say('Je reactie is opgeslagen.','Your response has been saved.');
     }catch(error){$('message').textContent=friendly(error);if(error.message==='locked')await load(true);}
     finally{pending=false;if(editor)editor.controls.inert=false;}
   }
@@ -196,7 +197,7 @@
     pending=true;sequence++;
     try{
       const next=await P.api(base+'/admin',{revision:current.revision,...body},{token:P.token(id)});
-      if(body.action==='repeat'){P.remember(next.id,P.token(id));localStorage.setItem('toss-poll-last',next.id);location.assign('/beheer/'+next.id);return;}
+      if(body.action==='repeat'){P.remember(next.id,P.token(id));P.preference('toss-poll-last',next.id);location.assign('/beheer/'+next.id);return;}
       managePage(next);$('message').textContent=say('Opgeslagen.','Saved.');
       return next;
     }catch(error){if(error.status===409 || error.status===401)await load(true);throw error;}
@@ -252,6 +253,10 @@
         if(confirm(say('De namenlijst weer voor iedereen met de link openen?','Show the signup list again to anyone with the link?')))await perform({action:'reopen'});
       })));
     }
+    if(navigator.share)controls.append(button(say('Groepslink delen','Share group link'),safe(async()=>{
+      try{await navigator.share({title:data.settings.title,text:data.settings.title+' · '+dateText(data.settings),url:location.origin+'/aanmelden/'+id});}
+      catch(error){if(error.name!=='AbortError')await copyPublic();}
+    })));
     controls.append(button(say('Groepslink kopiëren','Copy group link'),copyPublic),link(say('Bekijk als bezoeker','Public view'),'/aanmelden/'+id));
     const url=input('text',location.origin+'/aanmelden/'+id);url.id='publicUrl';url.readOnly=true;url.hidden=true;section.append(url);
     const tools=card(say('Aanmeldlijst beheren','Manage signup list'));
@@ -276,7 +281,7 @@
       $('message').textContent=friendly(error);
     }finally{content.setAttribute('aria-busy','false');}
   }
-  $('language').onclick=()=>{en=!en;localStorage.setItem('toss-poll-lang',en?'en':'nl');resetEditor();current=null;if(id)load(true);else create();};
+  $('language').onclick=()=>{en=!en;P.preference('toss-poll-lang',en?'en':'nl');resetEditor();current=null;if(id)load(true);else create();};
   function active(){return !document.hidden && !$('dialog').open && !dragId && (!admin || P.token(id));}
   document.addEventListener('visibilitychange',()=>{
     if(document.hidden && !admin){sequence++;$('groups')?.remove();}
