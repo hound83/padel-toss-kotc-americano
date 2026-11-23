@@ -25,10 +25,11 @@ test('signup poll through the real planner, mobile visitor, password and live fo
   await host.goto(url);await host.getByRole('link',{name:'Aanmeldpoll maken'}).click();
   await host.getByLabel('Speelvorm').selectOption('koc');await host.getByLabel('Naam van de avond').fill('Test KOC');
   await host.getByLabel('Banen',{exact:true}).fill('2');await host.getByLabel('Plekken',{exact:true}).fill('8');
+  assert.equal(await host.getByLabel('Plekken',{exact:true}).inputValue(),'8');
   await host.getByLabel('Kies een beheerwachtwoord').fill(password);await host.getByRole('button',{name:'Aanmelding openen'}).click();
   await host.getByRole('button',{name:'Ga indelen'}).waitFor();
   const id=new URL(host.url()).pathname.split('/').pop(),publicUrl=url+'/aanmelden/'+id;
-  await player.goto(publicUrl);await player.getByLabel('Jouw naam').fill('Mila');await player.getByRole('button',{name:'Ja, ik doe mee'}).click();await player.getByText('Je staat bij Deelnemers.').waitFor();
+  await player.goto(publicUrl);assert.equal(await player.locator('#listJump:visible').innerText(),'0 / 8 · Bekijk aanmeldingen');await player.getByLabel('Jouw naam').fill('Mila');await player.getByRole('button',{name:'Ja, ik doe mee'}).click();await player.getByText('Je staat bij Deelnemers.').waitFor();
   await visitor.goto(publicUrl);await visitor.locator('#groups').getByText('Mila').waitFor();assert.equal(await visitor.getByRole('button',{name:'Mijn aanmelding intrekken'}).count(),0);
   visitor.on('dialog',d=>d.accept());
   await visitor.getByLabel('Jouw naam').fill('Testreserve');
@@ -43,6 +44,7 @@ test('signup poll through the real planner, mobile visitor, password and live fo
   await host.getByLabel('Plek',{exact:true}).selectOption('2');await host.getByRole('button',{name:'Opslaan',exact:true}).click();
   await host.waitForFunction(()=>document.querySelector('[data-place=in] li:nth-child(2) .person')?.textContent.startsWith('Test 7'));
   const playing=host.locator('[data-place=in]');
+  assert.equal(await playing.locator('.count').innerText(),'8 / 8');
   await playing.locator('li').filter({hasText:'Test 6'}).dragTo(host.locator('[data-place=reserve]'));
   await host.locator('[data-place=reserve] li').filter({hasText:'Test 6'}).waitFor();
   await host.getByRole('button',{name:'Wijzig Test 6',exact:true}).click();
