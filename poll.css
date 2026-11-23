@@ -15,3 +15,5 @@ dialog{border:1px solid var(--line);border-radius:1rem;padding:1.4rem;width:min(
 @media(max-width:480px){.hero{grid-template-columns:minmax(0,1fr) 6.3rem}.list{grid-template-columns:1fr}.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.grid .wide{grid-column:1/-1}.actions button{flex-grow:1}.row button,.language{min-height:2.75rem}}
 
 .dialog-heading{display:flex;align-items:center;gap:.75rem;margin-bottom:.6rem}.dialog-heading img{object-fit:contain}.dialog-heading h2{margin:0}
+
+.nav-actions{display:flex;align-items:center;gap:1rem}#groups{scroll-margin-top:1rem}.card>form+.inline-link{display:inline-block;margin-top:.7rem}

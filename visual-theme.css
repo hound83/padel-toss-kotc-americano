@@ -63,6 +63,6 @@
 @media(prefers-reduced-motion:reduce){.mode-home .format-btn{transition:none;}.mode-home .format-btn:hover{transform:none;}}
 @media print{.format-mark{display:none!important;}.brand .ball-dot{display:none;}}
 
-.live-format-heading{display:flex;align-items:center;gap:clamp(.45rem,1.3vw,1.15rem);min-width:0}
-.live-format-heading img{width:clamp(3.1rem,7vw,6.6rem);height:clamp(2.3rem,5vw,4.8rem);object-fit:contain;flex:none}
+.live-format-heading{position:relative;padding-inline-start:clamp(3.2rem,7vw,6.6rem);min-width:0}
+.live-format-heading img{position:absolute;inset-inline-start:0;top:0;width:clamp(2.8rem,6.4vw,6rem);height:100%;object-fit:contain}
 #pollHome{align-self:flex-start;text-decoration:none}

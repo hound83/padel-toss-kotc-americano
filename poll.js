@@ -16,7 +16,12 @@
   }
   function link(label,url,primary=false){const a=el('a',label,'button'+(primary?' primary':''));a.href=url;return a;}
   function card(title){const result=el('section',undefined,'card');result.append(el('h2',title));return result;}
-  function field(parent,title,control){const label=el('label',undefined,'field');label.append(el('span',title),control);parent.append(label);return control;}
+  let fieldSerial=0;
+  function field(parent,title,control){
+    const label=el('label',undefined,'field'),caption=el('span',title);
+    caption.id='poll-field-'+(++fieldSerial);control.setAttribute('aria-labelledby',caption.id);
+    label.append(caption,control);parent.append(label);return control;
+  }
   function input(type,value=''){const node=el('input');node.type=type;node.value=value;return node;}
   function select(options,value){
     const node=el('select');for(const [id,title] of options)node.add(new Option(title,id));node.value=value;return node;
@@ -31,6 +36,8 @@
     $('heading').textContent=settings?.title||(!id?say('Nieuwe tossavond','New padel event'):say('Aanmeldingen','Signups'));
     $('event').textContent=settings?.date?dateText(settings)+' · '+settings.start+'–'+settings.end:'';
     document.title=$('heading').textContent+' · '+activity;
+    const manageLink=$('manageLink');manageLink.hidden=!id || admin;
+    if(id){manageLink.href='/beheer/'+id;manageLink.textContent=say('Beheer','Organizer');}
     if(phase==='planning' && !admin)$('phase').textContent=say('Indeling in voorbereiding','Preparing the schedule')+' · '+modeName(mode);
   }
   function dateText(s){return new Intl.DateTimeFormat(en?'en-GB':'nl-NL',{weekday:'long',day:'numeric',month:'long',timeZone:'UTC'}).format(new Date(s.date+'T12:00:00Z'));}
@@ -124,11 +131,12 @@
       }
       const cancel=button(say('Mijn aanmelding intrekken','Withdraw my signup'),()=>{if(confirm(say('Je eigen aanmelding intrekken?','Withdraw your own signup?')))vote('cancel');});
       form.onsubmit=e=>{e.preventDefault();vote('yes');};form.append(controls,own,cancel);section.append(form);
+      const jump=el('a',say('Bekijk alle aanmeldingen','View all signups'),'inline-link');jump.href='#groups';section.append(jump);
       editor={section,form,name,controls,own,cancel};content.prepend(section);
     }
     for(const b of editor.controls.children)b.setAttribute('aria-pressed',String(mine?.answer===b.dataset.answer));
     editor.cancel.hidden=!mine || mine.answer==='cancel';
-    editor.own.textContent=mine?(mine.answer==='cancel'?say('Je aanmelding is ingetrokken.','You withdrew your signup.'):say('Je staat bij ','You are listed under ')+places()[mine.place]+'.'):'';
+    editor.own.textContent=mine?(mine.answer==='cancel' && mine.place==='out'?say('Je aanmelding is ingetrokken.','You withdrew your signup.'):say('Je staat bij ','You are listed under ')+places()[mine.place]+'.'):'';
   }
   async function vote(answer){
     if(pending || !editor.form.reportValidity())return;
@@ -174,6 +182,7 @@
     if(!current || current.phase!==data.phase)resetEditor();
     current=data;header(data.settings,data.phase);
     if(data.phase==='open'){
+      $('event').textContent+=' · '+data.groups.in.length+' / '+data.settings.capacity+say(' plekken',' places');
       responses(data);groups(data,false);
     }else{
       resetEditor();const section=card(data.phase==='planning'?say('De indeling wordt gemaakt','The organizer is scheduling'):say('Het speelschema is klaar','The schedule is ready'));
@@ -212,6 +221,13 @@
       }
       const check=el('label',undefined,'check'),standing=input('checkbox');standing.checked=Boolean(entry?.standing);check.append(standing,el('span',say('Ook volgende edities van deze speelvorm alleen na mijn akkoord','Future editions of this format also require my approval')));root.append(check);
       standing.onchange=()=>{if(standing.checked){place.value='review';positions();}};
+      if(entry && !(entry.answer==='cancel' && entry.place==='out')){
+        actions(root,button(say('Aanmelding intrekken','Withdraw this signup'),async()=>{
+          if(!confirm(say('Aanmelding van ','Withdraw signup for ')+entry.name+'?'))return;
+          try{await perform({action:'withdraw',id:entry.id});$('dialog').close();}
+          catch(error){$('dialogError').textContent=friendly(error);}
+        }));
+      }
       return ()=>({action:'entry',id:entry?.id,name:name.value.trim(),place:place.value,position:Number(pos.value),level:level?.value?Number(level.value):null,standing:standing.checked});
     },perform);
   }

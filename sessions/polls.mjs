@@ -112,6 +112,11 @@ export async function pollApi(request,db,now,{json,requestJson,counter}){
             row.series,doc.settings.format,nameKey(entry.name),entry.person,id,row.revision));
           entry.standing=body.standing;
         }
+      }else if(body.action==='withdraw'){
+        const entry=doc.entries.find(e=>e.id===body.id);
+        if(!entry)invalid('missing',404);
+        adminEntry(doc,{id:entry.id,name:entry.name,place:'out',position:1},now);
+        entry.answer='cancel';entry.held=Boolean(entry.standing);
       }else if(body.action==='settings'){
         changeSettings(doc,body.settings);checkDate(doc.settings,now);
       }else if(body.action==='plan'){

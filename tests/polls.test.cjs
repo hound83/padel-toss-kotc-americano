@@ -34,6 +34,9 @@ test('everyone can see names, each browser only changes its own response, and ye
   assert.ok(page.groups.in.some(e=>e.name==='Player 1'));assert.ok(page.groups.in.some(e=>e.name==='Player 17'));assert.equal(page.groups.reserve.length,1);
   await f.vote(3,'Player 3','cancel');
   assert.ok((await f.send(f.root)).data.groups.in.some(e=>e.name==='Early reserve'));
+  const removed=privateData.entries.find(e=>e.name==='Player 6');
+  assert.equal((await f.act({action:'withdraw',id:removed.id})).status,200);
+  assert.ok(!JSON.stringify((await f.send(f.root)).data.groups).includes('"Player 6"'));
   const original=privateData.entries.find(e=>e.name==='Player 10');
   const move=await f.act({action:'entry',id:original.id,name:'Player Ten',place:'in',position:1});assert.equal(move.status,200);
   assert.equal(move.data.entries.filter(e=>e.place==='in')[0].name,'Player Ten');
