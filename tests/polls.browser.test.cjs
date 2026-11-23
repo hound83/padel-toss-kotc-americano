@@ -1,0 +1,70 @@
+const test=require('node:test');
+const assert=require('node:assert/strict');
+const http=require('node:http');
+const {randomBytes}=require('node:crypto');
+const {chromium}=require('playwright');
+
+test('signup poll through the real planner, mobile visitor, password and live format artwork', {timeout:90000},async t=>{
+  const {localSessionApp}=await import('../sessions/local.mjs');
+  const app=await localSessionApp();t.after(()=>app.close());
+  let url=process.env.PADEL_SESSION_SITE_URL;
+  if(!url){
+    const server=http.createServer(async(req,res)=>{
+      const result=await app.fetch(new Request(url+req.url,{method:req.method,headers:req.headers,
+        body:['GET','HEAD'].includes(req.method)?null:req,duplex:'half'}));
+      res.writeHead(result.status,Object.fromEntries(result.headers));res.end(Buffer.from(await result.arrayBuffer()));
+    });
+    await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));url='http://127.0.0.1:'+server.address().port;
+    t.after(()=>new Promise(resolve=>{server.closeAllConnections();server.close(resolve);}));
+  }
+  const browser=await chromium.launch({executablePath:process.env.CHROMIUM_EXECUTABLE_PATH});t.after(()=>browser.close());
+  const owner=await browser.newContext(),phone=await browser.newContext({viewport:{width:390,height:844},hasTouch:true}),other=await browser.newContext();
+  const host=await owner.newPage(),player=await phone.newPage(),visitor=await other.newPage();
+  const errors=[];for(const p of [host,player,visitor]){p.setDefaultTimeout(7500);p.on('pageerror',err=>errors.push(err.message));}
+  const password=randomBytes(14).toString('hex');
+  await host.goto(url);await host.getByRole('link',{name:'Aanmeldpoll maken'}).click();
+  await host.getByLabel('Speelvorm').selectOption('koc');await host.getByLabel('Naam van de avond').fill('Test KOC');
+  await host.getByLabel('Banen',{exact:true}).fill('2');await host.getByLabel('Plekken',{exact:true}).fill('8');
+  await host.getByLabel('Kies een beheerwachtwoord').fill(password);await host.getByRole('button',{name:'Aanmelding openen'}).click();
+  await host.getByRole('button',{name:'Ga indelen'}).waitFor();
+  const id=new URL(host.url()).pathname.split('/').pop(),publicUrl=url+'/aanmelden/'+id;
+  await player.goto(publicUrl);await player.getByLabel('Jouw naam').fill('Mila');await player.getByRole('button',{name:'Ja, ik doe mee'}).click();await player.getByText('Je staat bij Deelnemers.').waitFor();
+  await visitor.goto(publicUrl);await visitor.locator('#groups').getByText('Mila').waitFor();assert.equal(await visitor.getByRole('button',{name:'Mijn aanmelding intrekken'}).count(),0);
+  assert.match(await player.locator('#art').getAttribute('src'),/mode-koc\.svg/);
+  assert.ok(await player.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+  for(let i=1;i<=7;i++){const res=await host.request.post(url+'/api/polls/'+id,{headers:{'X-Signup-Key':randomBytes(32).toString('hex')},data:{name:'Test '+i,answer:'yes'}});assert.equal(res.status(),200);}
+  await host.reload();await host.getByRole('button',{name:'Wijzig Test 7',exact:true}).click();
+  await host.getByLabel('Plek',{exact:true}).selectOption('2');await host.getByRole('button',{name:'Opslaan',exact:true}).click();
+  await host.waitForFunction(()=>document.querySelector('[data-place=in] li:nth-child(2) .person')?.textContent.startsWith('Test 7'));
+  await visitor.goto(url+'/beheer/'+id);await visitor.getByLabel('Beheerwachtwoord').waitFor();assert.equal(await visitor.getByRole('button',{name:'Speler toevoegen'}).count(),0);
+  await visitor.getByLabel('Beheerwachtwoord').fill(password);await visitor.getByRole('button',{name:'Inloggen'}).click();await visitor.getByRole('button',{name:'Speler toevoegen'}).waitFor();
+  host.on('dialog',d=>d.accept());await host.getByRole('button',{name:'Ga indelen'}).click();
+  await host.locator('#kocRoll:visible').waitFor();await host.waitForFunction(()=>[...document.querySelectorAll('#kocRoster input')].some(i=>i.value==='Test 7'));
+  await player.getByText('De indeling wordt gemaakt').waitFor({timeout:12000});
+  assert.equal(await player.locator('#groups').count(),0);assert.equal(await player.getByLabel('Jouw naam').count(),0);
+  await host.locator('#kocRoll').click();await host.locator('#kocPresent').click();
+  assert.match(await host.locator('#liveArt').getAttribute('src'),/mode-koc\.svg/);
+  await host.locator('#presentExit').click();
+  await host.getByRole('button',{name:'Publiceer op de aanmeldlink'}).click();
+  await player.getByRole('link',{name:'Bekijk de baanindeling'}).click({timeout:15000});
+  await player.locator('#rounds article').first().waitFor();assert.match(await player.locator('#modeArt').getAttribute('src'),/mode-koc\.svg/);
+  assert.ok((await player.locator('#rounds').innerText()).includes('Mila'));
+  await visitor.reload();await visitor.getByRole('button',{name:'Herhaal volgende week'}).click();
+  await visitor.getByRole('button',{name:'Ga indelen'}).waitFor();assert.notEqual(new URL(visitor.url()).pathname.split('/').pop(),id);
+  assert.equal(await visitor.locator('#groups li').count(),0);
+  for(const [format,asset] of [['toss','toss'],['americano','americano'],['splitToss','split']]){
+    const settings={title:'Test '+format,format,capacity:8,courts:2,date:new Date().toISOString().slice(0,10),start:'11:00',end:'13:00'};
+    const created=await host.request.post(url+'/api/polls',{data:{settings,password}});assert.equal(created.status(),201);
+    const poll=await created.json(),api=url+'/api/polls/'+poll.id;
+    for(let i=1;i<=8;i++)await host.request.post(api,{headers:{'X-Signup-Key':randomBytes(32).toString('hex')},data:{name:'Naam '+i,answer:'yes'}});
+    await host.goto(url+'/beheer/'+poll.id);await host.getByLabel('Beheerwachtwoord').fill(password);await host.getByRole('button',{name:'Inloggen'}).click();
+    await host.getByRole('button',{name:'Ga indelen'}).click();await host.locator('#generateBtn:visible').waitFor();
+    assert.equal(await host.locator('#panel2 .name-field input:visible').count(),8);
+    await host.locator('#generateBtn').click();await host.locator('#presentBtn').click();
+    assert.match(await host.locator('#liveArt').getAttribute('src'),new RegExp('mode-'+asset+'\\.svg'));await host.locator('#presentExit').click();
+    await host.getByRole('button',{name:'Publiceer op de aanmeldlink'}).click();await host.getByText('Het speelschema staat op de groepslink.').waitFor();
+    await player.goto(url+'/aanmelden/'+poll.id);await player.getByRole('link',{name:'Bekijk de baanindeling'}).click();
+    await player.locator('#rounds article').first().waitFor();assert.match(await player.locator('#modeArt').getAttribute('src'),new RegExp('mode-'+asset+'\\.svg'));
+  }
+  assert.deepEqual(errors,[]);
+});

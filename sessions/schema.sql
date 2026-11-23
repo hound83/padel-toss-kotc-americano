@@ -13,3 +13,19 @@ CREATE TABLE IF NOT EXISTS limits (
   bucket TEXT PRIMARY KEY, hits INTEGER NOT NULL, expires INTEGER NOT NULL
 );
 CREATE INDEX IF NOT EXISTS limit_expiry ON limits(expires);
+
+CREATE TABLE IF NOT EXISTS signup_series (
+  id TEXT PRIMARY KEY, salt TEXT NOT NULL, verifier TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS signup_polls (
+  id TEXT PRIMARY KEY, series TEXT NOT NULL REFERENCES signup_series(id) ON DELETE CASCADE,
+  revision INTEGER NOT NULL, expires INTEGER NOT NULL, document TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS signup_expiry ON signup_polls(expires);
+CREATE TABLE IF NOT EXISTS signup_logins (
+  token TEXT PRIMARY KEY, series TEXT NOT NULL REFERENCES signup_series(id) ON DELETE CASCADE, expires INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS signup_holds (
+  series TEXT NOT NULL REFERENCES signup_series(id) ON DELETE CASCADE, format TEXT NOT NULL, name TEXT NOT NULL, person TEXT,
+  PRIMARY KEY(series,format,name)
+);

@@ -1,0 +1,272 @@
+(()=>{
+  'use strict';
+  const P=window.TossPoll, $=id=>document.getElementById(id);
+  const match=location.pathname.match(/^\/(aanmelden|beheer)\/([a-f0-9]{14})/);
+  const id=match?.[2],admin=match?.[1]==='beheer',base=id?'/'+id:'';
+  let en=new URLSearchParams(location.search).get('lang')==='en' || localStorage.getItem('toss-poll-lang')==='en';
+  let current=null, pending=false, sequence=0, dialogAction, dragId, editor=null;
+  const say=(nl,english)=>en?english:nl;
+  const modeName=mode=>P.modes[mode]?.[en?1:0]||'Padel';
+  const content=$('content');
+  function el(tag,text,cls){
+    const node=document.createElement(tag);if(text!==undefined)node.textContent=text;if(cls)node.className=cls;return node;
+  }
+  function button(label,fn,primary=false){
+    const b=el('button',label,primary?'primary':'');b.type='button';b.onclick=fn;return b;
+  }
+  function link(label,url,primary=false){const a=el('a',label,'button'+(primary?' primary':''));a.href=url;return a;}
+  function card(title){const result=el('section',undefined,'card');result.append(el('h2',title));return result;}
+  function field(parent,title,control){const label=el('label',undefined,'field');label.append(el('span',title),control);parent.append(label);return control;}
+  function input(type,value=''){const node=el('input');node.type=type;node.value=value;return node;}
+  function select(options,value){
+    const node=el('select');for(const [id,title] of options)node.add(new Option(title,id));node.value=value;return node;
+  }
+  function actions(parent,...children){const box=el('div',undefined,'actions');box.append(...children);parent.append(box);return box;}
+  function header(settings,phase){
+    document.documentElement.lang=en?'en':'nl';$('language').textContent=en?'NL':'EN';
+    const mode=settings?.format||'toss';
+    $('art').src=P.art(mode,en);$('art').hidden=false;
+    const activity=admin?say('Aanmeldingen beheren','Manage signups'):id?say('Aanmelden','Sign up'):say('Aanmeldpoll maken','Create a signup poll');
+    $('phase').textContent=activity+' · '+modeName(mode);
+    $('heading').textContent=settings?.title||(!id?say('Nieuwe tossavond','New padel event'):say('Aanmeldingen','Signups'));
+    $('event').textContent=settings?.date?dateText(settings)+' · '+settings.start+'–'+settings.end:'';
+    document.title=$('heading').textContent+' · '+activity;
+    if(phase==='planning' && !admin)$('phase').textContent=say('Indeling in voorbereiding','Preparing the schedule')+' · '+modeName(mode);
+  }
+  function dateText(s){return new Intl.DateTimeFormat(en?'en-GB':'nl-NL',{weekday:'long',day:'numeric',month:'long',timeZone:'UTC'}).format(new Date(s.date+'T12:00:00Z'));}
+  function places(){return {in:say('Deelnemers','Playing'),wait:say('Wachtlijst · Ja','Waiting · Yes'),reserve:say('Reserve','Standby'),review:say('Alleen na akkoord','Needs approval'),out:say('Afgemeld','Unavailable')};}
+  function friendly(err){
+    const labels={duplicate:say('Die naam staat al op de lijst. Gebruik ook een achternaam of initiaal.','That name is taken. Add an initial or last name.'),
+      login:say('Inloggen vereist. Controleer het beheerwachtwoord.','Sign in with the organizer password.'),
+      settings:say('Controleer datum, tijden, banen en aantal plekken.','Check the date, times, courts and places.'),
+      field:say('Controleer de ingevulde velden.','Check the fields.'),locked:say('De aanmelding is gesloten.','Signups have closed.'),
+      changed:say('De lijst is intussen gewijzigd. De nieuwste lijst is opgehaald. Controleer je keuze.','The list changed. Check your choice against the updated list.'),
+      limit:say('Te veel pogingen. Probeer het over een kwartier opnieuw.','Too many attempts. Try again in 15 minutes.'),
+      missing:say('Deze poll is verlopen of de link is onjuist.','This poll expired or the link is incorrect.'),
+      'password-length':say('Kies een wachtwoord van 8 tot 128 tekens.','Choose a password with 8 to 128 characters.'),
+      'published-format':say('Heropen de aanmelding om de speelvorm te wijzigen.','Reopen signups before changing the format.')};
+    return labels[err.message]||say('Opslaan of ophalen lukt niet. Controleer je verbinding en probeer opnieuw.','Could not save or refresh. Check your connection and try again.');
+  }
+  function modal(title,build,save){
+    $('dialogArt').src=P.art(current.settings.format,en);$('dialogTitle').textContent=title;$('fields').replaceChildren();$('dialogError').textContent='';
+    $('submitEdit').textContent=say('Opslaan','Save');$('dismiss').textContent=say('Sluiten','Close');
+    const read=build($('fields'));dialogAction=()=>save(read());$('dialog').showModal();
+  }
+  $('dismiss').onclick=()=>$('dialog').close();
+  $('dialogForm').onsubmit=async e=>{
+    e.preventDefault();if(pending)return;
+    $('submitEdit').disabled=true;
+    try{await dialogAction();$('dialog').close();}
+    catch(error){$('dialogError').textContent=friendly(error);}
+    finally{$('submitEdit').disabled=false;}
+  };
+  function configFields(root,initial,onChange){
+    const grid=el('div',undefined,'grid');root.append(grid);
+    const format=field(grid,say('Speelvorm','Format'),select(Object.keys(P.modes).map(k=>[k,modeName(k)]),initial.format));
+    const title=field(grid,say('Naam van de avond','Event name'),input('text',initial.title));title.maxLength=80;title.required=true;
+    const date=field(grid,say('Datum','Date'),input('date',initial.date));date.required=true;
+    const start=field(grid,say('Begintijd','From'),input('time',initial.start));
+    const end=field(grid,say('Eindtijd','Until'),input('time',initial.end));start.required=end.required=true;
+    const courts=field(grid,say('Banen','Courts'),input('number',initial.courts));courts.min=2;courts.max=12;courts.required=true;
+    const capacity=field(grid,say('Plekken','Places'),input('number',initial.capacity));capacity.min=4;capacity.max=96;capacity.required=true;
+    const read=()=>({format:format.value,title:title.value,date:date.value,start:start.value,end:end.value,courts:Number(courts.value),capacity:Number(capacity.value)});
+    if(onChange){
+      let lastSuggested=initial.title,autoCapacity=true;
+      capacity.addEventListener('input',()=>{autoCapacity=false;});
+      function defaults(){
+        if(title.value===lastSuggested)title.value=modeName(format.value);
+        lastSuggested=modeName(format.value);
+        if(autoCapacity)capacity.value=Math.min(96,Number(courts.value)*(['toss','splitToss'].includes(format.value)?8:4));
+      }
+      format.onchange=defaults;courts.onchange=defaults;
+      grid.addEventListener('input',()=>{const v=read();if(v.date)onChange(v);});
+      grid.addEventListener('change',()=>{const v=read();if(v.date)onChange(v);});
+    }
+    return read;
+  }
+  function create(){
+    const fmt=P.modes[new URLSearchParams(location.search).get('format')]?new URLSearchParams(location.search).get('format'):'toss';
+    const today=new Date();const date=[today.getFullYear(),String(today.getMonth()+1).padStart(2,'0'),String(today.getDate()).padStart(2,'0')].join('-');
+    const initial={format:fmt,title:modeName(fmt),courts:fmt==='koc'?4:3,capacity:fmt==='koc'?16:fmt==='americano'?12:24,date,start:'21:00',end:'23:00'};
+    header(initial);const section=card(say('Avond instellen','Event settings')),form=el('form');section.append(form);
+    const read=configFields(form,initial,header);
+    const pw=field(form,say('Kies een beheerwachtwoord','Choose an organizer password'),input('password'));pw.autocomplete='new-password';pw.required=true;pw.minLength=8;pw.maxLength=128;
+    form.append(el('small',say('Minimaal 8 tekens. Bewaar dit voor beheer op een ander apparaat.','At least 8 characters. Keep this for managing on another device.')));
+    const go=el('button',say('Aanmelding openen','Open signups'),'primary');go.type='submit';actions(form,go);
+    const last=localStorage.getItem('toss-poll-last');if(/^[a-f0-9]{14}$/.test(last))actions(section,link(say('Vorige poll beheren','Manage previous poll'),'/beheer/'+last));
+    form.onsubmit=async e=>{e.preventDefault();if(pending)return;pending=true;go.disabled=true;
+      try{const r=await P.api('',{settings:read(),password:pw.value});rememberAdmin(r);location.assign('/beheer/'+r.id);}
+      catch(error){$('message').textContent=friendly(error);}finally{pending=false;go.disabled=false;}};
+    content.replaceChildren(section);
+  }
+  function rememberAdmin(r){P.remember(r.id,r.token);localStorage.setItem('toss-poll-last',r.id);}
+  function login(){
+    content.replaceChildren();const section=card(say('Inloggen voor beheer','Organizer sign-in')),form=el('form');
+    const pw=field(form,say('Beheerwachtwoord','Organizer password'),input('password'));pw.required=true;pw.autocomplete='current-password';
+    const go=el('button',say('Inloggen','Sign in'),'primary');go.type='submit';actions(form,go,link(say('Openbare aanmeldpagina','Public signup page'),'/aanmelden/'+id));section.append(form);content.append(section);
+    form.onsubmit=async e=>{e.preventDefault();go.disabled=true;
+      try{const result=await P.api(base+'/login',{password:pw.value});rememberAdmin({...result,id});$('message').textContent='';await load();}
+      catch(error){$('message').textContent=friendly(error);}finally{go.disabled=false;}};
+  }
+  function resetEditor(){editor=null;content.replaceChildren();}
+  function who(){
+    try{return P.personalKey(false);}catch{return null;}
+  }
+  function responses(data){
+    const mine=data.mine;
+    if(!editor){
+      const section=card(say('Jouw reactie','Your response')),form=el('form');
+      const name=field(form,say('Jouw naam','Your name'),input('text',mine?.name||localStorage.getItem('toss-poll-name')||''));
+      name.id='myName';name.autocomplete='given-name';name.maxLength=50;name.required=true;
+      const controls=el('div',undefined,'actions'),own=el('p',undefined,'own-state');own.id='ownStatus';
+      for(const [key,nl,english] of [['yes','Ja, ik doe mee','Yes, I’m playing'],['reserve','Alleen reserve','Standby only'],['no','Ik kan niet','Unavailable']]){
+        const b=button(say(nl,english),()=>vote(key));b.dataset.answer=key;controls.append(b);
+      }
+      const cancel=button(say('Mijn aanmelding intrekken','Withdraw my signup'),()=>{if(confirm(say('Je eigen aanmelding intrekken?','Withdraw your own signup?')))vote('cancel');});
+      form.onsubmit=e=>{e.preventDefault();vote('yes');};form.append(controls,own,cancel);section.append(form);
+      editor={section,form,name,controls,own,cancel};content.prepend(section);
+    }
+    for(const b of editor.controls.children)b.setAttribute('aria-pressed',String(mine?.answer===b.dataset.answer));
+    editor.cancel.hidden=!mine || mine.answer==='cancel';
+    editor.own.textContent=mine?(mine.answer==='cancel'?say('Je aanmelding is ingetrokken.','You withdrew your signup.'):say('Je staat bij ','You are listed under ')+places()[mine.place]+'.'):'';
+  }
+  async function vote(answer){
+    if(pending || !editor.form.reportValidity())return;
+    pending=true;sequence++;editor.controls.inert=true;
+    try{
+      const data=await P.api(base,{name:editor.name.value.trim(),answer},{person:P.personalKey(true)});
+      localStorage.setItem('toss-poll-name',editor.name.value.trim());publicPage(data);$('message').textContent=say('Je reactie is opgeslagen.','Your response has been saved.');
+    }catch(error){$('message').textContent=friendly(error);if(error.message==='locked')await load(true);}
+    finally{pending=false;if(editor)editor.controls.inert=false;}
+  }
+  function groups(data,manage){
+    const old=$('groups');const list=el('div',undefined,'list');list.id='groups';
+    const labels=places();
+    const keys=manage?Object.keys(labels):['in','wait','reserve','out'];
+    for(const key of keys){
+      const rows=manage?data.entries.filter(e=>e.place===key):data.groups[key];
+      const box=el('section',undefined,'group');box.dataset.place=key;
+      const title=el('h3',labels[key]);title.append(el('span',key==='in'?rows.length+' / '+data.settings.capacity:String(rows.length),'count'));box.append(title);
+      if(!rows.length)box.append(el('p',say('Nog niemand','No one yet'),'empty'));
+      const ul=el('ol',undefined,'rows');box.append(ul);
+      rows.forEach((entry,index)=>{
+        const row=el('li',undefined,'row');row.append(el('span',String(index+1),'rank'));
+        const person=el('span',entry.name,'person');row.append(person);
+        if(manage){
+          person.append(el('small',new Intl.DateTimeFormat(en?'en-GB':'nl-NL',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit',timeZone:'Europe/Amsterdam'}).format(entry.at)+(entry.standing?say(' · groepsoordeel bewaard',' · group note saved'):'')));
+          row.dataset.id=entry.id;row.draggable=true;row.ondragstart=e=>{dragId=entry.id;e.dataTransfer.setData('text/plain',entry.id);};row.ondragend=()=>{dragId=null;};
+          const edit=button(say('Wijzig','Edit'),()=>entryModal(entry));edit.setAttribute('aria-label',say('Wijzig ','Edit ')+entry.name);row.append(edit);
+        }
+        ul.append(row);
+      });
+      if(manage){
+        box.ondragover=e=>{if(dragId){e.preventDefault();box.classList.add('over');}};
+        box.ondragleave=()=>box.classList.remove('over');
+        box.ondrop=e=>{e.preventDefault();box.classList.remove('over');const entry=data.entries.find(x=>x.id===dragId);dragId=null;if(!entry)return;
+          const before=rows.findIndex(x=>x.id===e.target.closest('li')?.dataset.id),position=before<0?rows.length+1:before+1;
+          perform({action:'entry',id:entry.id,name:entry.name,place:key,position}).catch(error=>{$('message').textContent=friendly(error);});};
+      }
+      list.append(box);
+    }
+    if(old)old.replaceWith(list);else content.append(list);
+  }
+  function publicPage(data){
+    if(!current || current.phase!==data.phase)resetEditor();
+    current=data;header(data.settings,data.phase);
+    if(data.phase==='open'){
+      responses(data);groups(data,false);
+    }else{
+      resetEditor();const section=card(data.phase==='planning'?say('De indeling wordt gemaakt','The organizer is scheduling'):say('Het speelschema is klaar','The schedule is ready'));
+      if(data.phase==='published')actions(section,link(say('Bekijk de baanindeling','View the court schedule'),'/s/'+data.viewCode,true));
+      else section.append(el('p',say('Zodra de banen zijn ingedeeld, vind je het schema via deze link.','The court schedule will be available at this link.')));
+      content.append(section);
+    }
+  }
+  async function perform(body){
+    if(pending)throw Error('changed');
+    pending=true;sequence++;
+    try{
+      const next=await P.api(base+'/admin',{revision:current.revision,...body},{token:P.token(id)});
+      if(body.action==='repeat'){P.remember(next.id,P.token(id));localStorage.setItem('toss-poll-last',next.id);location.assign('/beheer/'+next.id);return;}
+      managePage(next);$('message').textContent=say('Opgeslagen.','Saved.');
+      return next;
+    }catch(error){if(error.status===409 || error.status===401)await load(true);throw error;}
+    finally{pending=false;}
+  }
+  function entryModal(entry){
+    modal(entry?say('Speler wijzigen','Edit player'):say('Speler toevoegen','Add a player'),root=>{
+      const name=field(root,say('Naam','Name'),input('text',entry?.name||''));name.required=true;name.maxLength=50;
+      const place=field(root,say('Verplaats naar','Move to'),select(Object.entries(places()),entry?.place||'in'));
+      const pos=field(root,say('Plek','Position'),el('select'));
+      function positions(initial=false){
+        const others=current.entries.filter(e=>e.place===place.value && e.id!==entry?.id);
+        const max=place.value==='in'?Math.min(current.settings.capacity,others.length+1):others.length+1;
+        pos.replaceChildren(...Array.from({length:max},(_,i)=>new Option(String(i+1),String(i+1))));
+        const original=current.entries.filter(e=>e.place===entry?.place).findIndex(e=>e.id===entry?.id);
+        pos.value=String(initial && entry?Math.min(max,original+1):max);
+      }
+      positions(true);place.onchange=()=>positions();
+      let level;
+      if(current.settings.format==='splitToss'){
+        level=field(root,say('Speelgroep','Playing group'),select([['',say('Gelijk verdelen','Balance groups')],['0',say('Zilver','Silver')],['1',say('Goud','Gold')],['2',say('Platina','Platinum')]],entry?.level?.toString()||''));
+      }
+      const check=el('label',undefined,'check'),standing=input('checkbox');standing.checked=Boolean(entry?.standing);check.append(standing,el('span',say('Ook volgende edities van deze speelvorm alleen na mijn akkoord','Future editions of this format also require my approval')));root.append(check);
+      standing.onchange=()=>{if(standing.checked){place.value='review';positions();}};
+      return ()=>({action:'entry',id:entry?.id,name:name.value.trim(),place:place.value,position:Number(pos.value),level:level?.value?Number(level.value):null,standing:standing.checked});
+    },perform);
+  }
+  async function copyPublic(){
+    const url=location.origin+'/aanmelden/'+id;
+    try{await navigator.clipboard.writeText(url);$('message').textContent=say('Groepslink gekopieerd.','Group link copied.');}
+    catch{const box=$('publicUrl');box.hidden=false;box.select();}
+  }
+  function managePage(data){
+    current=data;resetEditor();header(data.settings,data.phase);
+    const section=card(data.phase==='open'?say('Aanmelding open','Signups open'):data.phase==='planning'?say('Bezig met indelen','Preparing the schedule'):say('Schema gepubliceerd','Schedule published'));
+    const controls=el('div',undefined,'actions');section.append(controls);
+    const safe=fn=>async()=>{try{await fn();}catch(error){$('message').textContent=friendly(error);}};
+    const plannerUrl=data.plannerKey?'/b/'+data.plannerKey:'/?poll='+id;
+    if(data.phase==='open'){
+      controls.append(button(say('Ga indelen','Start scheduling'),safe(async()=>{
+        if(!confirm(say('Aanmelding sluiten en de namenlijst verbergen voor bezoekers?','Close signups and hide the list from visitors?')))return;
+        await perform({action:'plan'});location.assign('/?poll='+id);
+      }),true));
+    }else{
+      controls.append(link(say('Open planner','Open planner'),plannerUrl,true),button(say('Aanmelding heropenen','Reopen signups'),safe(async()=>{
+        if(confirm(say('De namenlijst weer voor iedereen met de link openen?','Show the signup list again to anyone with the link?')))await perform({action:'reopen'});
+      })));
+    }
+    controls.append(button(say('Groepslink kopiëren','Copy group link'),copyPublic),link(say('Bekijk als bezoeker','Public view'),'/aanmelden/'+id));
+    const url=input('text',location.origin+'/aanmelden/'+id);url.id='publicUrl';url.readOnly=true;url.hidden=true;section.append(url);
+    const tools=card(say('Aanmeldlijst beheren','Manage signup list'));
+    actions(tools,button(say('Speler toevoegen','Add a player'),()=>entryModal()),button(say('Avond wijzigen','Edit event'),()=>modal(say('Avond wijzigen','Edit event'),r=>configFields(r,current.settings),s=>perform({action:'settings',settings:s}))),
+      button(say('Herhaal volgende week','Repeat next week'),safe(()=>perform({action:'repeat'}))),
+      button(say('Uitloggen','Sign out'),safe(async()=>{await P.api(base+'/logout',{},{token:P.token(id)});P.remember(id,null);current=null;login();})));
+    content.append(section,tools);groups(data,true);
+  }
+  async function load(force=false){
+    if((pending && !force) || !id)return;
+    const serial=++sequence,authorized=admin && P.token(id);
+    try{
+      const data=await P.api(base+(authorized?'/admin':''),undefined,authorized?{token:authorized}:{person:who()});
+      if(serial!==sequence)return;
+      if(admin && !authorized){header(data.settings,data.phase);if(!$('content').querySelector('[autocomplete=current-password]'))login();return;}
+      if(admin){if(force || data.revision!==current?.revision)managePage(data);}
+      else if(force || JSON.stringify(data)!==JSON.stringify(current) || (data.phase==='open' && !$('groups')))publicPage(data);
+    }catch(error){
+      if(serial!==sequence)return;
+      if(!admin){resetEditor();current=null;}
+      if(admin && error.status===401){P.remember(id,null);current=null;login();}
+      $('message').textContent=friendly(error);
+    }finally{content.setAttribute('aria-busy','false');}
+  }
+  $('language').onclick=()=>{en=!en;localStorage.setItem('toss-poll-lang',en?'en':'nl');resetEditor();current=null;if(id)load(true);else create();};
+  function active(){return !document.hidden && !$('dialog').open && !dragId && (!admin || P.token(id));}
+  document.addEventListener('visibilitychange',()=>{
+    if(document.hidden && !admin){sequence++;$('groups')?.remove();}
+    else if(!document.hidden)load();
+  });
+  window.addEventListener('pageshow',()=>{if(id)load();});
+  header(null);if(!id){create();content.setAttribute('aria-busy','false');}
+  else {load();setInterval(()=>{if(active())load();},5000);}
+})();

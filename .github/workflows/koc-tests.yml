@@ -16,7 +16,7 @@ jobs:
         with:
           node-version: '22'
       - name: Scheduling, ranking and name-list unit tests
-        run: node --test tests/koc.test.cjs tests/bulk-names.test.cjs tests/americano-ranking.test.cjs tests/round-planner.test.cjs tests/toss-start.test.cjs tests/sessions.test.cjs
+        run: node --test tests/koc.test.cjs tests/bulk-names.test.cjs tests/americano-ranking.test.cjs tests/round-planner.test.cjs tests/toss-start.test.cjs tests/sessions.test.cjs tests/polls.test.cjs
       - name: Install browser test dependencies
         run: |
           npm install --no-save --no-package-lock playwright@1.58.0
@@ -36,7 +36,7 @@ jobs:
             if ! kill -0 "$worker_pid" 2>/dev/null; then cat "$RUNNER_TEMP/koriander-worker.log"; exit 1; fi
             sleep 1
           done
-          PADEL_SESSION_SITE_URL=http://127.0.0.1:8787 node --test --test-timeout=90000 tests/sessions.browser.test.cjs
+          PADEL_SESSION_SITE_URL=http://127.0.0.1:8787 node --test --test-timeout=90000 tests/sessions.browser.test.cjs tests/polls.browser.test.cjs
       - name: Check preview updates over the public relay
         if: github.event_name == 'pull_request'
         run: node --test tests/share-preview.browser.test.cjs
