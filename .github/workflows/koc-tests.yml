@@ -48,6 +48,11 @@ jobs:
         env:
           PADEL_SITE_URL: https://hound83.github.io/padel-toss-kotc-americano/
           PADEL_SCREENSHOT_DIR: test-results
+      - name: Verify the Cloudflare signup release
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: node tests/poll-release.smoke.cjs
+        env:
+          PADEL_POLL_SITE_URL: https://padel.hound83.workers.dev/
       - name: Browser design previews
         if: always()
         uses: actions/upload-artifact@v4

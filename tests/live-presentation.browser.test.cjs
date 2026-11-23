@@ -237,7 +237,20 @@ test('v2.2: clean navigation and live KOC, Toss, Americano and split Toss', asyn
   assert.ok(Math.max(...widths)-Math.min(...widths)<=1);
   await five.locator('#generateBtn').click();
   await five.locator('#presentBtn').click();
-  assert.equal(await five.locator('#liveCurrent .live-match:visible').count(),5);
+  const currentCount=await five.locator('#liveCurrent .live-match:visible').count();
+  if(currentCount!==5){
+    const geometry=await five.evaluate(()=>{
+      const stats=()=>Object.fromEntries(['.live-head','.live-format-heading','#liveRoundTools','#livePageTools','#liveLayout','#liveCurrent','#liveStandings','.live-match'].map(selector=>{
+        const el=document.querySelector(selector),r=el.getBoundingClientRect();
+        return [selector,[r.top,r.width,r.height,el.clientHeight]];
+      }));
+      const frames={viewport:[innerWidth,innerHeight],now:stats(),cards:[...document.querySelectorAll('#liveCurrent .live-match')].map(e=>[e.hidden,e.clientHeight])};
+      const hidden=[...document.querySelectorAll('#liveCurrent [hidden]')];
+      hidden.forEach(e=>e.hidden=false);frames.full=stats();hidden.forEach(e=>e.hidden=true);
+      return frames;
+    });
+    assert.equal(currentCount,5,JSON.stringify(geometry));
+  }
   assert.equal(await five.locator('#liveUpcoming').isVisible(),false);
   await five.locator('#livePageNext').click();
   assert.equal(await five.locator('#liveUpcoming .live-match:visible').count(),5);
