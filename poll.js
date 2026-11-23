@@ -36,6 +36,7 @@
     $('heading').textContent=settings?.title||(!id?say('Nieuwe tossavond','New padel event'):say('Aanmeldingen','Signups'));
     $('event').textContent=settings?.date?dateText(settings)+' · '+settings.start+'–'+settings.end:'';
     document.title=$('heading').textContent+' · '+activity;
+    $('listJump').hidden=true;
     const manageLink=$('manageLink');manageLink.hidden=!id || admin;
     if(id){manageLink.href='/beheer/'+id;manageLink.textContent=say('Beheer','Organizer');}
     if(phase==='planning' && !admin)$('phase').textContent=say('Indeling in voorbereiding','Preparing the schedule')+' · '+modeName(mode);
@@ -84,12 +85,20 @@
     if(onChange){
       let lastSuggested=initial.title,autoCapacity=true;
       capacity.addEventListener('input',()=>{autoCapacity=false;});
-      function defaults(){
+      function suggestCapacity(){
+        const count=courts.valueAsNumber;
+        if(autoCapacity && Number.isInteger(count) && count>=2 && count<=12){
+          capacity.value=Math.min(96,count*(['toss','splitToss'].includes(format.value)?8:4));
+        }
+      }
+      format.onchange=()=>{
         if(title.value===lastSuggested)title.value=modeName(format.value);
         lastSuggested=modeName(format.value);
-        if(autoCapacity)capacity.value=Math.min(96,Number(courts.value)*(['toss','splitToss'].includes(format.value)?8:4));
-      }
-      format.onchange=defaults;courts.onchange=defaults;
+        suggestCapacity();
+      };
+      // Finish the suggestion while the court field still has focus. Changing a
+      // selected capacity on blur would move its caret before the first typed digit.
+      courts.addEventListener('input',suggestCapacity);
       grid.addEventListener('input',()=>{const v=read();if(v.date)onChange(v);});
       grid.addEventListener('change',()=>{const v=read();if(v.date)onChange(v);});
     }
@@ -136,7 +145,6 @@
       const cancel=button(say('Mijn aanmelding intrekken','Withdraw my signup'),()=>{if(confirm(say('Je eigen aanmelding intrekken?','Withdraw your own signup?')))vote('cancel');});
       form.onsubmit=e=>{e.preventDefault();vote('yes');};form.append(controls,own,cancel);
       form.append(el('p',say('Vol? Dan komt ‘Ja’ op de wachtlijst, vóór ‘Alleen reserve’.','Full? A ‘Yes’ joins the waitlist ahead of standby volunteers.'),'hint'));section.append(form);
-      const jump=el('a',say('Bekijk alle aanmeldingen','View all signups'),'inline-link');jump.href='#groups';section.append(jump);
       editor={section,form,name,controls,own,cancel};content.prepend(section);
     }
     for(const b of editor.controls.children)b.setAttribute('aria-pressed',String(mine?.answer===b.dataset.answer));
@@ -153,7 +161,7 @@
     finally{pending=false;if(editor)editor.controls.inert=false;}
   }
   function groups(data,manage){
-    const old=$('groups');const list=el('div',undefined,'list');list.id='groups';
+    const old=$('groups'),list=el('div',undefined,'list'),queues=el('div',undefined,'queues');list.id='groups';
     const labels=places();
     const keys=manage?Object.keys(labels):['in','wait','reserve','out'];
     for(const key of keys){
@@ -179,15 +187,17 @@
           const before=rows.findIndex(x=>x.id===e.target.closest('li')?.dataset.id),position=before<0?rows.length+1:before+1;
           perform({action:'entry',id:entry.id,name:entry.name,place:key,position}).catch(error=>{$('message').textContent=friendly(error);});};
       }
-      list.append(box);
+      (key==='in'?list:queues).append(box);
     }
+    list.append(queues);
     if(old)old.replaceWith(list);else content.append(list);
   }
   function publicPage(data){
     if(!current || current.phase!==data.phase)resetEditor();
     current=data;header(data.settings,data.phase);
     if(data.phase==='open'){
-      $('event').textContent+=' · '+data.groups.in.length+' / '+data.settings.capacity+say(' plekken',' places');
+      const jump=$('listJump');jump.hidden=false;
+      jump.textContent=data.groups.in.length+' / '+data.settings.capacity+' · '+say('Bekijk aanmeldingen','View signups');
       responses(data);groups(data,false);
     }else{
       resetEditor();const section=card(data.phase==='planning'?say('De indeling wordt gemaakt','The organizer is scheduling'):say('Het speelschema is klaar','The schedule is ready'));
