@@ -1,5 +1,6 @@
 import {centralLogin,organizerApi} from './organizer.mjs';
 import {pollApi,pollCleanup} from './polls.mjs';
+import {myPollsApi} from './poll-organizers.mjs';
 import createRanking from '../ranking.js';
 import {validPlayDate} from './poll-roster.mjs';
 
@@ -214,6 +215,7 @@ export async function api(request,db,now=Date.now(),adminPassword){
     const url=new URL(request.url),path=url.pathname,origin=request.headers.get('Origin');
     if(origin && origin!==url.origin && request.method!=='GET')fail(403,'origin');
     const services={json,requestJson,counter};
+    if(path==='/api/polls/mine' || path.startsWith('/api/polls/mine/'))return await myPollsApi(request,db,now,services);
     if(path==='/api/polls/hub' || path.startsWith('/api/polls/hub/'))return await organizerApi(request,db,now,adminPassword,services);
     if(path==='/api/polls' || path.startsWith('/api/polls/'))return await pollApi(request,db,now,services,adminPassword);
     const managedSession=path.match(/^\/api\/manage\/([a-f0-9-]{36})$/);

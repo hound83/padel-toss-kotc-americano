@@ -9,17 +9,20 @@ test('signup poll through the real planner, mobile visitor, password and live fo
   const app=await localSessionApp();t.after(()=>app.close());
   let url=process.env.PADEL_SESSION_SITE_URL;
   if(!url){
+    let localOrigin;
     const server=http.createServer(async(req,res)=>{
-      const result=await app.fetch(new Request(url+req.url,{method:req.method,headers:req.headers,
+      const result=await app.fetch(new Request(localOrigin+req.url,{method:req.method,headers:req.headers,
         body:['GET','HEAD'].includes(req.method)?null:req,duplex:'half'}));
       res.writeHead(result.status,Object.fromEntries(result.headers));res.end(Buffer.from(await result.arrayBuffer()));
     });
-    await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));url='http://127.0.0.1:'+server.address().port;
+    await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));url=localOrigin='http://127.0.0.1:'+server.address().port;
     t.after(()=>new Promise(resolve=>{server.closeAllConnections();server.close(resolve);}));
   }
+  url=await require('./https-loopback.cjs')(t,url);
   const browser=await chromium.launch({executablePath:process.env.CHROMIUM_EXECUTABLE_PATH});t.after(()=>browser.close());
   const safari=await webkit.launch();t.after(()=>safari.close());
-  const owner=await browser.newContext(),phone=await browser.newContext(devices['Pixel 7']),other=await safari.newContext(devices['iPhone 13']);
+  const tls={ignoreHTTPSErrors:true};
+  const owner=await browser.newContext(tls),phone=await browser.newContext({...devices['Pixel 7'],...tls}),other=await safari.newContext({...devices['iPhone 13'],...tls});
   const errors=[];
   async function tab(context){
     const page=await context.newPage();page.setDefaultTimeout(7500);
@@ -28,24 +31,28 @@ test('signup poll through the real planner, mobile visitor, password and live fo
   }
   const host=await tab(owner);
   let player=await tab(phone),visitor=await tab(other);
-  const password=randomBytes(14).toString('hex');
+  const password=randomBytes(14).toString('hex'),ownerName='Werner '+randomBytes(4).toString('hex');
   await host.goto(url);await host.getByRole('link',{name:'Aanmeldpoll maken'}).click();
   await host.getByLabel('Speelvorm').selectOption('koc');await host.getByLabel('Naam van de avond').fill('Test KOC');
   await host.getByLabel('Banen',{exact:true}).fill('2');await host.getByLabel('Plekken',{exact:true}).fill('8');
   assert.equal(await host.getByLabel('Plekken',{exact:true}).inputValue(),'8');
-  const code=host.getByLabel('Kies een beheercode om deze poll later te openen',{exact:true});
-  await host.locator('.poll-code-help summary').focus();await host.keyboard.press('Enter');
-  await host.getByText(/Elke aanmeldlink bevat een unieke poll-ID/).waitFor();
-  await code.fill(password);await host.getByRole('button',{name:'Nieuwe poll aanmaken',exact:true}).click();
+  await host.getByLabel('Jouw naam',{exact:true}).fill(ownerName);
+  await host.getByLabel('Wachtwoord',{exact:true}).fill(password);
+  await host.getByRole('button',{name:'Nieuwe poll aanmaken',exact:true}).click();
   await host.getByRole('button',{name:'Ga indelen'}).waitFor();
   const id=new URL(host.url()).pathname.split('/').pop(),publicUrl=url+'/aanmelden/'+id;
   const remembered=await tab(owner);
-  await remembered.goto(url+'/aanmaken');
-  await remembered.getByRole('link',{name:'Laatste poll op dit apparaat openen'}).click();
-  await remembered.getByLabel('Beheercode van deze poll').fill(password);
-  await remembered.getByRole('button',{name:'Inloggen'}).click();
+  await remembered.goto(url);await remembered.getByRole('link',{name:'Mijn polls',exact:true}).click();
+  await remembered.getByRole('heading',{name:ownerName,exact:true}).waitFor();
+  await remembered.getByRole('link',{name:/Test KOC/}).focus();await remembered.keyboard.press('Enter');
   await remembered.getByRole('button',{name:'Ga indelen'}).waitFor();
   assert.equal(new URL(remembered.url()).pathname,'/beheer/'+id);
+  await remembered.getByRole('link',{name:'Mijn polls',exact:true}).click();
+  await remembered.getByRole('link',{name:'Nieuwe poll aanmaken'}).click();
+  await remembered.getByText('Ingelogd als '+ownerName).waitFor();
+  await remembered.getByLabel('Naam van de avond').fill('Extra eigen avond');
+  await remembered.getByRole('button',{name:'Nieuwe poll aanmaken'}).click();
+  await remembered.getByRole('button',{name:'Ga indelen'}).waitFor();
   await remembered.close();
   await player.goto(publicUrl);assert.equal(await player.locator('#listJump:visible').innerText(),'0 / 8 · Bekijk aanmeldingen');await player.getByLabel('Jouw naam').fill('Mila');await player.getByRole('button',{name:'Ja, ik doe mee'}).click();await player.getByText('Je staat bij Deelnemers.').waitFor();
   async function reopenSignup(previous,context,name,status,answer){
@@ -101,12 +108,21 @@ test('signup poll through the real planner, mobile visitor, password and live fo
   await phoneOrganizer.getByRole('button',{name:'Speler toevoegen'}).waitFor();
   assert.equal(new URL(phoneOrganizer.url()).pathname,'/beheer/'+id);
   await phoneOrganizer.close();
-  await visitor.goto(url+'/aanmaken');
-  assert.equal(await visitor.getByRole('link',{name:'Laatste poll op dit apparaat openen'}).count(),0);
-  await visitor.getByLabel('Aanmeldlink of poll-ID').fill(id);
-  await visitor.getByRole('button',{name:'Poll openen',exact:true}).click();
-  await visitor.getByLabel('Beheercode van deze poll').waitFor();assert.equal(await visitor.getByRole('button',{name:'Speler toevoegen'}).count(),0);
-  await visitor.getByLabel('Beheercode van deze poll').fill(password);await visitor.getByRole('button',{name:'Inloggen'}).click();await visitor.getByRole('button',{name:'Speler toevoegen'}).waitFor();
+  await visitor.goto(url);await visitor.getByRole('link',{name:'Mijn polls',exact:true}).tap();
+  assert.equal(await visitor.getByRole('link',{name:/Test KOC/}).count(),0);
+  await visitor.getByLabel('Jouw naam',{exact:true}).fill(ownerName.toLowerCase());
+  await visitor.getByLabel('Wachtwoord',{exact:true}).fill('onjuist-wachtwoord');
+  await visitor.getByRole('button',{name:'Mijn polls openen'}).tap();
+  await visitor.getByText(/Controleer je naam en wachtwoord/).waitFor();
+  assert.equal(await visitor.getByText('Extra eigen avond').count(),0);
+  await visitor.getByLabel('Wachtwoord',{exact:true}).fill(password);
+  const loginResponse=visitor.waitForResponse(res=>res.url()===url+'/api/polls/mine/login');
+  await visitor.getByRole('button',{name:'Mijn polls openen'}).tap();
+  assert.equal((await loginResponse).status(),200);
+  await visitor.getByRole('heading',{name:ownerName,exact:true}).waitFor();
+  await visitor.getByRole('link',{name:/Extra eigen avond/}).waitFor();
+  await visitor.getByRole('link',{name:/Test KOC/}).tap();
+  await visitor.getByRole('button',{name:'Speler toevoegen'}).waitFor();
   host.on('dialog',d=>d.accept());await host.getByRole('button',{name:'Ga indelen'}).click();
   await host.locator('#kocRoll:visible').waitFor();await host.waitForFunction(()=>[...document.querySelectorAll('#kocRoster input')].some(i=>i.value==='Test 7'));
   await player.getByText('De indeling wordt gemaakt').waitFor({timeout:12000});
@@ -134,6 +150,13 @@ test('signup poll through the real planner, mobile visitor, password and live fo
     const poll=await created.json(),api=url+'/api/polls/'+poll.id;
     for(let i=1;i<=8;i++)await host.request.post(api,{headers:{'X-Signup-Key':randomBytes(32).toString('hex')},data:{name:'Naam '+i,answer:'yes'}});
     await host.goto(url+'/beheer/'+poll.id);await host.getByLabel('Beheercode van deze poll').fill(password);await host.getByRole('button',{name:'Inloggen'}).click();
+    if(format==='toss'){
+      await host.getByRole('button',{name:'Toevoegen aan Mijn polls'}).click();
+      const dlg=host.getByRole('dialog');
+      await dlg.getByText('Ingelogd als '+ownerName).waitFor();
+      await dlg.getByRole('button',{name:'Opslaan'}).click();
+      await host.getByText('Toegevoegd aan Mijn polls.').waitFor();
+    }
     await host.getByRole('button',{name:'Ga indelen'}).click();await host.locator('#generateBtn:visible').waitFor();
     assert.equal(await host.locator('#panel2 .name-field input:visible').count(),8);
     await host.locator('#generateBtn').click();await host.locator('#presentBtn').click();
@@ -142,5 +165,11 @@ test('signup poll through the real planner, mobile visitor, password and live fo
     await player.goto(url+'/aanmelden/'+poll.id);await player.getByRole('link',{name:'Bekijk de baanindeling'}).click();
     await player.locator('#rounds article').first().waitFor();assert.match(await player.locator('#modeArt').getAttribute('src'),new RegExp('mode-'+asset+'\\.svg'));
   }
+  await visitor.goto(url+'/mijn-polls');
+  await visitor.getByRole('link',{name:/Test toss/}).waitFor();
+  await visitor.getByRole('button',{name:'Uitloggen'}).tap();
+  await visitor.getByRole('button',{name:'Mijn polls openen'}).waitFor();
+  await visitor.reload();await visitor.getByLabel('Jouw naam',{exact:true}).waitFor();
+  assert.equal(await visitor.getByRole('link',{name:/Extra eigen avond/}).count(),0);
   assert.deepEqual(errors,[]);
 });

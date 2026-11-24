@@ -141,7 +141,7 @@ test('one central login reaches existing and new events, live schedules, and the
   await host.waitForFunction(old=>new URL(location.href).searchParams.get('avond')!==old,id);
   await host.getByRole('button',{name:'Speler toevoegen'}).waitFor();assert.equal(await host.locator('#groups li').count(),0);
   await host.getByRole('link',{name:'Nieuwe avond'}).click();
-  assert.equal(await host.getByLabel('Kies een beheercode om deze poll later te openen',{exact:true}).count(),0);
+  assert.equal(await host.getByLabel('Jouw naam',{exact:true}).count(),0);
   const title2='Donderdag '+randomBytes(4).toString('hex');
   await host.getByLabel('Naam van de avond').fill(title2);await host.getByRole('button',{name:'Aanmelding openen'}).click();
   await host.getByRole('button',{name:'Speler toevoegen'}).waitFor();
