@@ -155,7 +155,7 @@ test('one central login reaches existing and new events, live schedules, and the
   const viewerCode=(await shared.json()).links[0].code;
   await host.reload();const standalone=host.locator('.hub-session').filter({hasText:'Los '+id});
   await standalone.getByRole('link',{name:'Open live view'}).waitFor();
-  assert.equal(await standalone.locator('..').getByRole('heading',{level:2}).innerText(),'Today');
+  assert.equal(await standalone.locator('..').locator(':scope > h2').innerText(),'Today');
   const plannerPath=await standalone.getByRole('link',{name:'Open planner'}).getAttribute('href');
   assert.match(plannerPath,/^\/beheer\/sessie\/[a-f0-9-]{36}$/);
   assert.equal((await guest.request.get(url+'/api/manage/'+plannerPath.split('/').pop())).status(),401);
