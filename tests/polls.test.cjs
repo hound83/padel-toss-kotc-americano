@@ -186,3 +186,25 @@ test('a confirmed correction restores the old time for ten minutes without displ
   vote('Kim','yes',start+17*minute);
   assert.equal(player('Kim').place,'review');assert.equal(player('Kim').at,start+17*minute);
 });
+
+test('removing a player frees a place and forgets that evening’s PIN and recovered devices',async t=>{
+  const f=await fixture(t),first=f.key(1),phone=f.key(99);
+  await f.act({action:'settings',settings:{...f.config,capacity:4}});
+  await f.send(f.root,{name:'Mila',answer:'yes',pin:'0268'},first);
+  for(let i=2;i<=5;i++)await f.vote(i,'Player '+i);
+  await f.send(f.root+'/recover',{name:'Mila',pin:'0268'},phone);
+  const next='/'+(await f.act({action:'repeat'})).data.id;
+  await f.send(next,{name:'Mila',answer:'yes',pin:'0543'},first);
+  const before=await f.read(),mila=before.entries.find(e=>e.name==='Mila');
+  const change={action:'remove-entry',id:mila.id,revision:before.revision};
+  assert.equal((await f.send(f.root+'/admin',change,phone)).status,401);
+  assert.equal((await f.send(f.root+'/admin',{...change,revision:1},f.auth)).status,409);
+  const deleted=await f.send(f.root+'/admin',change,f.auth);
+  assert.equal(deleted.status,200);assert.equal(deleted.data.entries.length,4);
+  assert.equal(deleted.data.entries.find(e=>e.name==='Player 5').place,'in');
+  assert.equal((await f.send(f.root,undefined,phone)).data.mine,undefined);
+  assert.equal((await f.send(f.root+'/recover',{name:'Mila',pin:'0268'},phone)).status,401);
+  assert.equal((await f.send(next,undefined,first)).data.mine.hasPin,true);
+  assert.equal((await f.send(next+'/recover',{name:'Mila',pin:'0543'},phone)).status,200);
+  assert.equal((await f.vote(7,'Mila')).status,200);
+});

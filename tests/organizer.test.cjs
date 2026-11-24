@@ -316,3 +316,33 @@ test('the hub shows the original creator and time of each edition without guessi
   const old=(await send('polls/hub',undefined,site)).data.items.find(p=>p.id===personal.data.id);
   assert.equal(old.createdAt,null);assert.equal(old.createdBy,null);assert.equal(old.seriesOrganizer,'Mara V.');
 });
+
+test('only site organizers can delete a registered organizer, revoke access and release its name',async t=>{
+  const {send,login,settings}=await setup(t),site=await login();
+  const credentials={organizerName:'Mara V.',password:'abcdef'};
+  const created=await send('polls',{settings,...credentials}),id=created.data.id;
+  const personal={Cookie:created.headers.get('Set-Cookie').split(';')[0]},path='polls/'+id;
+  const token=(await send(path+'/login',{password:credentials.password})).data.token;
+  const other=await send('polls',{settings,organizerName:'Stef',password:credentials.password});
+  const accounts='polls/hub/organizers';
+  assert.equal((await send(accounts)).status,401);
+  assert.equal((await send(accounts,undefined,personal)).status,401);
+  const items=(await send(accounts,undefined,site)).data.items;
+  assert.equal(items.length,2);
+  const target=items.find(a=>a.name==='Mara V.');assert.equal(target.polls,1);
+  assert.doesNotMatch(JSON.stringify(items),/salt|verifier|password/);
+  assert.equal((await send(accounts+'/remove',{id:target.id},personal)).status,401);
+  assert.equal((await send(accounts+'/remove',{id:target.id},site)).status,200);
+  assert.equal((await send('polls/mine/login',credentials)).status,401);
+  assert.equal((await send('polls/mine',undefined,personal)).status,401);
+  assert.equal((await send(path+'/admin',undefined,{Authorization:'Bearer '+token})).status,401);
+  assert.equal((await send(path+'/login',{password:credentials.password})).status,401);
+  assert.equal((await send(path)).status,200);
+  assert.equal((await send(path+'/admin',undefined,site)).data.createdBy,null);
+  assert.equal((await send('polls/'+other.data.id+'/admin',undefined,site)).data.createdBy,'Stef');
+  const recreated=await send('polls',{settings,...credentials});assert.equal(recreated.status,201);
+  const newLogin={Cookie:recreated.headers.get('Set-Cookie').split(';')[0]};
+  assert.equal((await send(accounts+'/remove',{id:target.id},site)).status,200);
+  assert.deepEqual((await send('polls/mine',undefined,newLogin)).data.items.map(p=>p.id),[recreated.data.id]);
+  assert.equal((await send(path+'/admin',undefined,newLogin)).status,401);
+});
