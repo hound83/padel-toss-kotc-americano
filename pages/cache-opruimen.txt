@@ -9,9 +9,9 @@ self.addEventListener('install', event => {
   event.waitUntil(caches.open(noticeCache).then(cache => cache.add(notice)).then(() => self.skipWaiting()));
 });
 self.addEventListener('activate', event => {
-  event.waitUntil(caches.keys().then(keys => Promise.all(keys
+  event.waitUntil(self.clients.claim().then(() => caches.keys()).then(keys => Promise.all(keys
     .filter(key => key.startsWith('padel-toss-americano-') && key !== noticeCache)
-    .map(key => caches.delete(key)))).then(() => self.clients.claim()));
+    .map(key => caches.delete(key)))));
 });
 self.addEventListener('fetch', event => {
   if (event.request.mode === 'navigate' && event.request.url.startsWith(self.registration.scope)) {
