@@ -1,0 +1,15 @@
+# GitHub Pages serves the move notice. The Worker builds from the root application sources.
+exclude:
+  - AGENTS.md
+  - README.md
+  - aanmelden.html
+  - index.html
+  - kijken.html
+  - "*.js"
+  - "*.css"
+  - manifest.webmanifest
+  - wrangler.jsonc
+  - docs
+  - scripts
+  - sessions
+  - tests
