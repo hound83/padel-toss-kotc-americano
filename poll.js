@@ -366,7 +366,7 @@
           return mine.credentials(root,{setup:true,known});
         },async values=>{
           await P.api(base+'/organizer',values,{token:P.token(id)});
-          await load(true);$('message').textContent=say('Toegevoegd aan Mijn polls.','Added to my polls.');
+          P.remember(id,null);await load(true);$('message').textContent=say('Toegevoegd aan Mijn polls.','Added to my polls.');
         });
       })));
     }

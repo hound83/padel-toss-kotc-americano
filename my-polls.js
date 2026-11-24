@@ -22,7 +22,7 @@ window.TossMyPolls=({P,say,modeName,dateText,el,button,link,card,field,input,act
   }
   function signIn(){
     showingList=false;
-    const section=card(say('Mijn polls openen','Open my polls')),form=el('form');
+    const section=card(say('Inloggen','Sign in')),form=el('form');
     form.append(el('p',say('Vul de naam en het wachtwoord in waarmee je je polls aanmaakt.','Enter the name and password you use to create your polls.')));
     const read=credentials(form),go=el('button',say('Mijn polls openen','Open my polls'),'primary');
     go.type='submit';actions(form,go);section.append(form);
@@ -30,7 +30,7 @@ window.TossMyPolls=({P,say,modeName,dateText,el,button,link,card,field,input,act
     actions(section,first);content.replaceChildren(section,legacy());
     form.onsubmit=async event=>{
       event.preventDefault();go.disabled=true;
-      try{await P.api('/mine/login',read());form.reset();message.textContent='';await refresh();}
+      try{await P.api('/mine/login',read());form.reset();message.textContent='';await refresh(true);}
       catch(error){message.textContent=friendly(error);}
       finally{go.disabled=false;}
     };
@@ -63,7 +63,7 @@ window.TossMyPolls=({P,say,modeName,dateText,el,button,link,card,field,input,act
     }
     content.append(legacy());
   }
-  async function refresh(){
+  async function refresh(afterLogin=false){
     const serial=++generation;
     try{
       const events=[];let cursor='',owner;
@@ -77,7 +77,8 @@ window.TossMyPolls=({P,say,modeName,dateText,el,button,link,card,field,input,act
     }catch(error){
       if(serial!==generation)return;
       if(showingList || !content.querySelector('[autocomplete=current-password]'))signIn();
-      message.textContent=error.status===401?'':friendly(error);
+      if(error.status===401)message.textContent=afterLogin?say('Sta cookies voor deze site toe om ingelogd te blijven.','Allow cookies for this site to stay signed in.'):'';
+      else message.textContent=friendly(error);
     }finally{if(serial===generation)content.setAttribute('aria-busy','false');}
   }
   function clear(){
@@ -87,7 +88,7 @@ window.TossMyPolls=({P,say,modeName,dateText,el,button,link,card,field,input,act
     refresh();window.addEventListener('pagehide',clear);
     window.addEventListener('pageshow',e=>{if(e.persisted)refresh();});
     document.addEventListener('visibilitychange',()=>{
-      if(document.hidden)clear();else if(!content.querySelector('[autocomplete=current-password]'))refresh();
+      if(document.hidden)clear();else refresh();
     });
   }
   return {credentials,start,refresh};

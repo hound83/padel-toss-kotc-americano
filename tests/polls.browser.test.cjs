@@ -9,17 +9,20 @@ test('signup poll through the real planner, mobile visitor, password and live fo
   const app=await localSessionApp();t.after(()=>app.close());
   let url=process.env.PADEL_SESSION_SITE_URL;
   if(!url){
+    let localOrigin;
     const server=http.createServer(async(req,res)=>{
-      const result=await app.fetch(new Request(url+req.url,{method:req.method,headers:req.headers,
+      const result=await app.fetch(new Request(localOrigin+req.url,{method:req.method,headers:req.headers,
         body:['GET','HEAD'].includes(req.method)?null:req,duplex:'half'}));
       res.writeHead(result.status,Object.fromEntries(result.headers));res.end(Buffer.from(await result.arrayBuffer()));
     });
-    await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));url='http://127.0.0.1:'+server.address().port;
+    await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));url=localOrigin='http://127.0.0.1:'+server.address().port;
     t.after(()=>new Promise(resolve=>{server.closeAllConnections();server.close(resolve);}));
   }
+  url=await require('./https-loopback.cjs')(t,url);
   const browser=await chromium.launch({executablePath:process.env.CHROMIUM_EXECUTABLE_PATH});t.after(()=>browser.close());
   const safari=await webkit.launch();t.after(()=>safari.close());
-  const owner=await browser.newContext(),phone=await browser.newContext(devices['Pixel 7']),other=await safari.newContext(devices['iPhone 13']);
+  const tls={ignoreHTTPSErrors:true};
+  const owner=await browser.newContext(tls),phone=await browser.newContext({...devices['Pixel 7'],...tls}),other=await safari.newContext({...devices['iPhone 13'],...tls});
   const errors=[];
   async function tab(context){
     const page=await context.newPage();page.setDefaultTimeout(7500);
@@ -113,7 +116,10 @@ test('signup poll through the real planner, mobile visitor, password and live fo
   await visitor.getByText(/Controleer je naam en wachtwoord/).waitFor();
   assert.equal(await visitor.getByText('Extra eigen avond').count(),0);
   await visitor.getByLabel('Wachtwoord',{exact:true}).fill(password);
+  const loginResponse=visitor.waitForResponse(res=>res.url()===url+'/api/polls/mine/login');
   await visitor.getByRole('button',{name:'Mijn polls openen'}).tap();
+  assert.equal((await loginResponse).status(),200);
+  await visitor.getByRole('heading',{name:ownerName,exact:true}).waitFor();
   await visitor.getByRole('link',{name:/Extra eigen avond/}).waitFor();
   await visitor.getByRole('link',{name:/Test KOC/}).tap();
   await visitor.getByRole('button',{name:'Speler toevoegen'}).waitFor();
@@ -159,5 +165,11 @@ test('signup poll through the real planner, mobile visitor, password and live fo
     await player.goto(url+'/aanmelden/'+poll.id);await player.getByRole('link',{name:'Bekijk de baanindeling'}).click();
     await player.locator('#rounds article').first().waitFor();assert.match(await player.locator('#modeArt').getAttribute('src'),new RegExp('mode-'+asset+'\\.svg'));
   }
+  await visitor.goto(url+'/mijn-polls');
+  await visitor.getByRole('link',{name:/Test toss/}).waitFor();
+  await visitor.getByRole('button',{name:'Uitloggen'}).tap();
+  await visitor.getByRole('button',{name:'Mijn polls openen'}).waitFor();
+  await visitor.reload();await visitor.getByLabel('Jouw naam',{exact:true}).waitFor();
+  assert.equal(await visitor.getByRole('link',{name:/Extra eigen avond/}).count(),0);
   assert.deepEqual(errors,[]);
 });
