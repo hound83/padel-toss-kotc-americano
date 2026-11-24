@@ -1,0 +1,20 @@
+---
+layout: null
+permalink: /sw.js
+---
+// Installed copies of the old Pages planner update to the move notice on reconnection.
+const noticeCache = 'padel-toss-americano-pages-moved-v1';
+const notice = new URL('./index.html', self.registration.scope).href;
+self.addEventListener('install', event => {
+  event.waitUntil(caches.open(noticeCache).then(cache => cache.add(notice)).then(() => self.skipWaiting()));
+});
+self.addEventListener('activate', event => {
+  event.waitUntil(caches.keys().then(keys => Promise.all(keys
+    .filter(key => key.startsWith('padel-toss-americano-') && key !== noticeCache)
+    .map(key => caches.delete(key)))).then(() => self.clients.claim()));
+});
+self.addEventListener('fetch', event => {
+  if (event.request.mode === 'navigate' && event.request.url.startsWith(self.registration.scope)) {
+    event.respondWith(fetch(event.request).catch(() => caches.match(notice)));
+  }
+});

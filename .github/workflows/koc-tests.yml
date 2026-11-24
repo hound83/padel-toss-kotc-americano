@@ -17,6 +17,8 @@ jobs:
           node-version: '22'
       - name: Scheduling, ranking and name-list unit tests
         run: node --test tests/koc.test.cjs tests/bulk-names.test.cjs tests/americano-ranking.test.cjs tests/round-planner.test.cjs tests/toss-start.test.cjs tests/sessions.test.cjs tests/polls.test.cjs tests/organizer.test.cjs
+      - name: Build the GitHub Pages move notice
+        uses: actions/jekyll-build-pages@v1
       - name: Install browser test dependencies
         run: |
           npm install --no-save --no-package-lock playwright@1.58.0
@@ -38,16 +40,12 @@ jobs:
             sleep 1
           done
           PADEL_SESSION_SITE_URL=http://127.0.0.1:8787 node --test --test-timeout=90000 tests/sessions.browser.test.cjs tests/polls.browser.test.cjs tests/organizer.browser.test.cjs
-      - name: Check preview updates over the public relay
-        if: github.event_name == 'pull_request'
-        run: node --test tests/share-preview.browser.test.cjs
-        env:
-          PADEL_REAL_RELAY: '1'
-      - name: Verify the published GitHub Pages release
+      - name: Verify the Cloudflare planner and the old GitHub links
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: node tests/live-site.smoke.cjs
         env:
-          PADEL_SITE_URL: https://hound83.github.io/padel-toss-kotc-americano/
+          PADEL_SITE_URL: https://padel.hound83.workers.dev/
+          PADEL_LEGACY_SITE_URL: https://hound83.github.io/padel-toss-kotc-americano/
           PADEL_SCREENSHOT_DIR: test-results
       - name: Verify the Cloudflare signup release
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'

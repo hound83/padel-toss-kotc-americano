@@ -1,4 +1,4 @@
-// Post-merge validation of the actual GitHub Pages release, in a fresh browser.
+// Post-merge validation of the public Cloudflare planner and GitHub Pages move notice, in a fresh browser.
 const {chromium}=require('playwright');
 const fs=require('node:fs');
 const path=require('node:path');
@@ -28,15 +28,15 @@ const assert=require('node:assert/strict');
       ]);
       const assetsMatch=await Promise.all(artwork.map(async (response,index)=>response.ok()&&await response.text()===expectedArtwork[index]));
       if(worker.ok()&&document.ok()&&rounds.ok()&&await rounds.text()===expectedRounds&&await worker.text()===expectedWorker&&
-        await document.text()===expectedPage&&theme.ok()&&await theme.text()===expectedTheme&&assetsMatch.every(Boolean)){
+        (await document.text()).replace(/<head><base href="\/">.*?<meta name="referrer" content="no-referrer">/,'<head>')===expectedPage&&theme.ok()&&await theme.text()===expectedTheme&&assetsMatch.every(Boolean)){
         published=true;
         break;
       }
       await new Promise(resolve=>setTimeout(resolve,5000));
     }
-    assert.ok(published,'GitHub Pages must serve the current page, worker, stylesheet and mode artwork');
+    assert.ok(published,'Cloudflare must serve the current page, worker, stylesheet and mode artwork');
     await page.goto(url,{waitUntil:'networkidle'});
-    assert.equal(await page.locator('#appVersion').textContent(),'v2.8.0');
+    assert.equal(await page.locator('#appVersion').textContent(),'v3.3.0');
     await page.waitForFunction(()=>document.querySelectorAll('.mode-illustration').length===4&&[...document.querySelectorAll('.mode-illustration')].every(img=>img.complete&&img.naturalWidth>0));
     assert.equal(await page.evaluate(()=>getComputedStyle(document.documentElement).getPropertyValue('--teal-900').trim()),'#193B57');
     await page.evaluate(()=>navigator.serviceWorker.ready);
@@ -99,33 +99,35 @@ const assert=require('node:assert/strict');
     const pdf=fs.readFileSync(await (await pdfDownload).path());
     assert.match(pdf.toString('latin1'),/^%PDF-/);
     await tossContext.close();
-    const host=await browser.newContext(), guest=await browser.newContext({viewport:{width:390,height:844}});
-    const preview=await host.newPage(), watcher=await guest.newPage();
-    await preview.goto(url);
-    await preview.locator('#versionLink').click();
-    await preview.waitForURL(link=>link.searchParams.get('preview')==='3');
-    await preview.waitForFunction(()=>document.querySelector('#appVersion').textContent==='v3.0.0-preview');
-    assert.equal(await preview.locator('#appVersion').innerText(),'v3.0.0-preview');
-    await preview.locator('.format-btn[data-format=americano]').click();
-    await preview.locator('#continueTo2').click();await preview.locator('#generateBtn').click();
-    await preview.locator('#presentBtn').click();
-    const stacked=await preview.locator('#liveCurrent').evaluate(current=>{
-      const next=document.querySelector('#liveUpcoming');
-      return !next.hidden && next.getBoundingClientRect().top>=current.getBoundingClientRect().bottom;
-    });
-    assert.ok(stacked,'the published scheduler stacks the next round below the current round');
-    await preview.locator('#presentExit').click();
-    await preview.getByRole('button',{name:'Schema delen'}).click();
-    await preview.locator('#sharePublish').click();
-    await preview.waitForFunction(()=>document.querySelector('#shareUrl').value.length>0);
-    await watcher.goto(await preview.locator('#shareUrl').inputValue(),{waitUntil:'domcontentloaded'});
-    await watcher.locator('#rounds article').first().waitFor();
-    await preview.locator('#shareClose').click();
-    await preview.locator('.match-card input').first().fill('24');await preview.locator('.match-card input').nth(1).fill('16');
-    await watcher.getByText('24–16',{exact:true}).first().waitFor({timeout:45000});
-    console.log('Live preview and signed score update verified across two independent browser sessions.');
-    await host.close();await guest.close();
+    const fresh=await browser.newContext({serviceWorkers:'block'}),alias=await fresh.newPage();
+    for(const version of ['2.8','3','3.1']){
+      await alias.goto(new URL('?preview='+version+'&lang=en#court',url).href);
+      assert.equal(await alias.locator('#appVersion').innerText(),'v3.3.0');
+      assert.equal(new URL(alias.url()).search,'?lang=en');assert.equal(new URL(alias.url()).hash,'#court');
+      assert.equal(await alias.locator('#pollHome').isVisible(),true);assert.equal(await alias.locator('#versionLink,#entryVersionLink').count(),0);
+    }
+    await alias.locator('.format-btn[data-format=americano]').click();
+    await alias.locator('#continueTo2').click();await alias.locator('#generateBtn').click();await alias.locator('#presentBtn').click();
+    assert.ok(await alias.locator('#liveCurrent').evaluate(current=>{
+      const next=document.querySelector('#liveUpcoming');return !next.hidden && next.getBoundingClientRect().top>=current.getBoundingClientRect().bottom;
+    }));
+    const legacy=process.env.PADEL_LEGACY_SITE_URL;
+    let noticeLive=false;
+    for(let i=0;i<60;i++){
+      const res=await fresh.request.get(legacy);
+      if(res.ok() && (await res.text()).includes('De Padel Planner is verhuisd')){noticeLive=true;break;}
+      await new Promise(resolve=>setTimeout(resolve,3000));
+    }
+    assert.ok(noticeLive,'GitHub Pages must publish the move notice');
+    for(const [oldPath,next] of [['?preview=3','/'],['beheer','/beheer'],['aanmelden.html?lang=en','/aanmaken?lang=en'],['kijken.html#bewaard','/kijken.html#bewaard']]){
+      await alias.goto(new URL(oldPath,legacy).href,{waitUntil:'domcontentloaded'});
+      await alias.getByRole('heading',{name:'De Padel Planner is verhuisd'}).waitFor();
+      assert.equal(await alias.locator('.format-btn').count(),0);
+      assert.equal(await alias.locator('#open').getAttribute('href'),new URL(next,url).href);
+      await alias.waitForURL(new URL(next,url).href);
+    }
+    await fresh.close();
     assert.deepEqual(errors,[]);
-    console.log(JSON.stringify({url,version:'v2.8.0',modes:4,desktop:true,mobile:true,score:'26-6',freshInstall:true,offline:true}));
+    console.log(JSON.stringify({url,version:'v3.3.0',modes:4,desktop:true,mobile:true,score:'26-6',freshInstall:true,offline:true}));
   }finally{await browser.close();}
 })().catch(error=>{console.error(error);process.exitCode=1;});

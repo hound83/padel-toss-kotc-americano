@@ -3,6 +3,7 @@
   "main": "sessions/worker.mjs",
   "compatibility_date": "2026-03-01",
   "workers_dev": true,
+  "preview_urls": false,
   "previews": {},
   "observability": {
     "enabled": false

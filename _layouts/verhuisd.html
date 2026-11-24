@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <meta name="robots" content="noindex,follow">
+  <meta name="theme-color" content="#193b57">
+  <title>De Padel Planner is verhuisd · Koriander</title>
+  <style>
+    *{box-sizing:border-box}
+    body{margin:0;min-height:100vh;min-height:100svh;display:grid;place-items:center;padding:1.25rem;background:#f1f5f2;color:#193b57;font:1rem/1.5 system-ui,sans-serif}
+    main{width:min(100%,32rem);background:#fff;border:1px solid #d5dfd9;border-radius:1.25rem;padding:clamp(1.5rem,5vw,2.5rem);box-shadow:0 .7rem 2rem #193b5710}
+    img{display:block;width:9rem;height:5.8rem;object-fit:contain;object-position:left center}
+    h1{font-size:clamp(1.75rem,5vw,2.4rem);line-height:1.1;margin:.9rem 0}
+    p{margin:.65rem 0 1.15rem}
+    a,button{font:inherit;font-weight:650;cursor:pointer}
+    a{display:inline-block;background:#193b57;color:#fff;text-decoration:none;padding:.75rem 1.1rem;border-radius:.55rem}
+    button{display:block;margin:.5rem 0;background:#f1f5f2;color:#193b57;padding:.55rem .8rem;border:1px solid #becbc4;border-radius:.4rem}
+    :focus-visible{outline:3px solid #287b63;outline-offset:3px}
+    #saved{border-top:1px solid #d5dfd9;margin-top:1.3rem;padding-top:1rem}
+    h2{font-size:1.1rem;margin:0}
+  </style>
+</head>
+<body>
+  <main>
+    <img src="/padel-toss-kotc-americano/assets/mode-toss.svg" alt="" width="144" height="93">
+    <h1>De Padel Planner is verhuisd</h1>
+    <p id="message">Je vindt Toss 3.3 op het nieuwe adres.</p>
+    <a id="open" href="https://padel.hound83.workers.dev/">Open Toss 3.3</a>
+    <section id="saved" hidden>
+      <h2>Indeling uit deze browser meenemen</h2>
+      <p>Download je indeling en open die op het nieuwe adres met <strong>Opgeslagen schema laden</strong>.</p>
+      <div id="downloads"></div>
+    </section>
+  </main>
+  <script>
+    (async function(){
+      const root='/padel-toss-kotc-americano', here=new URL(location.href);
+      const path=here.pathname===root ? '/' : here.pathname.startsWith(root+'/') ? here.pathname.slice(root.length) : '/';
+      if('serviceWorker' in navigator){
+        const scope=here.origin+root+'/';
+        navigator.serviceWorker.getRegistration(scope).then(reg=>reg?.scope===scope && reg.update()).catch(()=>{});
+      }
+      const target=new URL('https://padel.hound83.workers.dev/');
+      // Set the pathname on the fixed origin, including when a pasted path starts with two slashes.
+      target.pathname=path==='/index.html' ? '/' : path==='/aanmelden.html' ? '/aanmaken' : path;
+      target.search=here.search;
+      target.searchParams.delete('preview');
+      target.hash=here.hash;
+      const link=document.getElementById('open');
+      link.href=target.href;
+      function savedItem(key){
+        try{return JSON.parse(localStorage.getItem(key));}catch{return null;}
+      }
+      // A returning viewer may have received a final score after their original link was shared.
+      if(path==='/kijken.html' && here.hash){
+        const fields=here.hash.slice(1).split('.');
+        if(fields.length===4 && /^koriander-[a-f0-9-]{36}$/.test(fields[0])){
+          const final=savedItem('padel-view-final-'+fields[0]);
+          if(final?.closed && Array.isArray(final.rounds)){
+            try{
+              const zipped=new Blob([JSON.stringify(final)]).stream().pipeThrough(new CompressionStream('gzip'));
+              const bytes=new Uint8Array(await new Response(zipped).arrayBuffer());
+              const packed=btoa(Array.from(bytes,b=>String.fromCharCode(b)).join('')).replaceAll('+','-').replaceAll('/','_').replace(/=+$/,'');
+              if(packed.length<=350000){fields[3]=packed;target.hash=fields.join('.');link.href=target.href;}
+            }catch{}
+          }
+        }
+      }
+      // Browser storage is tied to the old address. Offer portable files before leaving it.
+      if(target.pathname==='/' && !target.searchParams.has('poll')){
+        const slots=[['padel-toss-americano-session-v2','Planner'],['padel-toss-session-v3-preview','Planner 3.0'],
+          ['padel-toss-session-v31-preview','Planner 3.1'],['padel-toss-americano-rehearsal-v2','Oefensessie']];
+        for(const [key,label] of slots){
+          const saved=savedItem(key);
+          if(saved?.format!=='padel-toss-autosave' || saved.version!==2 || !saved.state?.format)continue;
+          const date=new Date(saved.savedAt);
+          const title=Number.isFinite(date.getTime()) ? label+' · '+date.toLocaleDateString('nl-NL') : label;
+          const button=document.createElement('button');
+          button.type='button';button.textContent='Download '+title;
+          button.onclick=()=>{
+            const data={format:'padel-scheduler',version:2,savedAt:saved.savedAt,state:saved.state};
+            const json=JSON.stringify(data,(k,v)=>k==='previewChannel'?undefined:v,2);
+            const file=URL.createObjectURL(new Blob([json],{type:'application/json'}));
+            const a=document.createElement('a');a.href=file;a.download='koriander-'+label.toLowerCase().replaceAll(' ','-')+'.json';
+            document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(file),2000);
+          };
+          document.getElementById('downloads').append(button);
+          document.getElementById('saved').hidden=false;
+        }
+      }
+      if(document.getElementById('saved').hidden){
+        document.getElementById('message').textContent='Je gaat over enkele seconden naar Toss 3.3 op het nieuwe adres.';
+        setTimeout(()=>location.replace(target.href),3500);
+      }
+    })();
+  </script>
+</body>
+</html>

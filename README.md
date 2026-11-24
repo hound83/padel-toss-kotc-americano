@@ -10,11 +10,11 @@
 </p>
 
 <p align="center">
-  <a href="https://hound83.github.io/padel-toss-kotc-americano/"><strong>▶️ OPEN DE PADEL PLANNER</strong></a>
+  <a href="https://padel.hound83.workers.dev/"><strong>▶️ OPEN DE PADEL PLANNER</strong></a>
 </p>
 
 <p align="center">
-  <strong>Directe URL:</strong> <a href="https://hound83.github.io/padel-toss-kotc-americano/">https://hound83.github.io/padel-toss-kotc-americano/</a><br />
+  <strong>Directe URL:</strong> <a href="https://padel.hound83.workers.dev/">https://padel.hound83.workers.dev/</a><br />
   <em>Werkt op telefoon, tablet en computer. Geen account nodig.</em>
 </p>
 
@@ -31,7 +31,7 @@
 
 ## Zo werkt het
 
-1. **Open de [webapp](https://hound83.github.io/padel-toss-kotc-americano/)** en kies een speelvorm.
+1. **Open de [webapp](https://padel.hound83.workers.dev/)** en kies een speelvorm.
 2. **Stel je avond in:** kies 2 tot en met 12 banen. Toss en Gesplitste Toss starten met 8 spelers per baan (Gesplitste Toss gelijk verdeeld over Zilver en Goud), Americano en KOC met 4 spelers per baan. Je kunt de aantallen met de tellers aanpassen.
 3. **Vul de namen in** of klik op **📋 Namenlijst plakken**. Plak één naam per regel in het tijdelijke zijpaneel; lege regels worden overgeslagen. Genereer daarna de indeling.
 4. **Speel!** Bekijk het schema, houd bij Americano de scores bij of gebruik de presentatiemodus om de indeling duidelijk te tonen.
@@ -67,7 +67,7 @@ Na afloop van een fase kan een deelnemer die door de loting minder potjes kreeg 
 
 ### Oefenmodus
 
-Open de [oefenmodus](https://hound83.github.io/padel-toss-kotc-americano/?rehearsal=1) om in een schema met score-invoer de volgende open ronde of alle open scores automatisch te vullen. De oefensessie wordt apart bewaard in dezelfde browser. Open de [gewone planner](https://hound83.github.io/padel-toss-kotc-americano/) om je echte wedstrijdsessie te hervatten.
+Open de [oefenmodus](https://padel.hound83.workers.dev/?rehearsal=1) om in een schema met score-invoer de volgende open ronde of alle open scores automatisch te vullen. De oefensessie wordt apart bewaard in dezelfde browser. Open de [gewone planner](https://padel.hound83.workers.dev/) om je echte wedstrijdsessie te hervatten.
 
 De [Americano-repetitie](docs/americano-rehearsal.md) toont de gevolgen voor punten, rangsaldo, plek en groepsindeling in 12 gesimuleerde scenario’s.
 
@@ -134,7 +134,7 @@ Er is geen account nodig. Ingevoerde spelersnamen en je actuele sessie worden lo
 
 ## 🛠️ Over dit project
 
-De Koriander Padel Toss is een statische webapp, gebouwd met **HTML, CSS en JavaScript** en gehost via **GitHub Pages**. Er is geen server of database nodig voor de speelindelingen.
+De Koriander Padel Toss is een statische webapp, gebouwd met **HTML, CSS en JavaScript** en gehost op **Cloudflare Workers**. De planner maakt lokale speelindelingen in de browser. Gedeelde sessies en aanmeldingen gebruiken Cloudflare D1.
 
 | Bestand | Functie |
 | :--- | :--- |
@@ -154,18 +154,16 @@ node --test tests/koc.test.cjs
 
 <p align="center">
   <strong>Klaar om te spelen?</strong><br />
-  <a href="https://hound83.github.io/padel-toss-kotc-americano/"><strong>🎾 Start de Padel Planner</strong></a><br />
+  <a href="https://padel.hound83.workers.dev/"><strong>🎾 Start de Padel Planner</strong></a><br />
   <em>Gemaakt voor gezellige én goed georganiseerde padelavonden.</em>
 </p>
 
 
-## Preview 3.0
+## Verhuizing naar Toss 3.3
 
-De standaardlink opent 2.8.0. Onderaan staat **Probeer de 3.0-preview**. De preview bewaart de lokale sessie apart. Een bestaand schema kan via de JSON-export van 2.8.0 worden ingeladen.
+Het [oude adres op GitHub Pages](https://hound83.github.io/padel-toss-kotc-americano/) toont een verhuismelding en stuurt door naar Cloudflare. Een oude kijklink opent hetzelfde schema. Bij een lokaal bewaarde indeling op de oude startpagina kun je eerst een JSON-bestand downloaden en dat op Cloudflare openen met **Opgeslagen schema laden**.
 
-Kies na het indelen **Schema delen → Kijklink maken**. Iedereen met de volledige link kan het schema, de rustbeurten en eventuele uitslagen en klassementen bekijken en op speler filteren. De link bevat de eerste gedeelde indeling. Wie de link doorstuurt, deelt die indeling ook.
-
-De organisator houdt het bewerken op het eigen apparaat. Zolang de planner open is, verstuurt hij wijzigingen versleuteld en ondertekend via ntfy.sh. De dienst bewaart updates tijdelijk. Met **Schema delen → Kijksessie beëindigen** verstuurt de organisator de eindstand. Kijkers zien dat de sessie is gesloten. Hun browser bewaart de ontvangen eindstand voor een volgend bezoek. Wie de link pas opent nadat de dienst de updates heeft verwijderd, ziet de oorspronkelijke indeling. Een kijklink verleent geen schrijfrechten.
+GitHub Pages bouwt alleen de verhuismelding uit `pages/` en `_layouts/verhuisd.html`, volgens `_config.yml`. De volledige planner, offlinebestanden en versiegeschiedenis staan nog in deze repository. Voor een latere overstap naar statische hosting kan de planner uit de bronbestanden worden gepubliceerd. Voor aanmeldingen, centraal beheer en gedeelde score-invoer is dan ook een sessiedienst nodig.
 
 ## Centraal beheer
 
@@ -173,7 +171,7 @@ Open **Beheer** onderaan de site of ga naar [Centraal beheer](https://padel.houn
 
 Het vaste wachtwoord staat in de Cloudflare Worker `padel` als runtime-Secret `PADEL_ADMIN_PASSWORD`. Stel het in via **Settings → Variables and Secrets**. Een wijziging maakt bestaande centrale inlogs ongeldig. Elke inlog vervalt na twaalf uur. Voor een eigen Node-host kan dezelfde omgevingsvariabele worden ingesteld.
 
-## Versie 3.2 met aanmeldpoll
+## Aanmeldpoll
 
 Op de [sessiesite](https://padel.hound83.workers.dev/) opent **Aanmeldpoll maken** een avond met een speelvorm, datum, tijden, banen en capaciteit. Kies een eigen beheerwachtwoord (minimaal acht tekens) en deel de **groepslink** via WhatsApp. Iedereen met die link ziet tijdens de open aanmelding de lijst. Spelers hebben geen account nodig. Ze kunnen op dezelfde browser hun eigen reactie wijzigen of intrekken. Bij een ander apparaat of gewiste browsergegevens kan de organisator helpen.
 
@@ -183,7 +181,7 @@ Open **Beheer** met het wachtwoord. Voeg een speler toe of kies bij een naam **W
 
 **Ga indelen** sluit de aanmelding en verbergt de lijsten voor bezoekers. De bestaande planner opent met de bevestigde deelnemers. Bij Gesplitste Toss kun je de speelgroep vooraf kiezen. **Publiceer op de aanmeldlink** maakt het speelschema bereikbaar vanaf dezelfde groepslink. Beheer van een al gepubliceerd speelschema verloopt via **Open planner**. **Herhaal volgende week** neemt de instellingen en het wachtwoord mee naar een verse aanmeldlijst. Een openbare poll vervalt veertien dagen na de speeldatum of laatste wijziging, afhankelijk van welke later is. Online speelsessies hebben hun eigen bewaartermijn.
 
-## Versie 3.1 met gedeelde score-invoer
+## Gedeelde score-invoer
 
 Open de [Koriander-sessiesite](https://padel.hound83.workers.dev/), maak een indeling en kies **Schema delen** en **Sessie online zetten**. Kopieer **Beheerlink** naar je eigen telefoon. Zodra de sessie online staat kan de laptop dicht. Op de telefoon staan dezelfde banen, rondes, scorevelden, timer en deelknoppen. Met de beheerlink kan iedereen de sessie beheren, dus deel deze alleen met een medeorganisator die dit ook mag.
 
@@ -195,7 +193,7 @@ Zeven dagen na de laatste wijziging verlopen de online links. Bekijken verlengt 
 
 ### Sessiesite draaien
 
-GitHub Pages bedient de statische 2.8- en 3.0-versies. De sessiesite voor 3.1 serveert de planner en de database-API op hetzelfde domein. Een installatie kan meerdere tossavonden bedienen. Namen en sessies gaan pas online bij **Sessie online zetten**.
+De Cloudflare-site voor 3.3 serveert de planner en de database-API op hetzelfde domein. Een installatie kan meerdere tossavonden bedienen. Namen en sessies gaan pas online bij **Sessie online zetten**.
 
 - Voor Cloudflare Workers en D1 staat de configuratie in `wrangler.jsonc`. Publiceer met een aangemeld Cloudflare-account via `npx wrangler@4 deploy`. Wrangler verpakt de publieke bestanden en koppelt de D1-database. De Worker maakt bij het eerste gebruik de tabellen aan. De Cron Trigger ruimt verlopen gegevens op.
 - Op een eigen host met Node.js 22.13 of nieuwer draait `node sessions/local.mjs` dezelfde sessiedienst met SQLite. Geef `SESSION_DB` een pad op permanente opslag. De standaardpoort is 8787. Zet er voor publiek gebruik een HTTPS-proxy voor. De browser maakt de beheerlink en spelerslinks op de publieke hostnaam. Bij gebruik achter een proxy groepeert de Node-server de limiet voor ongeldige codes per direct verbonden IP-adres.

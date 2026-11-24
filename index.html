@@ -1770,9 +1770,7 @@
   </dialog>
   <footer class="app-footer">
     <a data-organizer-link href="https://padel.hound83.workers.dev/beheer">Beheer</a>
-    <span id="appVersion">v2.8.0</span>
-    <a id="versionLink" href="?preview=3">Probeer de 3.0-preview</a>
-    <a hidden id="entryVersionLink" href="?preview=3.1" data-i18n="entryVersion">Probeer 3.1 met score-invoer</a>
+    <span id="appVersion">v3.3.0</span>
     <details><summary data-i18n="whatsNew">Wat is nieuw?</summary>
       <ul>
         <li data-i18n="changeIllustrations">Nieuwe baanillustraties, marineblauw/lime en een puntenscore van 26–6.</li>
@@ -2234,7 +2232,7 @@
       changeKocEntry: 'KOC: vaste startbanen voor spelers 1 en 2 en optionele plaatsing op de laagste baan.',
       changeKocNames: 'KOC: dubbele namen direct herkennen en blokkeren.',
       changeKocRandom: 'KOC: meer variatie op de onderste banen en in de spelersvolgorde.',
-      kocEditDetails:'Namen en banen wijzigen',applyDetails:'Wijzigingen toepassen',entryVersion:'Probeer 3.1 met score-invoer',entryMake:'Invullink maken',entryCopy:'Invullink kopiëren',entryLink:'Invullink',moreOptions:'Meer opties', shareAction:'Schema delen', viewLink:'Kijklink', makeLink:'Kijklink maken',copyLink:'Kijklink kopiëren',closeShare:'Sluiten',endShare:'Kijksessie beëindigen',previewLink:'Probeer de 3.0-preview',stableLink:'Terug naar versie 2.8.0',
+      kocEditDetails:'Namen en banen wijzigen',applyDetails:'Wijzigingen toepassen',entryMake:'Invullink maken',entryCopy:'Invullink kopiëren',entryLink:'Invullink',moreOptions:'Meer opties', shareAction:'Schema delen', viewLink:'Kijklink', makeLink:'Kijklink maken',copyLink:'Kijklink kopiëren',closeShare:'Sluiten',endShare:'Kijksessie beëindigen',
       changeAutosave: 'Automatisch bewaren en hervatten.', changePwa: 'Installeerbaar, offline en presentatiemodus.',
       updateAvailable: 'Er staat een nieuwe versie klaar.', updateReload: 'Vernieuwen',
       beginnerLabel: 'Zilver',
@@ -2592,7 +2590,7 @@
       changeKocEntry: 'KOC: fixed start courts for players 1 and 2, with optional placement on the lowest court.',
       changeKocNames: 'KOC: spot and block duplicate player names immediately.',
       changeKocRandom: 'KOC: more variation across lower courts and player display order.',
-      kocEditDetails:'Edit names and courts',applyDetails:'Apply changes',entryVersion:'Try 3.1 with player scoring',entryMake:'Create score entry link',entryCopy:'Copy score entry link',entryLink:'Score entry link',moreOptions:'More options', shareAction:'Share schedule',viewLink:'View link',makeLink:'Create view link',copyLink:'Copy view link',closeShare:'Close',endShare:'End viewing session',previewLink:'Try the 3.0 preview',stableLink:'Back to version 2.8.0',
+      kocEditDetails:'Edit names and courts',applyDetails:'Apply changes',entryMake:'Create score entry link',entryCopy:'Copy score entry link',entryLink:'Score entry link',moreOptions:'More options', shareAction:'Share schedule',viewLink:'View link',makeLink:'Create view link',copyLink:'Copy view link',closeShare:'Close',endShare:'End viewing session',
       changeAutosave: 'Automatic saving and session recovery.', changePwa: 'Installable, offline, and presentation mode.',
       updateAvailable: 'A new version is available.', updateReload: 'Refresh',
       beginnerLabel: 'Silver',
@@ -2656,17 +2654,11 @@
       el.setAttribute('aria-label', t(el.getAttribute('data-i18n-aria-label')));
     });
     document.documentElement.lang = state.lang;
-    const versionLink=document.getElementById('versionLink');
-    versionLink.href=previewV3?(hostedSessions?'/?preview=2.8':'./'):'?preview=3';versionLink.textContent=t(previewV3?'stableLink':'previewLink');
     TossPoll.organizerLinks(state.lang==='en');
     const pollHome=document.getElementById('pollHome');
-    pollHome.hidden=!hostedSessions || !entryPreview;
+    pollHome.hidden=!hostedSessions;
     pollHome.textContent=state.lang==='en'?'Create a signup poll':'Aanmeldpoll maken';
     pollHome.href='/aanmaken?lang='+state.lang;
-    const entryNav = document.getElementById('entryVersionLink');
-    entryNav.hidden = !hostedSessions && !entryPreview;
-    entryNav.href = entryPreview ? '?preview=3' : '?preview=3.1';
-    entryNav.textContent = t(entryPreview ? 'previewLink' : 'entryVersion');
     renderRoundRules();
     renderRoundSettings();
     paintRoundClocks(true);
@@ -2713,12 +2705,9 @@
     eyebrow.hidden = false;
   }
 
-  var previewVersion = new URLSearchParams(location.search).get('preview');
   var hostedSessions = !!document.querySelector('meta[name="koriander-sessions"]');
   var signupId = new URLSearchParams(location.search).get('poll');
   if(!hostedSessions || !/^[a-f0-9]{14}$/.test(signupId||''))signupId=null;
-  var entryPreview = previewVersion === '3.1' || (hostedSessions && !previewVersion);
-  var previewV3 = entryPreview || previewVersion === '3';
   var rehearsalMode = new URLSearchParams(window.location.search).get('rehearsal') === '1';
   var state = {
     step: 1,
@@ -5937,7 +5926,7 @@
   // numbered fields; editing an existing schedule only appends new players,
   // preserving player identities and already-played results.
   function parseBulkNames(raw){
-    return String(raw).split(/\r\n|\r|\n/).map(function(line){return line.trim();})
+    return String(raw).split(/\n|\r|\n/).map(function(line){return line.trim();})
       .filter(function(line){return line.length > 0;});
   }
 
@@ -6037,7 +6026,7 @@
     return String(name).normalize('NFKC').replace(/\s+/g, ' ').trim().toLocaleLowerCase();
   }
   function bulkEntries(raw){
-    return String(raw).split(/\r\n|\r|\n/).map(function(name, i){
+    return String(raw).split(/\n|\r|\n/).map(function(name, i){
       return {name:name.trim(), line:i + 1};
     }).filter(function(entry){return !!entry.name;});
   }
@@ -6975,7 +6964,31 @@
   // ---------- Local-first recovery ----------
   // No account or remote database: the organiser's own browser holds the
   // working copy, and the JSON export above remains a portable backup.
-  var AUTOSAVE_KEY = signupId ? 'padel-poll-draft-'+signupId : entryPreview ? (location.pathname.includes('/b/') ? 'padel-toss-managed-'+location.pathname.split('/').pop().slice(0,12) : 'padel-toss-session-v31-preview') : previewV3 ? 'padel-toss-session-v3-preview' : rehearsalMode ? 'padel-toss-americano-rehearsal-v2' : 'padel-toss-americano-session-v2';
+  function plannerDraftKey(){
+    if(signupId)return 'padel-poll-draft-'+signupId;
+    const owner=location.pathname.match(/^\/(?:b|beheer\/sessie)\/([^/]+)\/?$/);
+    if(owner)return 'padel-toss-managed-'+owner[1].slice(0,12);
+    if(rehearsalMode)return 'padel-toss-americano-rehearsal-v2';
+    const current='padel-toss-session-v31-preview', stable='padel-toss-americano-session-v2', oldView='padel-toss-session-v3-preview';
+    const defaultKey=hostedSessions?current:stable;
+    const formerVersion=new URLSearchParams(location.search).get('preview');
+    const preferred={'2.8':stable,'3':oldView,'3.1':current}[formerVersion] || defaultKey;
+    // Keep an old bookmark's draft in its original slot. An empty slot falls back to the current planner.
+    for(const key of new Set([preferred,defaultKey,current,stable,oldView])){
+      try{
+        const saved=JSON.parse(localStorage.getItem(key));
+        if(saved?.format==='padel-toss-autosave' && saved.version===2 &&
+            validateSaveData({format:SAVE_FORMAT,version:SAVE_VERSION,state:saved.state})===null)return key;
+      }catch{}
+    }
+    return defaultKey;
+  }
+  var AUTOSAVE_KEY=plannerDraftKey();
+  if(new URLSearchParams(location.search).has('preview')){
+    const canonical=new URL(location.href);
+    canonical.searchParams.delete('preview');
+    history.replaceState(history.state,'',canonical.href);
+  }
   var autosaveTimer = null;
   var autosaveSuspended = false;
   function formSnapshot(){
@@ -8094,7 +8107,6 @@
     const rounds=[], boards=[];
     let newTickets=false;
     function scoredRow(row,match,slot,open){
-      if(!entryPreview)return row;
       row.slot=slot;
       if(open && !row.score){
         const lineup=JSON.stringify([slot,row.teams]);
@@ -8144,7 +8156,7 @@
       const groups=state.format==='americano' && !state.splitDone?[{id:null,resultsEnabled:true}]:state.pools.filter(p=>!state.splitDone || ['top','bottom'].includes(p.id));
       for(const pool of groups.filter(p=>p.resultsEnabled)){
         const totals=computeTotals(pool.id);
-        boards.push({...entryPreview && {poolId:pool.id},title:(pool.id?poolDisplayLabel(pool)+' · ':'')+t('boardTitle'),unit:t(scoreMode()==='games'?'gameColumn':'thPts'),rows:rankPlayers(totals.totals,totals.h2h).map(p=>[p.rank,p.name,p.adjPoints])});
+        boards.push({poolId:pool.id,title:(pool.id?poolDisplayLabel(pool)+' · ':'')+t('boardTitle'),unit:t(scoreMode()==='games'?'gameColumn':'thPts'),rows:rankPlayers(totals.totals,totals.h2h).map(p=>[p.rank,p.name,p.adjPoints])});
       }
     }
     const titles={toss:'formatToss',splitToss:'formatSplitToss',americano:'formatAmericano',koc:'formatKoc'};
@@ -8162,100 +8174,18 @@
     }
     if(newTickets)scheduleAutosave();
     const snapshot={title:t(titles[state.format]),format:state.format,en,rounds,boards,playerIds:state.viewerIds};
-    if(entryPreview)snapshot.entryMode=koc?'koc':scoreMode();
+    snapshot.entryMode=koc?'koc':scoreMode();
     return snapshot;
   }
 
-  function setupSharing(){
-    const dlg=document.getElementById('shareDialog'),output=document.getElementById('shareUrl');
-    const info=document.getElementById('shareInfo'),send=document.getElementById('sharePublish');
-    const end=document.getElementById('shareEnd'),copy=document.getElementById('shareCopy');
-    let active=null,lastSent='',running=false,ending=false,retry;
-    const say=(nl,en)=>state.lang==='en'?en:nl;
-    const key=id=>'padel-view-owner-'+id;
-    const sessionId=()=>state.previewChannel;
-    function remember(){if(active)localStorage.setItem(key(active.channel),JSON.stringify(active));}
-    function restore(){
-      if(active?.channel!==sessionId()){
-        active=null;lastSent='';
-        if(sessionId()){try{active=JSON.parse(localStorage.getItem(key(sessionId())));}catch{}}
-      }
-    }
-    async function sync(){
-      clearTimeout(retry);restore();
-      if(running || ending || !active || !(state.step===3 || state.step===4))return;
-      const snapshot=viewSnapshot();if(!snapshot)return;
-      const data=JSON.stringify(snapshot),session=active;
-      if(data===lastSent)return;
-      running=true;let done=false;
-      try{
-        await TossShare.send(session,{...snapshot,at:Date.now()});
-        if(active===session && !ending){lastSent=data;info.textContent=say('Kijklink klaar. Wijzigingen worden tijdens het spelen gedeeld.','Link ready. Changes are shared during play.');}
-        done=true;
-      }catch{if(active===session && !ending)info.textContent=say('De link toont de beginstand. Live bijwerken lukt nu niet. De app probeert het opnieuw.','The link shows the initial schedule. Live updates are unavailable. Retrying.');}
-      finally{running=false;retry=setTimeout(sync,done?1500:30000);}
-    }
-    window.queueShareUpdate=()=>{clearTimeout(retry);retry=setTimeout(sync,1200);};
-    for(const id of ['presentBtn','kocPresent']){
-      const button=document.createElement('button');button.type='button';button.className='btn btn-ghost';button.dataset.i18n='shareAction';
-      button.textContent=t('shareAction');document.getElementById(id).after(button);
-      button.onclick=()=>{
-        restore();end.hidden=!active;output.hidden=!active;output.value=active?TossShare.link(active):'';
-        document.getElementById('shareCopy').hidden=!active;send.hidden=!!active || !viewSnapshot();
-        info.textContent=viewSnapshot()?say('Iedereen met de link kan het schema bekijken. Tijdens het spelen verstuurt de app wijzigingen versleuteld via ntfy.sh.','Anyone with the link can view the schedule. During play the app sends encrypted updates via ntfy.sh.'):say('Maak eerst een indeling.','Generate a schedule first.');
-        dlg.showModal();
-      };
-    }
-    send.onclick=async()=>{
-      send.disabled=true;
-      try{
-        const snapshot=viewSnapshot();if(!snapshot)return;
-        active=await TossShare.create({...snapshot,at:Date.now()});remember();
-        state.previewChannel=active.channel;writeAutosave();lastSent='';
-        output.value=TossShare.link(active);output.hidden=false;send.hidden=true;end.hidden=false;copy.hidden=false;
-        info.textContent=say('Kijklink klaar. Verbinding maken…','Link ready. Connecting…');sync();
-      }catch{info.textContent=say('Delen lukt niet. Controleer of deze browser lokale opslag toestaat.','Sharing failed. Check whether local storage is available.');}
-      finally{send.disabled=false;}
-    };
-    end.onclick=async()=>{
-      const session=active,snapshot=viewSnapshot();
-      if(!session || !snapshot || ending)return;
-      if(!confirm(say('Kijksessie beëindigen voor alle kijkers? Het eindresultaat blijft zichtbaar.','End the session for all viewers? The final results will remain visible.')))return;
-      ending=true;end.disabled=true;clearTimeout(retry);
-      try{
-        await TossShare.send(session,{...snapshot,at:Date.now(),closed:true});
-        localStorage.removeItem(key(session.channel));
-        if(sessionId()===session.channel){
-          delete state.previewChannel;active=null;lastSent='';writeAutosave();
-          end.hidden=true;copy.hidden=true;output.hidden=true;output.value='';send.hidden=false;
-          info.textContent=say('Kijksessie gesloten. Met een nieuwe kijklink kun je opnieuw delen.','Viewing session closed. Create a new link to share again.');
-        }
-      }catch{info.textContent=say('Afsluiten is niet gelukt. Controleer de verbinding en probeer het opnieuw.','Could not close the session. Check the connection and try again.');}
-      finally{ending=false;end.disabled=false;}
-    };
-    window.addEventListener('storage',event=>{
-      if(active && event.key===key(active.channel) && !event.newValue){
-        active=null;lastSent='';clearTimeout(retry);
-        end.hidden=true;copy.hidden=true;output.hidden=true;send.hidden=false;
-        info.textContent=say('Kijksessie gesloten.','Viewing session closed.');
-      }
-    });
-    document.getElementById('shareCopy').onclick=async()=>{try{await navigator.clipboard.writeText(output.value);info.textContent=say('Kijklink gekopieerd.','View link copied.');}catch{output.focus();output.select();}};
-    document.getElementById('shareClose').onclick=()=>dlg.close();
-    window.addEventListener('online',sync);
-  }
-
-  // init
-  if(entryPreview){
-    document.getElementById('appVersion').textContent=hostedSessions?'v3.3.0':'v3.1.0-preview';
-    PadelSessions.setup({
-      hosted:hostedSessions, language:()=>state.lang, poll:()=>state.signupPoll, hasDraw:()=>state.format==='koc'?!!state.koc?.assignment:state.step===3 && !!state.pools.length,
-      snapshot:()=>{if(editSession || ![3,4].includes(state.step))return null;const view=viewSnapshot();return view ? {state,view} : null;},
-      editing:()=>!!editSession || document.getElementById('kocEditDialog')?.open || document.body.classList.contains('presentation-mode') && !!document.activeElement?.matches('input'),
-      restore:doc=>{applyLoadedState(doc);if(document.body.classList.contains('presentation-mode'))renderLivePresentation();writeAutosave();},
-      save:writeAutosave
-    });
-  }else if(previewV3){document.getElementById('appVersion').textContent='v3.0.0-preview';import('./share-v3.js').then(setupSharing);}
+  // The hosted and offline planners share the same 3.3 release.
+  PadelSessions.setup({
+    hosted:hostedSessions, language:()=>state.lang, poll:()=>state.signupPoll, hasDraw:()=>state.format==='koc'?!!state.koc?.assignment:state.step===3 && !!state.pools.length,
+    snapshot:()=>{if(editSession || ![3,4].includes(state.step))return null;const view=viewSnapshot();return view ? {state,view} : null;},
+    editing:()=>!!editSession || document.getElementById('kocEditDialog')?.open || document.body.classList.contains('presentation-mode') && !!document.activeElement?.matches('input'),
+    restore:doc=>{applyLoadedState(doc);if(document.body.classList.contains('presentation-mode'))renderLivePresentation();writeAutosave();},
+    save:writeAutosave
+  });
   applyStaticTranslations();
   setupBulkNameTools();
   renderKoc();

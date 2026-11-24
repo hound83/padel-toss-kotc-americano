@@ -270,7 +270,7 @@
     };
     window.detachTossSession=()=>{
       clearTimeout(timer);sequence++;centralSession=null;secret=null;meta=null;base='';download.hidden=true;announce('');
-      if(location.pathname.startsWith('/b/') || location.pathname.startsWith('/beheer/sessie/'))history.replaceState(null,'','/?preview=3.1');
+      if(location.pathname.startsWith('/b/') || location.pathname.startsWith('/beheer/sessie/'))history.replaceState(null,'','/');
     };
     window.addEventListener('online',()=>schedule(0));
     document.addEventListener('visibilitychange',()=>{if(secret && (document.hidden || !meta?.closed))schedule(0);});
