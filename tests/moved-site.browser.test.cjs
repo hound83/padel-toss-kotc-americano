@@ -111,7 +111,23 @@ test('An installed GitHub copy replaces the old offline planner and retains loca
     await navigator.serviceWorker.register('./sw.js');await navigator.serviceWorker.ready;
   });
   await page.waitForFunction(()=>!!navigator.serviceWorker.controller);
-  upgraded=true;await page.reload();
+  // Capture the old controller before the update. Removing its cache alone does not prove that
+  // Chromium has finished activating its replacement and delivered the controllerchange event.
+  upgraded=true;
+  const control=page.evaluate(async()=>{
+    const reg=await navigator.serviceWorker.getRegistration();
+    const previous=navigator.serviceWorker.controller;
+    const takeover=new Promise(resolve=>{
+      navigator.serviceWorker.addEventListener('controllerchange',()=>resolve(),{once:true});
+    });
+    await reg.update();
+    if(navigator.serviceWorker.controller===previous)await takeover;
+    const active=navigator.serviceWorker.controller;
+    if(active.state!=='activated')await new Promise(resolve=>active.addEventListener('statechange',()=>{
+      if(active.state==='activated')resolve();
+    }));
+  });
+  await control;
   await page.waitForFunction(async()=>!(await caches.keys()).includes('padel-toss-americano-old'));
   await ctx.setOffline(true);await page.reload();
   await page.locator('#saved').waitFor();
