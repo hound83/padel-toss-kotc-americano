@@ -3,7 +3,7 @@ window.TossOrganizerHub=function({P,say,modeName,dateText,el,button,link,card,fi
   const main=document.getElementById('pollMain'), index=document.getElementById('hubIndex');
   const message=document.getElementById('message');
   let unlocked=false, selected=null, generation=0, signature='', cards=new Map();
-  let polls=[], sessions=[];
+  let polls=[], sessions=[],accountsPanel=null;
   const requestId=()=>new URLSearchParams(location.search).get('avond');
   const today=()=>new Intl.DateTimeFormat('sv-SE',{timeZone:'Europe/Amsterdam'}).format(new Date());
   const phaseLabel=phase=>phase==='open'?say('Aanmelding open','Signups open'):phase==='planning'?say('Indeling maken','Scheduling'):say('Gepubliceerd','Published');
@@ -25,7 +25,8 @@ window.TossOrganizerHub=function({P,say,modeName,dateText,el,button,link,card,fi
   }
   function creationInfo(item){
     const line=el('small',undefined,'creation-info');
-    line.append(item.createdBy?say('Aangemaakt door ','Created by ')+item.createdBy:say('Maker niet vastgelegd','Creator not recorded'));
+    const unknown=item.creatorRemoved?say('Organisator verwijderd','Organizer deleted'):say('Maker niet vastgelegd','Creator not recorded');
+    line.append(item.createdBy?say('Aangemaakt door ','Created by ')+item.createdBy:unknown);
     if(!item.createdBy && item.seriesOrganizer)line.append(say(' · Reeks van ',' · Series organizer ')+item.seriesOrganizer);
     if(Number.isFinite(item.createdAt)){
       const date=new Date(item.createdAt),locale=document.documentElement.lang==='en'?'en-GB':'nl-NL';
@@ -90,6 +91,43 @@ window.TossOrganizerHub=function({P,say,modeName,dateText,el,button,link,card,fi
     actions(body,link(say('Open planner','Open planner'),'/beheer/sessie/'+session.id),link(say('Open liveweergave','Open live view'),'/s/'+session.viewCode),removeButton('session',session));
     row.append(art,body);section.append(row);
   }
+  function organizerAccounts(){
+    const panel=el('details',undefined,'card organizer-accounts'),body=el('div');
+    const summary=el('summary',say('Organisatoren beheren','Manage organizers'));
+    panel.append(summary,body);panel.open=Boolean(accountsPanel?.open);
+    async function showAccounts(){
+      if(!panel.open || !panel.isConnected)return;
+      body.textContent=say('Namen ophalen…','Loading names…');
+      try{
+        const accounts=await allPages('/hub/organizers');
+        if(!panel.open || !panel.isConnected)return;
+        body.replaceChildren();
+        body.append(el('p',say('Een organisatornaam vervalt na drie maanden zonder gebruik. Zolang er een avond voor vandaag of later gepland staat, blijft de naam beschikbaar.',
+          'An organizer name expires after three months of inactivity. A scheduled event today or later keeps the account available.'),'hint'));
+        if(!accounts.length)body.append(el('p',say('Er zijn geen geregistreerde organisatoren.','There are no registered organizers.')));
+        for(const account of accounts.sort((a,b)=>a.name.localeCompare(b.name,document.documentElement.lang))){
+          const row=el('div',undefined,'account-row'),description=el('div');
+          description.append(el('strong',account.name),el('small',account.polls+(account.polls===1?say(' gekoppelde avond',' linked event'):say(' gekoppelde avonden',' linked events'))));
+          const remove=button(say('Verwijderen','Delete'),()=>{
+            modal(say('Organisator verwijderen?','Delete organizer?'),host=>{
+              host.append(el('strong',account.name),el('p',say(
+                'De geregistreerde naam komt vrij en de persoonlijke toegang vervalt. De geplande avonden en hun aanmeldlinks blijven beschikbaar. Je kunt ze openen via Beheer.',
+                'The registered name becomes available and personal access ends. The planned events and their signup links remain available. You can open them through the organizer dashboard.')));
+              return ()=>({id:account.id});
+            },async data=>{
+              try{await P.api('/hub/organizers/remove',data);}catch(error){if(error.status===401)lock();throw error;}
+              await refresh();await showAccounts();message.textContent=say('Organisator verwijderd.','Organizer deleted.');
+              return accountsPanel?.querySelector('summary');
+            },{remove:true});
+          });
+          remove.className='remove-item';remove.setAttribute('aria-label',say('Organisator '+account.name+' verwijderen','Delete organizer '+account.name));
+          row.append(description,remove);body.append(row);
+        }
+      }catch(error){if(error.status===401)lock();else if(panel.isConnected)body.textContent=friendly(error);}
+    }
+    panel.ontoggle=()=>{if(panel.open)showAccounts();else body.replaceChildren();};
+    return panel;
+  }
   function render(){
     const focused=document.activeElement, focusId=[...cards].find(([,v])=>v.toggle===focused)?.[0];
     const heldFocus=content.contains(focused)?focused:null;
@@ -117,13 +155,14 @@ window.TossOrganizerHub=function({P,say,modeName,dateText,el,button,link,card,fi
       index.append(section);
     }
     if(!dates.length)index.append(el('p',say('Er zijn nog geen geplande avonden.','There are no scheduled events yet.'),'hub-empty'));
+    accountsPanel=organizerAccounts();index.append(accountsPanel);
     const target=cards.get(selected);
     if(target)target.row.append(content);
     if(heldFocus?.isConnected)heldFocus.focus({preventScroll:true});
     else if(focusId)cards.get(focusId)?.toggle.focus({preventScroll:true});
   }
   function clear(){
-    ++generation;unlocked=false;signature='';selected=null;polls=[];sessions=[];
+    ++generation;unlocked=false;signature='';selected=null;polls=[];sessions=[];accountsPanel=null;
     main.append(content);select(null);index.replaceChildren();cards.clear();index.hidden=true;
     const dialog=document.getElementById('dialog');if(dialog.open)dialog.close();
     document.getElementById('fields').replaceChildren();message.textContent='';

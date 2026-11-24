@@ -316,3 +316,55 @@ test('the hub shows the original creator and time of each edition without guessi
   const old=(await send('polls/hub',undefined,site)).data.items.find(p=>p.id===personal.data.id);
   assert.equal(old.createdAt,null);assert.equal(old.createdBy,null);assert.equal(old.seriesOrganizer,'Mara V.');
 });
+
+test('only site organizers can delete a registered organizer, revoke access and release its name',async t=>{
+  const {send,login,settings}=await setup(t),site=await login();
+  const credentials={organizerName:'Mara V.',password:'abcdef'};
+  const created=await send('polls',{settings,...credentials}),id=created.data.id;
+  const personal={Cookie:created.headers.get('Set-Cookie').split(';')[0]},path='polls/'+id;
+  const token=(await send(path+'/login',{password:credentials.password})).data.token;
+  const other=await send('polls',{settings,organizerName:'Stef',password:credentials.password});
+  const accounts='polls/hub/organizers';
+  assert.equal((await send(accounts)).status,401);
+  assert.equal((await send(accounts,undefined,personal)).status,401);
+  const items=(await send(accounts,undefined,site)).data.items;
+  assert.equal(items.length,2);
+  const target=items.find(a=>a.name==='Mara V.');assert.equal(target.polls,1);
+  assert.doesNotMatch(JSON.stringify(items),/salt|verifier|password/);
+  assert.equal((await send(accounts+'/remove',{id:target.id},personal)).status,401);
+  assert.equal((await send(accounts+'/remove',{id:target.id},site)).status,200);
+  assert.equal((await send('polls/mine/login',credentials)).status,401);
+  assert.equal((await send('polls/mine',undefined,personal)).status,401);
+  assert.equal((await send(path+'/admin',undefined,{Authorization:'Bearer '+token})).status,401);
+  assert.equal((await send(path+'/login',{password:credentials.password})).status,401);
+  assert.equal((await send(path)).status,200);
+  const kept=(await send(path+'/admin',undefined,site)).data;
+  assert.equal(kept.createdBy,null);assert.equal(kept.creatorRemoved,true);
+  assert.equal((await send('polls/'+other.data.id+'/admin',undefined,site)).data.createdBy,'Stef');
+  const recreated=await send('polls',{settings,...credentials});assert.equal(recreated.status,201);
+  const newLogin={Cookie:recreated.headers.get('Set-Cookie').split(';')[0]};
+  assert.equal((await send(accounts+'/remove',{id:target.id},site)).status,200);
+  assert.deepEqual((await send('polls/mine',undefined,newLogin)).data.items.map(p=>p.id),[recreated.data.id]);
+  assert.equal((await send(path+'/admin',undefined,newLogin)).status,401);
+});
+
+test('organizer retention gives legacy names a full period, clamps month ends and protects scheduled evenings',async t=>{
+  const {app,send,settings,now}=await setup(t);
+  const {expireAccounts,registerUse,includeOlderAccounts,retentionEnd}=await import('../sessions/poll-accounts.mjs');
+  assert.equal(retentionEnd(Date.UTC(2027,0,31,12)),Date.UTC(2027,3,30,12));
+  assert.equal(retentionEnd(Date.UTC(2023,10,30,10)),Date.UTC(2024,1,29,10));
+  const end=retentionEnd(now),dueDate=new Date(end+86400000).toISOString().slice(0,10);
+  for(const [name,date] of [['Unoccupied',settings.date],['Planned',dueDate],['Renewed',settings.date],['Old account',settings.date]]){
+    assert.equal((await send('polls',{settings:{...settings,date},organizerName:name,password:'abcdef'})).status,201);
+  }
+  // Model a pre-release account which has no activity row.
+  app.sql.prepare("DELETE FROM poll_organizer_accounts WHERE organizer='old account'").run();
+  await includeOlderAccounts(app.DB,now+86400000);
+  const account=name=>app.sql.prepare('SELECT * FROM poll_organizers WHERE name_key=?').get(name);
+  await registerUse(app.DB,account('renewed'),end-60000);
+  await expireAccounts(app.DB,end-1);assert.ok(account('unoccupied'));
+  await expireAccounts(app.DB,end);assert.equal(account('unoccupied'),undefined);
+  assert.ok(account('old account'));assert.ok(account('renewed'));assert.ok(account('planned'));
+  await expireAccounts(app.DB,end+4*86400000);
+  assert.equal(account('planned'),undefined);assert.equal(account('old account'),undefined);assert.ok(account('renewed'));
+});

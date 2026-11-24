@@ -89,7 +89,7 @@
     $('submitEdit').textContent=submitLabel||(remove?say('Ja, verwijderen','Yes, delete'):say('Opslaan','Save'));
     $('submitEdit').className=remove?'confirm-remove':'primary';
     $('dismiss').textContent=remove?say('Annuleren','Cancel'):say('Sluiten','Close');
-    const read=build($('fields'));dialogAction=()=>save(read());$('dialog').showModal();
+    const read=build($('fields'));dialogAction=()=>save(read());if(!$('dialog').open)$('dialog').showModal();
     if(remove)$('dismiss').focus();
   }
   $('dismiss').onclick=()=>$('dialog').close();
@@ -265,7 +265,8 @@
   }
   function responseForm(mine){
     const section=card(say('Jouw reactie','Your response')),form=el('form');
-    const name=field(form,say('Jouw naam','Your name'),input('text',mine?.name||P.preference('toss-poll-name')||''));
+    try{localStorage.removeItem('toss-poll-name');}catch{}
+    const name=field(form,say('Jouw naam','Your name'),input('text',mine?.name||''));
     name.id='myName';name.autocomplete='given-name';name.maxLength=50;name.required=true;
     const controls=el('div',undefined,'actions'),own=el('p',undefined,'own-state');own.id='ownStatus';
     controls.setAttribute('role','group');controls.setAttribute('aria-label',say('Kies je reactie','Choose your response'));
@@ -280,6 +281,7 @@
     const pinBox=el('div');pinOption.append(pinBox);
     const pin=pinField(pinBox,say('Kies een pincode van vier cijfers','Choose a four-digit PIN'),true);
     const hint=el('small',say('Onthoud deze code voor deze avond.','Remember this code for this event.'));
+    hint.textContent+=' '+say('Naam en pincode vervallen met deze poll, doorgaans 14 dagen na de speeldatum.','Your name and PIN expire with this poll, usually 14 days after the playing date.');
     hint.id='signupPinHint';pin.setAttribute('aria-describedby',hint.id);pinBox.append(hint);
     const notice=el('p',undefined,'signup-warning');notice.setAttribute('aria-live','polite');
     const save=button(say('Reactie bevestigen','Confirm response'),vote,true);
@@ -326,7 +328,6 @@
     pending=true;sequence++;editor.form.inert=true;
     try{
       const data=await P.api(base,body,{person:P.personalKey(true)});
-      P.preference('toss-poll-name',data.mine.name);
       editor.selected=null;editor.wantPin.checked=false;editor.pin.value='';editor.name.value=data.mine.name;
       publicPage(data);$('message').textContent=say('Je reactie is opgeslagen.','Your response has been saved.');
     }catch(error){$('message').textContent=friendly(error);if(['locked','changed'].includes(error.message))await load(true);}
@@ -420,6 +421,17 @@
         try{await perform({action:'withdraw',id:entry.id,revision:poll.revision});$('dialog').close();}
         catch(error){$('dialogError').textContent=friendly(error);}
       }));
+    }
+    if(entry){
+      const remove=button(say('Speler verwijderen','Delete player'),()=>{
+        modal(say('Speler verwijderen?','Delete player?'),confirmation=>{
+          confirmation.append(el('strong',entry.name+' · '+poll.settings.title),el('p',say(
+            'Deze speler verdwijnt uit de aanmeldlijst van deze avond. Ook de eventuele pincode vervalt. Een vrijgekomen plek gaat naar de eerstvolgende speler. Een al gepubliceerd speelschema kun je afzonderlijk wijzigen.',
+            'This player will be removed from this event’s signup list. Their PIN, if set, will expire. The next eligible player takes a freed place. A published schedule can be edited separately.')));
+          return ()=>({action:'remove-entry',id:entry.id,revision:poll.revision});
+        },perform,{remove:true,format:poll.settings.format});
+      });
+      remove.className='remove-item';actions(root,remove);
     }
     return ()=>({action:'entry',revision:poll.revision,id:entry?.id,name:name.value.trim(),place:place.value,position:Number(pos.value),level:level?.value?Number(level.value):null,standing:standing.checked});
   }

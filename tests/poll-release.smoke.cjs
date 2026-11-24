@@ -72,6 +72,7 @@ const {chromium}=require('playwright');
     await page.locator('#language').tap();
     await page.getByLabel('Algemeen beheerwachtwoord',{exact:true}).waitFor();
     assert.equal((await page.request.get(new URL('/api/polls/hub',base).href)).status(),401);
+    assert.equal((await page.request.get(new URL('/api/polls/hub/organizers',base).href)).status(),401);
     await page.goto(base);
     await page.locator('.format-btn[data-format=toss]').tap();
     await page.locator('#continueTo2').tap();await page.locator('#generateBtn').tap();

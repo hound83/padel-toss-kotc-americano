@@ -1,8 +1,9 @@
+import {registerUse} from './poll-accounts.mjs';
 import {makeSignupPin,recoverSignup,signupPerson} from './poll-signup-pin.mjs';
 import {centralLogin} from './organizer.mjs';
 import {acceptablePassword,hash,random,verifier} from './poll-auth.mjs';
 import {currentOrganizer,organizerCredentials,organizerSession} from './poll-organizers.mjs';
-import {creatorName, emptyPoll, changeSettings, adminEntry, nameKey, prepareRoster, publicPoll, respond, invalid} from './poll-roster.mjs';
+import {creatorName, emptyPoll, changeSettings, adminEntry, nameKey, prepareRoster, publicPoll, removeEntry, respond, invalid} from './poll-roster.mjs';
 
 const day=86400000;
 const stmt=(db,sql,...args)=>db.prepare(sql).bind(...args);
@@ -14,9 +15,10 @@ const personKey=async(request,series)=>{
   if(!/^[a-f0-9]{64}$/.test(key))invalid('identity',403);
   return hash(series+'/'+key);
 };
-async function issueLogin(db,series,now){
+async function issueLogin(db,series,now,salt){
   const token=random(32);
-  await stmt(db,'INSERT INTO signup_logins VALUES(?,?,?)',await hash(token),series,now+12*3600000).run();
+  const issued=await stmt(db,'INSERT INTO signup_logins SELECT ?,id,? FROM signup_series WHERE id=? AND salt=?',await hash(token),now+12*3600000,series,salt).run();
+  if(!issued.meta.changes)invalid('login',401);
   return token;
 }
 async function loggedIn(db,request,series,now){
@@ -48,14 +50,15 @@ export async function pollApi(request,db,now,{json,requestJson,counter},adminPas
     }
     doc.createdAt=now;
     doc.createdBy=owner?.display_name || (viaHub && body.creatorName!==undefined ? creatorName(body.creatorName) : null);
+    if(owner)doc.creatorAccount=owner.accountId;
     const salt=owner?.salt||random(16);
     const password=owner?.verifier||await verifier(viaHub?random(32):acceptablePassword(body.password),salt);
     const writes=[stmt(db,'INSERT INTO signup_series VALUES(?,?,?)',series,salt,password),rowInsert(db,id,series,doc,now)];
-    if(owner)writes.push(stmt(db,'INSERT INTO poll_organizer_series(series,organizer) VALUES(?,?)',series,owner.name_key));
-    const session=owner && body.useSession!==true?await organizerSession(request,db,now,owner.name_key):null;
+    if(owner)writes.push(stmt(db,'INSERT INTO poll_organizer_series(series,organizer) VALUES(?,(SELECT organizer FROM poll_organizer_accounts WHERE id=?))',series,owner.accountId));
+    const session=owner && body.useSession!==true?await organizerSession(request,db,now,owner):null;
     await db.batch([...writes,...(session?.statements||[])]);
     if(owner){const response=json({id},201);return session?session.respond(response):response;}
-    return json(viaHub?{id}:{id,token:await issueLogin(db,series,now)},201);
+    return json(viaHub?{id}:{id,token:await issueLogin(db,series,now,salt)},201);
   }
   const route=path.match(/^\/api\/polls\/([a-f0-9]{14})(?:\/(login|admin|logout|organizer|recover))?$/);
   if(!route)invalid('missing',404);
@@ -77,11 +80,13 @@ export async function pollApi(request,db,now,{json,requestJson,counter},adminPas
     const series=await first(db,'SELECT salt,verifier FROM signup_series WHERE id=?',row.series);
     const body=await requestJson(request);
     if(typeof body.password!=='string' || body.password.length>128 || await verifier(body.password,series.salt)!==series.verifier)invalid('login',401);
-    return json({token:await issueLogin(db,row.series,now)});
+    const owner=await first(db,`SELECT o.name_key,o.salt FROM poll_organizer_series m
+      JOIN poll_organizers o ON m.organizer=o.name_key WHERE m.series=? AND o.salt=?`,row.series,series.salt);
+    if(owner)await registerUse(db,owner,now);
+    return json({token:await issueLogin(db,row.series,now,series.salt)});
   }
   const membership=(kind==='admin' || kind==='organizer') &&
-    await first(db,`SELECT m.organizer,o.display_name FROM poll_organizer_series m JOIN poll_organizers o ON o.name_key=m.organizer
-      WHERE m.series=?`,row.series);
+    await first(db,`SELECT m.organizer,o.display_name,o.salt AS accountSalt FROM poll_organizer_series m JOIN poll_organizers o ON o.name_key=m.organizer WHERE m.series=?`,row.series);
   if(kind==='organizer'){
     if(request.method!=='POST')invalid('method',405);
     // Linking a legacy series needs both its existing poll login and the organizer's credentials.
@@ -91,17 +96,17 @@ export async function pollApi(request,db,now,{json,requestJson,counter},adminPas
     const owner=await organizerCredentials(request,db,now,body,counter,!membership);
     if(membership && membership.organizer!==owner.name_key)invalid('organizer-linked',409);
     await stmt(db,`INSERT INTO poll_organizer_series(series,organizer)
-      SELECT series,? FROM signup_polls WHERE id=? AND expires>? ON CONFLICT(series) DO NOTHING`,owner.name_key,id,now).run();
+      SELECT series,(SELECT organizer FROM poll_organizer_accounts WHERE id=?) FROM signup_polls WHERE id=? AND expires>? ON CONFLICT(series) DO NOTHING`,owner.accountId,id,now).run();
     const linked=await first(db,'SELECT organizer FROM poll_organizer_series WHERE series=?',row.series);
     if(linked?.organizer!==owner.name_key)invalid('organizer-linked',409);
     if(body.useSession===true)return json({ok:true});
-    const session=await organizerSession(request,db,now,owner.name_key);
+    const session=await organizerSession(request,db,now,owner);
     await db.batch(session.statements);
     return session.respond(json({ok:true}));
   }
   const siteAdmin=kind==='admin' && await centralLogin(request,db,now,adminPassword);
-  const ownPoll=kind==='admin' && !siteAdmin && membership &&
-    (await currentOrganizer(request,db,now))?.name_key===membership.organizer;
+  const personalLogin=kind==='admin' && !siteAdmin && membership && await currentOrganizer(request,db,now);
+  const ownPoll=personalLogin && personalLogin.name_key===membership.organizer && personalLogin.salt===membership.accountSalt;
   if(kind && !siteAdmin && !ownPoll)await loggedIn(db,request,row.series,now);
   async function organizerView(version,doc){
     const view=adminView(version,doc);
@@ -110,6 +115,7 @@ export async function pollApi(request,db,now,{json,requestJson,counter},adminPas
     if(siteAdmin){
       view.createdAt=doc.createdAt??null;
       view.createdBy=doc.createdBy??null;
+      view.creatorRemoved=Boolean(doc.creatorRemoved);
       view.seriesOrganizer=membership?.display_name??null;
       // A central login opens the planner with its cookie. Never hand a long-lived
       // owner link to that browser as a side effect of viewing a signup list.
@@ -186,6 +192,10 @@ export async function pollApi(request,db,now,{json,requestJson,counter},adminPas
             row.series,doc.settings.format,nameKey(entry.name),entry.person,id,row.revision));
           entry.standing=body.standing;
         }
+      }else if(body.action==='remove-entry'){
+        const removed=removeEntry(doc,body.id);
+        if(removed.person)extra.push(stmt(db,`DELETE FROM signup_recovered_devices WHERE poll=? AND person=?
+          AND EXISTS(SELECT 1 FROM signup_polls WHERE id=? AND revision=?)`,id,removed.person,id,row.revision));
       }else if(body.action==='withdraw'){
         const entry=doc.entries.find(e=>e.id===body.id);
         if(!entry)invalid('missing',404);
@@ -219,6 +229,7 @@ export async function pollApi(request,db,now,{json,requestJson,counter},adminPas
           doc.next=random(7);
           const nextPoll=emptyPoll(next);
           nextPoll.createdAt=now;
+          if(ownPoll)nextPoll.creatorAccount=personalLogin.accountId;
           nextPoll.createdBy=ownPoll?membership.display_name:body.creatorName===undefined?null:creatorName(body.creatorName);
           extra.push(stmt(db,'INSERT INTO signup_polls(id,series,revision,expires,document) SELECT ?,?,1,?,? WHERE EXISTS(SELECT 1 FROM signup_polls WHERE id=? AND revision=?)',
             doc.next,row.series,ttl(next,now),JSON.stringify(nextPoll),id,row.revision));
