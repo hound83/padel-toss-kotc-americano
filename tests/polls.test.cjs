@@ -72,14 +72,14 @@ test('private series decision, password, phases, repeat, stale updates and expir
   assert.equal((await f.send(f.root)).status,404);
   assert.equal(f.app.sql.prepare('SELECT count(*) AS n FROM signup_holds').get().n,0);
 });
-test('simultaneous signups fill only the available places, retries cannot create duplicates, and queue changes get a new position',async t=>{
+test('simultaneous signups fill only the available places, retries cannot create duplicates, and quick corrections preserve waitlist order',async t=>{
   const f=await fixture(t);
   const results=await Promise.all(Array.from({length:19},(_,i)=>f.vote(i+1,'P'+i)));assert.ok(results.every(x=>x.status===200),JSON.stringify(results.map(x=>x.status)));
   const before=(await f.send(f.root)).data;assert.equal(before.groups.in.length,16);assert.equal(before.groups.wait.length,3);
   assert.equal(new Set([...before.groups.in,...before.groups.wait].map(x=>x.name)).size,19);
   const [a,b]=before.groups.wait.map(x=>x.name);
   const k=Number(a.slice(1))+1;await f.vote(k,a,'reserve');await f.vote(k,a,'yes');await f.vote(k,a,'yes');
-  const after=(await f.send(f.root)).data;assert.equal(after.groups.wait.at(-1).name,a);assert.equal(after.groups.wait[0].name,b);
+  const after=(await f.send(f.root)).data;assert.equal(after.groups.wait[0].name,a);assert.equal(after.groups.wait[1].name,b);
   const first=(await f.read()).entries.find(x=>x.name===a);
   await f.act({action:'entry',id:first.id,name:a,place:'in',position:2});
   const moved=(await f.send(f.root)).data;assert.equal(moved.groups.in[1].name,a);assert.equal(moved.groups.in.length,16);
@@ -157,4 +157,32 @@ test('a later Yes gets a new position once ten minutes have elapsed',async()=>{
     assert.equal(jan.at,start+minute+delay);
     assert.deepEqual(doc.entries.filter(e=>e.place==='wait').map(e=>e.name),['Pim','Jan']);
   }
+});
+
+test('a confirmed correction restores the old time for ten minutes without displacing a promoted player',async()=>{
+  const {emptyPoll,respond,adminEntry,publicPoll}=await import('../sessions/poll-roster.mjs');
+  const start=Date.UTC(2026,10,24,18),minute=60000;
+  const doc=emptyPoll({title:'Training',format:'koc',date:'2026-11-26',start:'21:00',end:'23:00',courts:2,capacity:4});
+  const vote=(name,answer,at)=>respond(doc,name,{name,answer},at,false);
+  const player=name=>doc.entries.find(e=>e.name===name);
+  ['Jan','Bo','Kim','Sam','Noor','Pim'].forEach((name,i)=>vote(name,'yes',start+i));
+  vote('Jan','no',start+minute);
+  assert.equal(player('Noor').place,'in');
+  assert.equal(publicPoll(doc,'id','Jan',start+minute).mine.correction.until,start+11*minute);
+  vote('Jan','yes',start+11*minute-1);
+  assert.equal(player('Jan').at,start);assert.equal(player('Noor').place,'in');
+  assert.deepEqual(doc.entries.filter(e=>e.place==='wait').map(e=>e.name),['Jan','Pim']);
+  vote('Jan','no',start+11*minute-1);
+  assert.equal(player('Jan').correction.until,start+11*minute);
+  vote('Jan','yes',start+11*minute);
+  assert.deepEqual(doc.entries.filter(e=>e.place==='wait').map(e=>e.name),['Pim','Jan']);
+  vote('Bo','no',start+12*minute);vote('Bo','yes',start+13*minute);
+  assert.equal(player('Pim').place,'in');assert.equal(player('Bo').at,start+1);
+  vote('Pim','no',start+14*minute);vote('Sam','no',start+14*minute+1);
+  vote('Kim','no',start+14*minute+2);vote('Kim','yes',start+15*minute);
+  assert.equal(player('Kim').place,'in');assert.equal(player('Kim').at,start+2);
+  vote('Kim','no',start+16*minute);
+  adminEntry(doc,{id:player('Kim').id,name:'Kim',place:'review',position:1},start+16*minute);
+  vote('Kim','yes',start+17*minute);
+  assert.equal(player('Kim').place,'review');assert.equal(player('Kim').at,start+17*minute);
 });

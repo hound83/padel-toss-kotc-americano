@@ -28,7 +28,7 @@ function rowInsert(db,id,series,doc,now){
 }
 function adminView(row,doc){
   return {id:row.id,revision:row.revision,settings:doc.settings,phase:doc.phase,viewCode:doc.viewCode,next:doc.next||null,plannerKey:doc.plannerKey||null,
-    entries:doc.entries.map(({person,pin,...visible})=>visible)};
+    entries:doc.entries.map(({person,pin,correction,...visible})=>visible)};
 }
 function checkDate(config,now){
   if(Date.parse(config.date)>now+370*day)invalid('date');
@@ -128,7 +128,7 @@ export async function pollApi(request,db,now,{json,requestJson,counter},adminPas
   let person=await signupPerson(db,id,device);
   if(request.method==='GET'){
     const doc=prepareRoster(JSON.parse(row.document));
-    return json(kind?await organizerView(row,doc):publicPoll(doc,id,person));
+    return json(kind?await organizerView(row,doc):publicPoll(doc,id,person,now));
   }
   if(request.method!=='POST')invalid('method',405);
   const body=await requestJson(request);
@@ -165,7 +165,7 @@ export async function pollApi(request,db,now,{json,requestJson,counter},adminPas
           own.pin=pendingPin;
         }
       }
-      if(JSON.stringify(doc)===row.document)return json(publicPoll(doc,id,person));
+      if(JSON.stringify(doc)===row.document)return json(publicPoll(doc,id,person,now));
       if(body.action!=='set-pin')doc.lastAccepted=accepted;
       // Registration on a fresh device must not race with recovery of someone else's response.
       writeGuard=' AND NOT EXISTS(SELECT 1 FROM signup_recovered_devices WHERE poll=? AND device=? AND person<>?)';
@@ -239,7 +239,7 @@ export async function pollApi(request,db,now,{json,requestJson,counter},adminPas
     const last=(await db.batch([...extra,updated])).at(-1);
     if(last.meta.changes){
       if(kind && body.action==='repeat')return json({id:doc.next});
-      return json(kind?await organizerView({...row,revision:row.revision+1},doc):publicPoll(doc,id,person));
+      return json(kind?await organizerView({...row,revision:row.revision+1},doc):publicPoll(doc,id,person,now));
     }
     if(kind)invalid('changed',409);
     await new Promise(resolve=>setTimeout(resolve,2+Math.random()*Math.min(50,4*(attempt+1))));

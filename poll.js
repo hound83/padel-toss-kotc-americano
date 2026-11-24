@@ -306,9 +306,15 @@
     open.hidden=Boolean(mine);
     const changing=selected!==mine?.answer;
     const givesUp=changing && ((mine?.place==='in' && ['reserve','no'].includes(selected)) || (mine?.place==='wait' && ['reserve','no'].includes(selected)) || (mine?.place==='reserve' && selected==='no'));
-    notice.textContent=givesUp?say('Na bevestigen geef je je huidige plek op. Kies je later opnieuw ‘Ja’, dan telt het tijdstip van die nieuwe reactie.',
-      'Confirming gives up your current place. If you choose Yes again later, the time of that new response counts.'):'';
-    notice.hidden=!givesUp;
+    const correction=mine?.correction;
+    if(correction && correction.until>Date.now()){
+      const time=new Intl.DateTimeFormat(en?'en-GB':'nl-NL',{hour:'2-digit',minute:'2-digit',second:'2-digit',timeZone:'Europe/Amsterdam'}).format(correction.until);
+      const answer=correction.answer==='yes'?say('Ja','Yes'):say('Alleen reserve','Standby only');
+      notice.textContent=say('Bevestig ‘'+answer+'’ vóór '+time+' om je eerdere aanmeldtijd terug te krijgen. Iemand die al is doorgeschoven houdt de plek.',
+        'Confirm “'+answer+'” before '+time+' to recover your previous signup time. Anyone already promoted keeps their place.');
+    }else notice.textContent=givesUp?say('Na bevestigen komt je plek vrij. Binnen 10 minuten kun je terug met je eerdere aanmeldtijd. Iemand die al is doorgeschoven houdt de plek.',
+      'Confirming frees your place. You have 10 minutes to return with your previous signup time. Anyone already promoted keeps their place.'):'';
+    notice.hidden=!notice.textContent;
     save.disabled=pending || !selected || !(changing || (mine && name.value.trim()!==mine.name) || !pin.disabled);
   }
   async function vote(){
