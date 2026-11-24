@@ -21,7 +21,7 @@ async function setup(t,doc=fixture()){
     const r=await api(new Request('https://club.test'+path,{method:body===undefined?'GET':'POST',headers,body:body===undefined?undefined:JSON.stringify(body)}),app.DB,now);
     return {status:r.status,...(r.status===304?{}:await r.json())};
   }
-  const created=await send('/api/sessions',doc);assert.equal(created.status,201);
+  const created=await send('/api/sessions',{...doc,playDate:new Date(now).toISOString().slice(0,10)});assert.equal(created.status,201);
   return {app,created,send,clock:delta=>{now+=delta;},cleanup:()=>cleanup(app.DB,now),owner:body=>send('/api/manage',body,created.secret),
     visitor:(code,body,h)=>send('/api/s/'+code,body,null,h)};
 }

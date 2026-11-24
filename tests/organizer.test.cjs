@@ -66,10 +66,17 @@ test('all poll series and separate sessions can be managed; the overview sends o
   app.sql.prepare('INSERT INTO sessions VALUES (?,?,1,?,?,0,?,?,?)').run(id,ownerHash,'view','epoch',now+3600000,now,doc);
   app.sql.prepare('INSERT INTO links VALUES (?,?,?,?,?)').run(code,id,'view','','');
   const standalone=await send('polls/hub/sessions',undefined,auth);
-  assert.equal(standalone.status,200);assert.equal(standalone.data.items[0].title,'Zaterdagavond');
+  assert.deepEqual(standalone.data.items,[]);
+  const legacyView=await send('manage/'+id,undefined,auth);
+  assert.equal(legacyView.data.playDate,null);
+  assert.equal((await send('manage/'+id,{action:'schedule',revision:1,playDate:'2026-02-31'},auth)).status,422);
+  const promoted=await send('manage/'+id,{action:'schedule',revision:1,playDate:settings.date},auth);
+  assert.equal(promoted.data.playDate,settings.date);assert.equal(promoted.data.links[0].code,code);
+  const dated=(await send('polls/hub/sessions',undefined,auth)).data.items;
+  assert.equal(dated.length,1);assert.equal(dated[0].date,settings.date);
   assert.equal((await send('manage/'+id,undefined,{Authorization:'Bearer '+first.token})).status,401);
   assert.equal((await send('manage/'+id,undefined,auth)).data.state.format,'koc');
-  assert.equal((await send('manage/'+id,{action:'close',revision:1},auth)).data.closed,true);
+  assert.equal((await send('manage/'+id,{action:'close',revision:2},auth)).data.closed,true);
   // A published poll already contains the session; there must be only one card.
   const published=await send(path,{action:'publish',revision:3,sessionKey:ownerSecret},auth);
   assert.equal(published.status,200);assert.equal(published.data.plannerId,id);assert.equal(published.data.plannerKey,undefined);
@@ -119,7 +126,7 @@ test('removing a schedule revokes its links and deleting a published event prese
   const {app,send,login,settings}=await setup(t), auth=await login();
   const schedule={state:{format:'koc',koc:{}},view:{title:'Zaterdag',rounds:[{n:1,rows:[
     {label:'Baan 1',slot:'baan1',teams:[['Ada'],['Bram']]}]}],boards:[],playerIds:{Ada:'a',Bram:'b'}}};
-  const created=(await send('sessions',schedule)).data, standalone=(await send('polls/hub/sessions',undefined,auth)).data.items[0];
+  const created=(await send('sessions',{...schedule,playDate:settings.date})).data, standalone=(await send('polls/hub/sessions',undefined,auth)).data.items[0];
   const owner={Authorization:'Bearer '+created.secret}, path='polls/hub/remove';
   const remove={kind:'session',id:standalone.id,revision:standalone.revision};
   const edit=await send('manage',{action:'mode',mode:'group',revision:1},owner);
@@ -133,7 +140,7 @@ test('removing a schedule revokes its links and deleting a published event prese
   for(const endpoint of ['s/'+standalone.viewCode,'s/'+scoreCode,'manage/'+standalone.id])assert.equal((await send(endpoint,undefined,auth)).status,404);
   assert.equal((await send('manage',undefined,owner)).status,404);
 
-  const shared=(await send('sessions',schedule)).data;
+  const shared=(await send('sessions',{...schedule,playDate:settings.date})).data;
   const listed=(await send('polls/hub/sessions',undefined,auth)).data.items[0];
   const events=[];
   for(const title of ['Woensdag','Zaterdag']){
@@ -154,4 +161,40 @@ test('removing a schedule revokes its links and deleting a published event prese
   assert.deepEqual((await send('polls/hub/sessions',undefined,auth)).data.items,[]);
   assert.equal(app.sql.prepare('SELECT COUNT(*) AS n FROM links').get().n,0);
   assert.equal(app.sql.prepare('SELECT COUNT(*) AS n FROM signup_series').get().n,0);
+});
+
+test('only explicitly dated shares enter the planner and a poll always owns its published date',async t=>{
+  const {app,login,send,settings,now,password}=await setup(t),auth=await login();
+  const day=86400000,date=new Date(now+22*day).toISOString().slice(0,10);
+  const doc={state:{format:'koc',koc:{}},view:{title:'KOC',rounds:[{n:1,rows:[]}],boards:[],playerIds:{}}};
+  for(const playDate of [undefined,'','not a date','2026-02-31',new Date(now+400*day).toISOString().slice(0,10)]){
+    const res=await send('sessions',{...doc,playDate});
+    assert.equal(res.status,422);assert.equal(res.data.error,'date');
+  }
+  assert.equal(app.sql.prepare('SELECT count(*) n FROM sessions').get().n,0);
+  const manual=(await send('sessions',{...doc,playDate:date})).data;
+  assert.ok(manual.expires>=Date.parse(date)+7*day);
+  const owner={Authorization:'Bearer '+manual.secret};
+  const revised=await send('manage',{action:'save',revision:1,document:{...doc,view:{...doc.view,title:'KOC training'}}},owner);
+  assert.equal(revised.data.playDate,date);
+  const code=manual.links[0].code;
+  const future=await send('s/'+code,undefined,{},password,now+18*day);
+  assert.equal(future.status,200);assert.equal(future.data.view.playDate,date);
+  assert.equal(future.data.view.planning,undefined);
+  const poll=(await send('polls',{settings:{...settings,date},central:true},auth)).data;
+  const manage='polls/'+poll.id+'/admin';
+  await send(manage,{action:'plan',revision:1},auth);
+  const imported=(await send('sessions',{...doc,state:{...doc.state,signupPoll:{id:poll.id}},playDate:'2000-01-01'})).data;
+  assert.equal(imported.playDate,date);
+  const list=()=>send('polls/hub/sessions',undefined,auth).then(res=>res.data.items.map(s=>s.viewCode));
+  assert.deepEqual(await list(),[code]);
+  const published=await send(manage,{action:'publish',revision:2,sessionKey:imported.secret},auth);
+  assert.equal(published.data.phase,'published');
+  const later=new Date(now+35*day).toISOString().slice(0,10);
+  const moved=await send(manage,{action:'settings',revision:3,settings:{...settings,date:later}},auth);
+  assert.equal(moved.data.settings.date,later);
+  const view=await send('s/'+imported.links[0].code,undefined,{},password,now+33*day);
+  assert.equal(view.data.view.playDate,later);
+  await send(manage,{action:'reopen',revision:4},auth);
+  assert.deepEqual(await list(),[code]);
 });

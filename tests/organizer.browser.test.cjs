@@ -131,7 +131,7 @@ test('one central login reaches existing and new events, live schedules, and the
   await host.waitForFunction(old=>new URL(location.href).searchParams.get('avond')!==old,id);
   await host.getByRole('button',{name:'Speler toevoegen'}).waitFor();assert.equal(await host.locator('#groups li').count(),0);
   await host.getByRole('link',{name:'Nieuwe avond'}).click();
-  assert.equal(await host.getByLabel('Beheerwachtwoord voor deze avond',{exact:true}).count(),0);
+  assert.equal(await host.getByLabel('Kies een beheercode om deze poll later te openen',{exact:true}).count(),0);
   const title2='Donderdag '+randomBytes(4).toString('hex');
   await host.getByLabel('Naam van de avond').fill(title2);await host.getByRole('button',{name:'Aanmelding openen'}).click();
   await host.getByRole('button',{name:'Speler toevoegen'}).waitFor();
@@ -141,10 +141,11 @@ test('one central login reaches existing and new events, live schedules, and the
   const names=['A','B','C','D','E','F','G','H'];
   const plan={state:{format:'toss',activeRoster:names,activeRosterLevels:[],scores:{},laterAdditions:{},pools:[{id:'main',players:names,rounds:[]}]},
     view:{title:'Los '+id,en:false,rounds:[{n:1,rows:[]}],boards:[],playerIds:Object.fromEntries(names.map((n,i)=>[n,'p'+i]))}};
-  const shared=await guest.request.post(url+'/api/sessions',{data:plan});assert.equal(shared.status(),201);
+  const shared=await guest.request.post(url+'/api/sessions',{data:{...plan,playDate:date}});assert.equal(shared.status(),201);
   const viewerCode=(await shared.json()).links[0].code;
   await host.reload();const standalone=host.locator('.hub-session').filter({hasText:'Los '+id});
   await standalone.getByRole('link',{name:'Open live view'}).waitFor();
+  assert.equal(await standalone.locator('..').getByRole('heading',{level:2}).innerText(),'Today');
   const plannerPath=await standalone.getByRole('link',{name:'Open planner'}).getAttribute('href');
   assert.match(plannerPath,/^\/beheer\/sessie\/[a-f0-9-]{36}$/);
   assert.equal((await guest.request.get(url+'/api/manage/'+plannerPath.split('/').pop())).status(),401);

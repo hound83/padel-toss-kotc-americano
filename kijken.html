@@ -41,7 +41,7 @@ article h3{display:flex;align-items:center;justify-content:space-between;gap:.55
 #entryForm input{min-width:0;width:100%;font:inherit;font-size:1.25rem;padding:.45rem;border:1px solid #879bab;border-radius:.45rem}
 #entryForm .actions{display:flex;flex-wrap:wrap;gap:.45rem}#entrySend{background:var(--navy);color:white}
 .score-heading{display:flex;align-items:center;gap:.75rem}.score-heading h2{margin:0}.score-heading img{object-fit:contain}</style></head><body>
-<header><img id="modeArt" src="./icon.svg" alt=""><div><h1 id="title">Speelschema</h1><div class="meta"><span id="updated"></span><span id="connection" role="status">Kijklink openen…</span></div></div></header>
+<header><img id="modeArt" src="./icon.svg" alt=""><div><h1 id="title">Speelschema</h1><div class="meta"><span id="playDate" hidden></span><span id="updated"></span><span id="connection" role="status">Kijklink openen…</span></div></div></header>
 <div class="filter"><label id="label" for="player" hidden>Speler</label><select id="player" hidden></select><button id="everyone" hidden type="button">Toon iedereen</button></div>
 <p id="entryHint" hidden></p><p id="entryStatus" role="status"></p><main id="rounds"></main>
 <footer class="viewer-footer"><a class="organizer-button" data-organizer-link href="https://padel.hound83.workers.dev/beheer">Beheer</a></footer>
@@ -170,6 +170,8 @@ article h3{display:flex;align-items:center;justify-content:space-between;gap:.55
    TossPoll.organizerLinks(en);
    $('everyone').textContent=en?'Show everyone':'Toon iedereen';$('everyone').hidden=!player || !!restrictedPlayer;
    $('title').textContent=s.title;
+   $('playDate').hidden=!s.playDate;
+   $('playDate').textContent=s.playDate?new Date(s.playDate+'T12:00:00Z').toLocaleDateString(en?'en-GB':'nl-NL',{weekday:'long',day:'numeric',month:'long',timeZone:'UTC'}):'';
    const mode=s.format || (/court|koc/i.test(s.title)?'koc':/americano/i.test(s.title)?'americano':/split|gesplitst/i.test(s.title)?'splitToss':'toss');
    $('entryArt').src=$('modeArt').src=TossPoll.art(mode,en);
    $('updated').textContent=(en?'Updated ':'Bijgewerkt ')+new Date(s.at).toLocaleString(en?'en-GB':'nl-NL',{dateStyle:'short',timeStyle:'short'});

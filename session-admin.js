@@ -62,7 +62,7 @@
       }
     }
     let finalState=null;
-    function setMeta(value){meta={revision:value.revision,expires:value.expires,mode:value.mode,closed:value.closed,links:value.links};}
+    function setMeta(value){meta={revision:value.revision,expires:value.expires,mode:value.mode,closed:value.closed,links:value.links,playDate:value.playDate};}
     function restore(remote){
       applying=true;
       try{setMeta(remote);app.restore(remote.state);base=JSON.stringify(app.snapshot());finalState=remote.closed?structuredClone(remote.state):null;}
@@ -81,10 +81,13 @@
     }
     function draw(){
       drawPollButtons();if(!dialog.open)return;
-      const doc=app.snapshot(), fields=!!meta,closed=!!meta?.closed;
+      const doc=app.snapshot(),poll=app.poll?.(),needsDate=!meta?.playDate && !poll,fields=!!meta && !needsDate,closed=!!meta?.closed;
+      $('shareDateGroup').hidden=!app.hosted || !needsDate || (!doc && !meta);
+      $('shareDateLabel').textContent=say('Speeldatum','Playing date');
+      $('shareDate').max=new Date(Date.now()+370*86400000).toISOString().slice(0,10);
       const canEnter=!!doc?.view.rounds.some(rd=>rd.rows.some(row=>row.slot));
-      $('sharePublish').hidden=fields || !doc;$('sharePublish').disabled=!app.hosted || busy;
-      $('sharePublish').textContent=say('Sessie online zetten','Start online session');
+      $('sharePublish').hidden=fields || (!doc && !meta);$('sharePublish').disabled=!app.hosted || busy;
+      $('sharePublish').textContent=needsDate?say('Inplannen en delen','Schedule and share'):say('Publiceer op de aanmeldlink','Publish to the signup link');
       $('viewCaption').hidden=$('shareUrl').hidden=$('shareCopy').hidden=!fields;
       $('viewCaption').textContent=say('Kijklink','View link');
       $('shareUrl').value=guestUrl(meta?.links.find(l=>l.role==='view')?.code);
@@ -113,11 +116,13 @@
       $('shareEnd').textContent=say('Sessie beëindigen','End session');
       if(!app.hosted)info.textContent=say('Online delen is beschikbaar op de sessiesite.','Online sharing is available on the session site.');
       else if(!doc && !fields)info.textContent=say('Maak eerst een indeling.','Generate a schedule first.');
-      else if(closed)info.textContent=say('Sessie beëindigd. De eindstand is nog zeven dagen te bekijken.','Session closed. The final results can be viewed for seven days.');
-      else info.textContent=fields?say('Online opgeslagen. De laptop kan dicht. De sessie vervalt zeven dagen na de laatste wijziging.',
-        'Saved online. The laptop can close. The session expires seven days after the last change.'):
-        say('Bij online delen worden het schema, de spelersnamen en de uitslagen zeven dagen na de laatste wijziging bewaard.',
-        'Sharing online stores the schedule, player names and results until seven days after the last change.');
+      else if(needsDate)info.textContent=meta?
+        say('Kies een speeldatum om dit bestaande schema in de planner te zetten. De gedeelde links blijven werken.','Choose a date to add this existing schedule to the planner. Its shared links stay valid.'):
+        say('Kies wanneer je speelt. Bij het delen verschijnt de avond op die datum in de planner.','Choose when you play. Sharing adds the event to the planner on that date.');
+      else if(fields){
+        const expiry=new Date(meta.expires).toLocaleDateString(app.language()==='en'?'en-GB':'nl-NL',{day:'numeric',month:'long',year:'numeric'});
+        info.textContent=(closed?say('Sessie beëindigd. Eindstand beschikbaar tot ','Session closed. Results available until '):say('Online opgeslagen. Links geldig tot ','Saved online. Links valid until '))+expiry+'.';
+      }else info.textContent=say('Het schema verschijnt op de bestaande aanmeldlink van deze avond.','The schedule will appear on the existing signup link for this event.');
     }
     async function getEntryLink(){
       const player=meta.mode==='personal'?$('entryPlayer').value:'';
@@ -187,8 +192,14 @@
       }finally{busy=false;draw();if(secret && !meta?.closed)schedule(queued?10:800);queued=false;}
     }
     async function publish(){
-      const doc=app.snapshot();if(!doc || !app.hosted)return;
-      const poll=app.poll?.();let admin,token;
+      if(!app.hosted)return;
+      const poll=app.poll?.();
+      if(secret && meta && !meta.playDate && !poll){
+        setMeta(await request('/api/manage',{action:'schedule',revision:meta.revision,playDate:$('shareDate').value}));
+        return;
+      }
+      const doc=app.snapshot();if(!doc)return;
+      let admin,token;
       if(poll){
         try{
           token=TossPoll.token(poll.id);
@@ -203,7 +214,7 @@
         }
       }
       if(!secret){
-        const signature=JSON.stringify(doc),result=await request('/api/sessions',doc);
+        const signature=JSON.stringify(doc),result=await request('/api/sessions',{...doc,playDate:admin?.settings.date||$('shareDate').value});
         secret=result.secret;setMeta(result);base=signature;history.replaceState(null,'','/b/'+secret);
         app.save();announce('');
       }
@@ -223,7 +234,10 @@
         }
       }
     }
-    $('sharePublish').onclick=()=>action(publish);
+    $('sharePublish').onclick=()=>{
+      if(!$('shareDateGroup').hidden && !$('shareDate').reportValidity())return;
+      action(publish);
+    };
     $('entryMode').onchange=async()=>{
       const mode=$('entryMode').value;modePending=mode;draw();
       await action(async()=>{
@@ -235,7 +249,7 @@
     };
     $('entryPlayer').onchange=()=>action(getEntryLink);
     $('shareEnd').onclick=()=>{
-      if(!meta || meta.closed || !confirm(say('Sessie beëindigen voor alle spelers? De eindstand blijft zeven dagen zichtbaar.','End the session for all players? Results stay visible for seven days.')))return;
+      if(!meta || meta.closed || !confirm(say('Sessie beëindigen voor alle spelers? De gedeelde links tonen daarna de eindstand.','End the session for all players? Shared links will show the final results.')))return;
       action(async()=>{
         const doc=app.snapshot();
         if(doc && JSON.stringify(doc)!==base){
@@ -269,6 +283,7 @@
       }if(doc && JSON.stringify(doc)!==base){record(doc,meta.revision);schedule(300);}
     };
     window.detachTossSession=()=>{
+      $('shareDate').value='';
       clearTimeout(timer);sequence++;centralSession=null;secret=null;meta=null;base='';download.hidden=true;announce('');
       if(location.pathname.startsWith('/b/') || location.pathname.startsWith('/beheer/sessie/'))history.replaceState(null,'','/');
     };
