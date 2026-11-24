@@ -8,22 +8,30 @@ window.TossMyPolls=({P,say,modeName,dateText,el,button,link,card,field,input,act
       const signed=el('p',say('Ingelogd als ','Signed in as '));signed.append(el('strong',known));root.append(signed);
       return ()=>({organizerName:known,useSession:true});
     }
-    const grid=el('div',undefined,'grid');root.append(grid);
+    const grid=el('div',undefined,'grid organizer-credentials');root.append(grid);
     const name=field(grid,say('Jouw naam','Your name'),input('text'));
     name.autocomplete='username';name.required=true;name.maxLength=80;name.placeholder=say('Bijvoorbeeld Werner','For example, Werner');
     const password=field(grid,say('Wachtwoord','Password'),input('password'));
     password.autocomplete=setup?'new-password':'current-password';password.required=true;password.minLength=8;password.maxLength=128;
     if(setup){
-      const hint=el('small',say('Kies bij je eerste poll een wachtwoord van minimaal 8 tekens. Organiseer je al avonden? Gebruik dan dezelfde naam en hetzelfde wachtwoord.',
-        'For your first poll, choose a password of at least 8 characters. If you already organize events, use the same name and password.'));
-      hint.id='organizerPasswordHint';password.setAttribute('aria-describedby',hint.id);root.append(hint);
+      const hints=[
+        [name,say('Kies bij je eerste poll een naam die nog vrij is. Is Werner bezet? Gebruik bijvoorbeeld Werner V.',
+          'Choose an available name for your first poll. If Werner is taken, try Werner V.')],
+        [password,say(`Kies ${password.minLength} tot ${password.maxLength} tekens. Alleen je naam moet uniek zijn. Gebruik voor je volgende polls hetzelfde wachtwoord.`,
+          `Use ${password.minLength} to ${password.maxLength} characters. Only your name needs to be unique. Use the same password for your next polls.`)]
+      ];
+      for(const [control,text] of hints){
+        const hint=el('small',text);
+        hint.id=control.getAttribute('aria-labelledby')+'-hint';
+        control.setAttribute('aria-describedby',hint.id);control.parentElement.append(hint);
+      }
     }
     return ()=>({organizerName:name.value.trim(),password:password.value});
   }
   function signIn(){
     showingList=false;
     const section=card(say('Inloggen','Sign in')),form=el('form');
-    form.append(el('p',say('Vul de naam en het wachtwoord in waarmee je je polls aanmaakt.','Enter the name and password you use to create your polls.')));
+    form.append(el('p',say('Vul je naam in zoals bij je eerste poll, met je eventuele initiaal of achternaam. Gebruik hetzelfde wachtwoord.','Enter your name as you did for your first poll, including any initial or surname. Use the same password.')));
     const read=credentials(form),go=el('button',say('Mijn polls openen','Open my polls'),'primary');
     go.type='submit';actions(form,go);section.append(form);
     const first=link(say('Mijn eerste poll aanmaken','Create my first poll'),path('/aanmaken'));

@@ -53,7 +53,7 @@ export async function organizerCredentials(request,db,now,body,counter,allowNew)
     owner=await select();
   }
   const digest=await verifier(password,owner?.salt||dummySalt);
-  if(!owner || digest!==owner.verifier)invalid('organizer-login',401);
+  if(!owner || digest!==owner.verifier)invalid(owner && allowNew?'organizer-name-used':'organizer-login',401);
   return owner;
 }
 

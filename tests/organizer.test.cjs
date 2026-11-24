@@ -209,16 +209,19 @@ test('an organizer can reopen only their own polls by name and password on a new
   for(const flag of ['HttpOnly','Secure','SameSite=Strict','Path=/'])assert.ok(first.headers.get('Set-Cookie').includes(flag));
   assert.notEqual(app.sql.prepare('SELECT token FROM poll_organizer_logins').get().token,own.Cookie.split('=')[1]);
   assert.equal((await send('polls/mine?name=Werner')).status,401);
-  assert.equal((await send('polls/mine/login',{...credentials,password:'wrong-password'})).status,401);
-  assert.equal((await send('polls/mine/login',{...credentials,organizerName:'Unknown'})).status,401);
+  for(const input of [{...credentials,password:'wrong-password'},{...credentials,organizerName:'Unknown'}]){
+    const denied=await send('polls/mine/login',input);
+    assert.equal(denied.status,401);assert.equal(denied.data.error,'organizer-login');
+  }
   const wrong=await send('polls',{settings,organizerName:' WERNER  DE VRIES ',password:'wrong-password'});
-  assert.equal(wrong.status,401);assert.equal(app.sql.prepare('SELECT count(*) AS n FROM signup_polls').get().n,1);
+  assert.equal(wrong.status,401);assert.equal(wrong.data.error,'organizer-name-used');
+  assert.equal(app.sql.prepare('SELECT count(*) AS n FROM signup_polls').get().n,1);
   assert.equal((await send('polls',{settings,organizerName:credentials.organizerName,useSession:true})).status,401);
   const second=await send('polls',{settings:{...settings,title:'Donderdagtoss'},organizerName:credentials.organizerName,useSession:true},own);
   assert.equal(second.status,201);
   const again=await send('polls/'+id+'/admin',{action:'repeat',revision:1},own);
   assert.equal(again.status,200);
-  const other=await send('polls',{settings:{...settings,title:'Andere organisator'},organizerName:'Werner B',password:'eigen-wachtwoord'});
+  const other=await send('polls',{settings:{...settings,title:'Andere organisator'},organizerName:'Werner B',password:credentials.password});
   assert.equal(other.status,201);
   const phone=await send('polls/mine/login',{...credentials,organizerName:'  wErNeR   de vries '});
   assert.equal(phone.status,200);const phoneCookie=cookie(phone);

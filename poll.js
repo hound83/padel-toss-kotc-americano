@@ -61,6 +61,8 @@
   function friendly(err){
     const labels={'hub-unconfigured':say('Het algemene beheerwachtwoord is nog niet ingesteld.','The site organizer password has not been set.'),storage:say('Sta lokale opslag toe om je eigen reactie te kunnen beheren, of vraag de organisator je aan te melden.','Enable browser storage to manage your own response, or ask the organizer to sign you up.'),duplicate:say('Die naam staat al op de lijst. Gebruik ook een achternaam of initiaal.','That name is taken. Add an initial or last name.'),
       'organizer-login':say('Controleer je naam en wachtwoord.','Check your name and password.'),
+      'organizer-name-used':say('Deze naam is al in gebruik. Is dit jouw naam in de planner? Vul je bestaande wachtwoord in. Kies anders een naam met je initiaal of achternaam.',
+        'This name is already in use. Is it your name in the planner? Enter your existing password. Otherwise add an initial or surname to your name.'),
       'organizer-name':say('Vul je eigen naam in (maximaal 80 tekens).','Enter your own name (up to 80 characters).'),
       'organizer-linked':say('Deze poll hoort al bij een organisator.','This poll already belongs to an organizer.'),
       login:hubRoute?say('Controleer het algemene beheerwachtwoord.','Check the site organizer password.'):say('Controleer de beheercode van deze poll.','Check the organizer code for this poll.'),
@@ -91,7 +93,7 @@
       if(focusAfter instanceof HTMLElement)focusAfter.focus({preventScroll:true});
     }
     catch(error){
-      if(error.message==='changed' || error.status===401){
+      if(error.message==='changed' || (error.status===401 && error.message!=='organizer-name-used')){
         $('dialog').close();$('message').textContent=friendly(error);
       }else $('dialogError').textContent=friendly(error);
     }
@@ -136,10 +138,13 @@
     header(initial);const section=card(say('Avond instellen','Event settings')),form=el('form');section.append(form);
     const read=configFields(form,initial,header);
     const central=new URLSearchParams(location.search).get('beheer')==='1';
-    const owner=el('div');let readOwner;
+    const owner=el('div'),ownerError=el('p',undefined,'error');let readOwner;
+    ownerError.setAttribute('role','alert');
+    owner.addEventListener('input',()=>{ownerError.textContent='';});
     function ownerFields(){
       owner.replaceChildren(el('h3',say('Jij als organisator','You as organizer')));
       readOwner=mine.credentials(owner,{setup:true,known:organizerName});
+      ownerError.textContent='';owner.append(ownerError);
     }
     if(!central){ownerFields();form.append(owner);}
     const go=el('button',central?say('Aanmelding openen','Open signups'):say('Nieuwe poll aanmaken','Create new poll'),'primary');go.type='submit';actions(form,go);
@@ -154,9 +159,10 @@
         if(!central && error.status===401 && organizerName){
           organizerName=null;ownerFields();$('message').textContent=say('Log opnieuw in met je naam en wachtwoord.','Sign in again with your name and password.');return;
         }
+        if(error.message==='organizer-name-used'){
+          $('message').textContent='';ownerError.textContent=friendly(error);ownerError.scrollIntoView({block:'nearest'});return;
+        }
         $('message').textContent=friendly(error);
-        if(error.message==='organizer-login')$('message').textContent+=' '+say('Maakt iemand met dezelfde voornaam al polls? Voeg dan je initiaal of achternaam toe.',
-          'Does another organizer use the same first name? Add an initial or surname.');
       }finally{pending=false;go.disabled=false;}
     };
     if(!central)actions(section,link(say('Mijn polls openen','Open my polls'),'/mijn-polls'+(en?'?lang=en':'')));
