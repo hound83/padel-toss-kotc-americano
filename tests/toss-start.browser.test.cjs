@@ -38,8 +38,16 @@ test('Toss first-round choices survive generating, language, storage and roster 
   await inputs.nth(23).fill('Zoe');
   async function mark(index,kind){await details.locator('[data-player="'+index+'"][data-choice="'+kind+'"]').check();}
   await mark(23,'Play');
-  await mark(0,'Pair');await mark(1,'Pair');
-  await page.locator('#tossAddPair').click();
+  const fields=page.locator('#namesGrid .name-field');
+  await fields.nth(0).locator('.duo-link').click();
+  assert.equal(await fields.nth(0).locator('.duo-link').getAttribute('aria-pressed'),'true');
+  await fields.nth(1).locator('.plan-grip').dragTo(fields.nth(4));
+  assert.equal(await inputs.nth(4).inputValue(),'Benjamin');
+  assert.match(await fields.nth(0).locator('.partner-note').textContent(),/Benjamin/);
+  await fields.nth(4).locator('.plan-grip').press('Enter');
+  await fields.nth(1).locator('.plan-grip').press('Enter');
+  assert.equal(await inputs.nth(1).inputValue(),'Benjamin');
+  assert.equal(await fields.nth(0).locator('.duo-link').getAttribute('aria-pressed'),'true');
   await mark(2,'Pair');await mark(3,'Pair');
   await page.locator('#tossAddPair').click();
   assert.equal(await page.locator('#tossStartPairs button').count(),2);

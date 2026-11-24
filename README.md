@@ -93,6 +93,8 @@ Als de baanindeling groter is dan het scherm, verdeelt de presentatie de kaarten
 
 ## Extra instellingen en speelschema
 
+Bij Toss, Toss met klassement en Split Toss kun je in **Namen** een speler verslepen of twee handgrepen kiezen. Tik op het schakeltje tussen twee namen om het duo voor de eerste ronde vast te leggen of los te maken. Een duo blijft gekoppeld als je de namen in de lijst verschuift. Bij Split Toss kun je ook twee losse spelers tussen groepen uitwisselen.
+
 Bij Toss, Gesplitste Toss en Americano staat **Extra instellingen** onder de namen. Kies eventueel een begintijd, rondeduur (standaard 20 minuten) en namen of nummers voor de banen. Bij Gesplitste Toss gelden de spelerskeuzes per groep.
 
 **Start** garandeert een speelplek in ronde 1. Een bevestigd duo speelt de eerste ronde samen. Daarna probeert de planner beide spelers in dezelfde rondes te laten spelen en rusten. Met **Laatste vrij** krijgt een speler zo mogelijk rust in de laatste ronde. Banen vullen en twee opeenvolgende wachtrondes voorkomen gaan voor. Een optioneel speelniveau helpt de planner om evenwichtige koppels te kiezen. De organisator ziet de aanduidingen in de instellingen.
@@ -104,6 +106,8 @@ Bij Toss, Gesplitste Toss en Americano staat **Extra instellingen** onder de nam
 Bij KOC zijn baanaanduidingen en speelniveau beschikbaar onder **Extra instellingen**. De Rondeplanner gebruikt het niveau bij de start en vermindert het gewicht ervan in de eerste zes gespeelde wedstrijden.
 
 ## Speciaal voor KOC
+
+Sleep in de startindeling een spelerskaartje naar een plek op dezelfde of een andere baan. Op een volle baan wisselen de twee spelers van plek. Je kunt ook twee handgrepen aantikken. Met het schakeltje tussen twee spelers kies je de startduo’s. In de Rondeplanner kun je dit doen tot de eerste uitslag wordt ingevuld.
 
 - Kies **2 tot en met 4 banen** met dezelfde knoppen als bij de andere speelvormen, of **5 tot en met 12 banen** via de dropdown.
 - Vink afwezige spelers uit of pas namen aan; starten met minder spelers kan ook.

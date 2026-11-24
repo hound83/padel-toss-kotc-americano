@@ -88,7 +88,9 @@ test('signup poll through the real planner, mobile visitor, password and live fo
   await player.getByRole('button',{name:'Reactie bevestigen'}).tap();
   assert.equal(await rating.evaluate(el=>el.validity.valueMissing),true);
   await rating.fill('7,8');assert.equal(await rating.evaluate(el=>el.validity.patternMismatch),true);
-  await rating.fill('8,00');assert.equal(await player.locator('#ratingWarning').isVisible(),false);
+  for(const value of ['0,01','6,00','8,00']){
+    await rating.fill(value);assert.equal(await player.locator('#ratingWarning').isVisible(),false);
+  }
   await rating.fill('8.01');await player.getByRole('alert').filter({hasText:'Je rating ligt boven 8,00'}).waitFor();
   await rating.fill('10,43');
   const pin='0379';

@@ -101,16 +101,27 @@ test('round planner, clock, rules and scoring options work in the browser',async
   const cards=koc.locator('#kocRoundCards');
   const teams=cards.locator('.koc-round-team ul');
   const readTeams=async()=>Promise.all((await teams.all()).map(team=>team.locator('li').allTextContents()));
-  const firstTeams=await readTeams();
+  let firstTeams=await readTeams();
   for(const team of firstTeams.slice(-2)){
     assert.equal(team.filter(name=>['Speler 7','Speler 8'].includes(name)).length,1);
   }
   assert.deepEqual(await cards.locator('.koc-waiting-card li').allTextContents(),['Speler 9','Speler 10']);
+  const firstCourt=cards.locator('.koc-courts .koc-court').first();
+  const original=await firstCourt.locator('li').allTextContents();
+  await firstCourt.locator('.duo-link').nth(1).tap();
+  assert.deepEqual((await firstCourt.locator('li').allTextContents()).slice(0,2),original.slice(1,3));
+  await firstCourt.locator('.plan-grip').first().tap();
+  await cards.locator('.koc-waiting-card .plan-grip').first().tap();
+  assert.equal((await firstCourt.locator('li').allTextContents())[0],'Speler 9');
+  await firstCourt.locator('.plan-grip').first().tap();
+  await cards.locator('.koc-waiting-card .plan-grip').first().tap();
+  firstTeams=await readTeams();
   const expectedWaiting=await cards.locator('.koc-courts .koc-court').last().locator('.koc-round-team').nth(1).locator('li').allTextContents();
   for(const [key,value] of [['2:0','20'],['2:1','13'],['1:0','17'],['1:1','17']]){
     await cards.locator('[data-koc-round-score="'+key+'"]').fill(value);
   }
   assert.equal(await koc.locator('#kocRoundNext').isEnabled(),false);
+  assert.equal(await cards.locator('.plan-grip:visible').count(),0);
   await cards.locator('[data-koc-round-score="1:0"]').fill('18');
   await koc.locator('#kocRoundNext').tap();
   assert.equal(await koc.locator('#kocRoundHeading').textContent(),'Ronde 2');
@@ -266,6 +277,12 @@ test('round planner, clock, rules and scoring options work in the browser',async
   assert.equal(await americano.locator('#playRules summary').textContent(),'Spelregels voor Americano');
   await americano.locator('#roundSettingsScore').selectOption('games');
   await americano.locator('#continueTo2').click();
+  const middleLink=americano.locator('#namesGrid .duo-link').nth(6);
+  await middleLink.tap();
+  assert.equal(await middleLink.getAttribute('aria-pressed'),'true');
+  await middleLink.tap();
+  assert.equal(await middleLink.getAttribute('aria-pressed'),'false');
+  await middleLink.tap();
   await americano.locator('#generateBtn').click();
   assert.equal(await americano.locator('#playRules summary').textContent(),'Spelregels voor Americano');
   const gameScores=americano.locator('#scheduleRound1 input[data-key]');
@@ -285,6 +302,20 @@ test('round planner, clock, rules and scoring options work in the browser',async
   await split.locator('.lang-btn[data-lang="nl"]').click();
   await split.locator('#roundSettingsScore').selectOption('games');
   await split.locator('#continueTo2').click();
+  const silver=split.locator('#namesGridBeginner .name-field'),gold=split.locator('#namesGridErvaren .name-field');
+  await silver.nth(0).locator('input').fill('Mila');
+  await gold.nth(0).locator('input').fill('Timo');
+  await silver.nth(0).locator('.duo-link').click();
+  await silver.nth(0).locator('.plan-grip').click();
+  await gold.nth(0).locator('.plan-grip').click();
+  assert.match(await split.locator('#rosterCardHelp').textContent(),/Ontkoppel het duo eerst|Unlink the pair/);
+  assert.equal(await silver.nth(0).locator('input').inputValue(),'Mila');
+  await silver.nth(0).locator('.duo-link').click();
+  await silver.nth(0).locator('.plan-grip').click();
+  await gold.nth(0).locator('.plan-grip').click();
+  assert.equal(await silver.nth(0).locator('input').inputValue(),'Timo');
+  assert.equal(await gold.nth(0).locator('input').inputValue(),'Mila');
+  await gold.nth(1).locator('.duo-link').click();
   await split.locator('#beginnerResultsToggle').check();
   await split.locator('#generateBtn').click();
   assert.match(await split.locator('#scheduleScoreUnit').innerText(),/gewonnen games/);
