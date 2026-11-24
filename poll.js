@@ -388,7 +388,7 @@
         if(manage){
           person.append(el('small',new Intl.DateTimeFormat(en?'en-GB':'nl-NL',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit',timeZone:'Europe/Amsterdam'}).format(entry.at)));
           if(data.settings.format==='koc' && entry.rating)person.append(el('small','Rating '+displayRating(entry.rating)));
-          row.dataset.id=entry.id;row.draggable=true;row.classList.add('player-card');
+          row.dataset.id=entry.id;row.classList.add('player-card');
           const grip=el('span',undefined,'player-grip');grip.setAttribute('aria-hidden','true');grip.title=say('Sleep om te verplaatsen','Drag to move');row.prepend(grip);
           const edit=button(say('Aanpassen','Edit'),()=>entryModal(entry));edit.setAttribute('aria-label',say(entry.name+' aanpassen','Edit '+entry.name));row.append(edit);
         }

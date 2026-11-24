@@ -61,6 +61,7 @@ dialog{border:1px solid var(--line);border-radius:1rem;padding:1.4rem;width:min(
 .row.player-card{background:#f7faf8;border:1px solid #d0ddd7;border-radius:.6rem;padding:.35rem .45rem .35rem .15rem;margin-top:.4rem;gap:.32rem}
 .player-card .rank{min-width:1.1rem}.player-card.dragging{opacity:.65}.player-grip{display:grid;place-items:center;align-self:stretch;width:1.7rem;flex:none;cursor:grab;touch-action:none;user-select:none;-webkit-touch-callout:none}
 .player-grip:before{content:'';width:12px;height:18px;background:radial-gradient(circle,#62766b 1.6px,transparent 1.8px) 0 0/6px 6px}
+.row.player-card{cursor:grab;user-select:none}
 .group.over{background:#f3f8eb;outline:2px solid #62883a}.player-card.drop-before{box-shadow:0 -3px #62883a}.player-card.drop-after{box-shadow:0 3px #62883a}
 .player-drag-preview{position:fixed;z-index:20;max-width:70vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;pointer-events:none;background:var(--navy);color:white;border-radius:.6rem;padding:.4rem .8rem}
 @media(pointer:coarse){.player-grip{width:2.75rem;min-height:2.75rem}}
