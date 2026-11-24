@@ -43,6 +43,7 @@ article h3{display:flex;align-items:center;justify-content:space-between;gap:.55
 <header><img id="modeArt" src="./icon.svg" alt=""><div><h1 id="title">Speelschema</h1><div class="meta"><span id="updated"></span><span id="connection" role="status">Kijklink openen…</span></div></div></header>
 <div class="filter"><label id="label" for="player" hidden>Speler</label><select id="player" hidden></select><button id="everyone" hidden type="button">Toon iedereen</button></div>
 <p id="entryHint" hidden></p><p id="entryStatus" role="status"></p><main id="rounds"></main>
+<footer style="margin-block:2rem 1rem"><a data-organizer-link href="https://padel.hound83.workers.dev/beheer" style="color:var(--navy)">Beheer</a></footer>
 <dialog id="entryDialog" aria-labelledby="entryTitle">
   <form id="entryForm">
     <div class="score-heading"><img id="entryArt" alt="" width="68" height="50"><h2 id="entryTitle"></h2></div>
@@ -56,6 +57,7 @@ article h3{display:flex;align-items:center;justify-content:space-between;gap:.55
 <script src="./poll-common.js"></script><script src="./name-hint.js"></script><script src="./share-v3.js"></script><script>
 (async()=>{
  const $=id=>document.getElementById(id);
+ TossPoll.organizerLinks(new URLSearchParams(location.search).get('lang')==='en');
  function node(tag,text='',className=''){const el=document.createElement(tag);el.textContent=text;el.className=className;return el;}
  const short=location.pathname.match(/^\/s\/([^/]*)\/?$/)?.[1];
  const shortPath=short!==undefined;let revision=0,restrictedPlayer=null,reloading=false;
@@ -164,6 +166,7 @@ article h3{display:flex;align-items:center;justify-content:space-between;gap:.55
  }
  function draw(){
    const s=latest,en=s.en,player=$('player').value;
+   TossPoll.organizerLinks(en);
    $('everyone').textContent=en?'Show everyone':'Toon iedereen';$('everyone').hidden=!player || !!restrictedPlayer;
    $('title').textContent=s.title;
    const mode=s.format || (/court|koc/i.test(s.title)?'koc':/americano/i.test(s.title)?'americano':/split|gesplitst/i.test(s.title)?'splitToss':'toss');

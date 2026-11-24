@@ -1,3 +1,4 @@
+import {centralLogin,organizerApi} from './organizer.mjs';
 import {pollApi,pollCleanup} from './polls.mjs';
 import createRanking from '../ranking.js';
 
@@ -153,8 +154,9 @@ async function modeLink(db,row,player){
   }
   fail(409,'changed');
 }
-async function manage(db,request,now){
-  const row=await ownerRow(db,request,now);
+async function manage(db,request,now,sessionId){
+  const row=sessionId ? await one(db,'SELECT * FROM sessions WHERE id=? AND expires>?',sessionId,now) : await ownerRow(db,request,now);
+  if(!row)fail(404,'missing');
   if(request.method==='GET'){
     if(request.headers.get('If-None-Match')===String(row.revision))return new Response(null,{status:304,headers:{'Cache-Control':'no-store'}});
     return json({...await ownerInfo(db,row),state:JSON.parse(row.document).state});
@@ -177,14 +179,21 @@ async function manage(db,request,now){
   return json(await ownerInfo(db,{...row,revision:row.revision+1,mode,epoch,closed,expires:now+WEEK}));
 }
 export async function cleanup(db,now=Date.now()){
-  await db.batch([...pollCleanup(db,now),query(db,'DELETE FROM links WHERE session_id IN (SELECT id FROM sessions WHERE expires<=?)',now),
+  await db.batch([...pollCleanup(db,now),query(db,'DELETE FROM organizer_logins WHERE expires<=?',now),query(db,'DELETE FROM links WHERE session_id IN (SELECT id FROM sessions WHERE expires<=?)',now),
     query(db,'DELETE FROM sessions WHERE expires<=?',now),query(db,'DELETE FROM limits WHERE expires<=?',now)]);
 }
-export async function api(request,db,now=Date.now()){
+export async function api(request,db,now=Date.now(),adminPassword){
   try{
     const url=new URL(request.url),path=url.pathname,origin=request.headers.get('Origin');
     if(origin && origin!==url.origin && request.method!=='GET')fail(403,'origin');
-    if(path==='/api/polls' || path.startsWith('/api/polls/'))return await pollApi(request,db,now,{json,requestJson,counter});
+    const services={json,requestJson,counter};
+    if(path==='/api/polls/hub' || path.startsWith('/api/polls/hub/'))return await organizerApi(request,db,now,adminPassword,services);
+    if(path==='/api/polls' || path.startsWith('/api/polls/'))return await pollApi(request,db,now,services,adminPassword);
+    const managedSession=path.match(/^\/api\/manage\/([a-f0-9-]{36})$/);
+    if(managedSession){
+      if(!await centralLogin(request,db,now,adminPassword))fail(401,'login');
+      return await manage(db,request,now,managedSession[1]);
+    }
     if(path==='/api/sessions' && request.method==='POST')return await create(db,request,now);
     if(path==='/api/manage')return await manage(db,request,now);
     const part=path.match(/^\/api\/s\/([^/]{1,14})$/);

@@ -1,3 +1,4 @@
+import {centralLogin} from './organizer.mjs';
 import {emptyPoll, changeSettings, adminEntry, nameKey, publicPoll, respond, invalid} from './poll-roster.mjs';
 
 const day=86400000;
@@ -41,16 +42,18 @@ function adminView(row,doc){
 function checkDate(config,now){
   if(Date.parse(config.date)>now+370*day)invalid('date');
 }
-export async function pollApi(request,db,now,{json,requestJson,counter}){
+export async function pollApi(request,db,now,{json,requestJson,counter},adminPassword){
   const path=new URL(request.url).pathname;
   if(path==='/api/polls' && request.method==='POST'){
     await counter(db,request,'poll-create',now,20,true);
     const body=await requestJson(request),doc=emptyPoll(body.settings);
     checkDate(doc.settings,now);
     const id=random(7),series=crypto.randomUUID(),salt=random(16);
-    const password=await verifier(acceptablePassword(body.password),salt);
+    const viaHub=body.central===true;
+    if(viaHub && !await centralLogin(request,db,now,adminPassword))invalid('login',401);
+    const password=await verifier(viaHub?random(32):acceptablePassword(body.password),salt);
     await db.batch([stmt(db,'INSERT INTO signup_series VALUES(?,?,?)',series,salt,password),rowInsert(db,id,series,doc,now)]);
-    return json({id,token:await issueLogin(db,series,now)},201);
+    return json(viaHub?{id}:{id,token:await issueLogin(db,series,now)},201);
   }
   const route=path.match(/^\/api\/polls\/([a-f0-9]{14})(?:\/(login|admin|logout))?$/);
   if(!route)invalid('missing',404);
@@ -66,7 +69,19 @@ export async function pollApi(request,db,now,{json,requestJson,counter}){
     if(typeof body.password!=='string' || body.password.length>128 || await verifier(body.password,series.salt)!==series.verifier)invalid('login',401);
     return json({token:await issueLogin(db,row.series,now)});
   }
-  if(kind)await loggedIn(db,request,row.series,now);
+  const siteAdmin=kind==='admin' && await centralLogin(request,db,now,adminPassword);
+  if(kind && !siteAdmin)await loggedIn(db,request,row.series,now);
+  async function organizerView(version,doc){
+    const view=adminView(version,doc);
+    if(siteAdmin){
+      // A central login opens the planner with its cookie. Never hand a long-lived
+      // owner link to that browser as a side effect of viewing a signup list.
+      delete view.plannerKey;
+      const link=doc.viewCode && await first(db,"SELECT s.id FROM sessions s JOIN links l ON l.session_id=s.id WHERE l.code=? AND l.role='view' AND s.expires>?",doc.viewCode,now);
+      view.plannerId=link?.id||null;
+    }
+    return view;
+  }
   if(kind==='logout'){
     if(request.method!=='POST')invalid('method',405);
     await stmt(db,'DELETE FROM signup_logins WHERE token=?',await hash(request.headers.get('Authorization').slice(7))).run();
@@ -75,7 +90,7 @@ export async function pollApi(request,db,now,{json,requestJson,counter}){
   const person=kind?null:await personKey(request,row.series);
   if(request.method==='GET'){
     const doc=JSON.parse(row.document);
-    return json(kind?adminView(row,doc):publicPoll(doc,id,person));
+    return json(kind?await organizerView(row,doc):publicPoll(doc,id,person));
   }
   if(request.method!=='POST')invalid('method',405);
   const body=await requestJson(request);
@@ -142,7 +157,7 @@ export async function pollApi(request,db,now,{json,requestJson,counter}){
     const last=(await db.batch([...extra,updated])).at(-1);
     if(last.meta.changes){
       if(kind && body.action==='repeat')return json({id:doc.next});
-      return json(kind?adminView({...row,revision:row.revision+1},doc):publicPoll(doc,id,person));
+      return json(kind?await organizerView({...row,revision:row.revision+1},doc):publicPoll(doc,id,person));
     }
     if(kind)invalid('changed',409);
     await new Promise(resolve=>setTimeout(resolve,2+Math.random()*Math.min(50,4*(attempt+1))));

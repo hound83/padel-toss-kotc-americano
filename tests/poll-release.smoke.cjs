@@ -9,10 +9,10 @@ const {chromium}=require('playwright');
     let live=false;
     for(let i=0;i<36;i++){
       await page.goto(base);
-      if(await page.locator('#appVersion').innerText()==='v3.2.0' && await page.locator('#pollHome').isVisible()){live=true;break;}
+      if(await page.locator('#appVersion').innerText()==='v3.3.0' && await page.locator('#pollHome').isVisible()){live=true;break;}
       await new Promise(resolve=>setTimeout(resolve,5000));
     }
-    assert.ok(live,'the production planner serves 3.2');
+    assert.ok(live,'the production planner serves 3.3');
     await page.locator('#pollHome').click();
     for(const [format,file] of [['toss','toss'],['koc','koc'],['americano','americano'],['splitToss','split']]){
       await page.getByLabel('Speelvorm',{exact:true}).selectOption(format);
@@ -20,6 +20,10 @@ const {chromium}=require('playwright');
     }
     const missing=await page.request.get(new URL('/api/polls/00000000000000',base).href);
     assert.equal(missing.status(),404);assert.deepEqual(await missing.json(),{error:'missing'});
-    console.log('Cloudflare production serves Toss 3.2, its four mode illustrations and the signup API.');
+    await page.locator('footer [data-organizer-link]').click();
+    await page.getByRole('heading',{name:'Centraal beheer'}).waitFor();
+    await page.getByLabel('Beheerwachtwoord').waitFor();
+    assert.equal((await page.request.get(new URL('/api/polls/hub',base).href)).status(),401);
+    console.log('Cloudflare production serves Toss 3.3, the four mode illustrations and the protected organizer dashboard.');
   }finally{await browser.close();}
 })().catch(err=>{console.error(err);process.exitCode=1;});

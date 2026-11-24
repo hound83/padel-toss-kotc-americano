@@ -2,7 +2,10 @@
   'use strict';
   const P=window.TossPoll, $=id=>document.getElementById(id);
   const match=location.pathname.match(/^\/(aanmelden|beheer)\/([a-f0-9]{14})/);
-  const id=match?.[2],admin=match?.[1]==='beheer',base=id?'/'+id:'';
+  const hubRoute=/^\/beheer\/?$/.test(location.pathname);
+  const admin=hubRoute || match?.[1]==='beheer';
+  let id=match?.[2],base=id?'/'+id:'',hub;
+  const adminToken=()=>hubRoute?null:P.token(id);
   let en=new URLSearchParams(location.search).get('lang')==='en' || P.preference('toss-poll-lang')==='en';
   let current=null, pending=false, sequence=0, dialogAction, dragId, editor=null;
   const say=(nl,english)=>en?english:nl;
@@ -29,6 +32,7 @@
   function actions(parent,...children){const box=el('div',undefined,'actions');box.append(...children);parent.append(box);return box;}
   function header(settings,phase){
     document.documentElement.lang=en?'en':'nl';$('language').textContent=en?'NL':'EN';
+    P.organizerLinks(en);
     const mode=settings?.format||'toss';
     $('art').src=P.art(mode,en);$('art').hidden=false;
     const activity=admin?say('Aanmeldingen beheren','Manage signups'):id?say('Aanmelden','Sign up'):say('Aanmeldpoll maken','Create a signup poll');
@@ -39,12 +43,16 @@
     $('listJump').hidden=true;
     const manageLink=$('manageLink');manageLink.hidden=!id || admin;
     if(id){manageLink.href='/beheer/'+id;manageLink.textContent=say('Beheer','Organizer');}
+    if(hubRoute){
+      $('phase').textContent='Koriander Padel';$('heading').textContent=say('Centraal beheer','Organizer dashboard');
+      $('event').textContent='';document.title=$('heading').textContent+' · Koriander Padel';
+    }
     if(phase==='planning' && !admin)$('phase').textContent=say('Indeling in voorbereiding','Preparing the schedule')+' · '+modeName(mode);
   }
   function dateText(s){return new Intl.DateTimeFormat(en?'en-GB':'nl-NL',{weekday:'long',day:'numeric',month:'long',timeZone:'UTC'}).format(new Date(s.date+'T12:00:00Z'));}
   function places(){return {in:say('Deelnemers','Playing'),wait:say('Wachtlijst · Ja','Waiting · Yes'),reserve:say('Reserve','Standby'),review:say('Alleen na akkoord','Needs approval'),out:say('Afgemeld','Unavailable')};}
   function friendly(err){
-    const labels={storage:say('Sta lokale opslag toe om je eigen reactie te kunnen beheren, of vraag de organisator je aan te melden.','Enable browser storage to manage your own response, or ask the organizer to sign you up.'),duplicate:say('Die naam staat al op de lijst. Gebruik ook een achternaam of initiaal.','That name is taken. Add an initial or last name.'),
+    const labels={'hub-unconfigured':say('Het centrale beheerwachtwoord is nog niet ingesteld.','The central organizer password has not been configured.'),storage:say('Sta lokale opslag toe om je eigen reactie te kunnen beheren, of vraag de organisator je aan te melden.','Enable browser storage to manage your own response, or ask the organizer to sign you up.'),duplicate:say('Die naam staat al op de lijst. Gebruik ook een achternaam of initiaal.','That name is taken. Add an initial or last name.'),
       login:say('Inloggen vereist. Controleer het beheerwachtwoord.','Sign in with the organizer password.'),
       settings:say('Controleer datum, tijden, banen en aantal plekken.','Check the date, times, courts and places.'),
       field:say('Controleer de ingevulde velden.','Check the fields.'),locked:say('De aanmelding is gesloten.','Signups have closed.'),
@@ -110,13 +118,19 @@
     const initial={format:fmt,title:modeName(fmt),courts:fmt==='koc'?4:3,capacity:fmt==='koc'?16:fmt==='americano'?12:24,date,start:'21:00',end:'23:00'};
     header(initial);const section=card(say('Avond instellen','Event settings')),form=el('form');section.append(form);
     const read=configFields(form,initial,header);
-    const pw=field(form,say('Kies een beheerwachtwoord','Choose an organizer password'),input('password'));pw.autocomplete='new-password';pw.required=true;pw.minLength=8;pw.maxLength=128;
-    form.append(el('small',say('Minimaal 8 tekens. Bewaar dit voor beheer op een ander apparaat.','At least 8 characters. Keep this for managing on another device.')));
+    const central=new URLSearchParams(location.search).get('beheer')==='1';
+    let pw;
+    if(!central){
+      pw=field(form,say('Kies een beheerwachtwoord','Choose an organizer password'),input('password'));
+      pw.autocomplete='new-password';pw.required=true;pw.minLength=8;pw.maxLength=128;
+      form.append(el('small',say('Minimaal 8 tekens. Bewaar dit voor beheer op een ander apparaat.','At least 8 characters. Keep this for managing on another device.')));
+    }
     const go=el('button',say('Aanmelding openen','Open signups'),'primary');go.type='submit';actions(form,go);
-    const last=P.preference('toss-poll-last');if(/^[a-f0-9]{14}$/.test(last))actions(section,link(say('Vorige poll beheren','Manage previous poll'),'/beheer/'+last));
+    const last=P.preference('toss-poll-last');if(!central && /^[a-f0-9]{14}$/.test(last))actions(section,link(say('Vorige poll beheren','Manage previous poll'),'/beheer/'+last));
     form.onsubmit=async e=>{e.preventDefault();if(pending)return;pending=true;go.disabled=true;
-      try{const r=await P.api('',{settings:read(),password:pw.value});rememberAdmin(r);location.assign('/beheer/'+r.id);}
-      catch(error){$('message').textContent=friendly(error);}finally{pending=false;go.disabled=false;}};
+      try{const r=await P.api('',central?{settings:read(),central:true}:{settings:read(),password:pw.value});
+        if(central)location.assign('/beheer?avond='+r.id);else{rememberAdmin(r);location.assign('/beheer/'+r.id);}}
+      catch(error){if(central && error.status===401){location.assign('/beheer');return;}$('message').textContent=friendly(error);}finally{pending=false;go.disabled=false;}};
     content.replaceChildren(section);
   }
   function rememberAdmin(r){P.remember(r.id,r.token);P.preference('toss-poll-last',r.id);}
@@ -208,11 +222,13 @@
   }
   async function perform(body){
     if(pending)throw Error('changed');
+    const eventId=id;
     pending=true;sequence++;
     try{
-      const next=await P.api(base+'/admin',{revision:current.revision,...body},{token:P.token(id)});
-      if(body.action==='repeat'){P.remember(next.id,P.token(id));P.preference('toss-poll-last',next.id);location.assign('/beheer/'+next.id);return;}
-      managePage(next);$('message').textContent=say('Opgeslagen.','Saved.');
+      const next=await P.api(base+'/admin',{revision:current.revision,...body},{token:adminToken()});
+      if(eventId!==id)return;
+      if(body.action==='repeat'){if(hubRoute){await hub.refresh(next.id);return;}P.remember(next.id,P.token(id));P.preference('toss-poll-last',next.id);location.assign('/beheer/'+next.id);return;}
+      managePage(next);if(hubRoute)hub.refresh();$('message').textContent=say('Opgeslagen.','Saved.');
       return next;
     }catch(error){if(error.status===409 || error.status===401)await load(true);throw error;}
     finally{pending=false;}
@@ -256,7 +272,7 @@
     const section=card(data.phase==='open'?say('Aanmelding open','Signups open'):data.phase==='planning'?say('Bezig met indelen','Preparing the schedule'):say('Schema gepubliceerd','Schedule published'));
     const controls=el('div',undefined,'actions');section.append(controls);
     const safe=fn=>async()=>{try{await fn();}catch(error){$('message').textContent=friendly(error);}};
-    const plannerUrl=data.plannerKey?'/b/'+data.plannerKey:'/?poll='+id;
+    const plannerUrl=data.plannerId?'/beheer/sessie/'+data.plannerId:data.plannerKey?'/b/'+data.plannerKey:'/?poll='+id;
     if(data.phase==='open'){
       controls.append(button(say('Ga indelen','Start scheduling'),safe(async()=>{
         if(!confirm(say('Aanmelding sluiten en de namenlijst verbergen voor bezoekers?','Close signups and hide the list from visitors?')))return;
@@ -272,36 +288,57 @@
       catch(error){if(error.name!=='AbortError')await copyPublic();}
     })));
     controls.append(button(say('Groepslink kopiëren','Copy group link'),copyPublic),link(say('Bekijk als bezoeker','Public view'),'/aanmelden/'+id));
+    if(data.phase==='published' && data.viewCode)controls.append(link(say('Open liveweergave','Open live view'),'/s/'+data.viewCode));
     const url=input('text',location.origin+'/aanmelden/'+id);url.id='publicUrl';url.readOnly=true;url.hidden=true;section.append(url);
     const tools=card(say('Aanmeldlijst beheren','Manage signup list'));
     actions(tools,button(say('Speler toevoegen','Add a player'),()=>entryModal()),button(say('Avond wijzigen','Edit event'),()=>modal(say('Avond wijzigen','Edit event'),r=>configFields(r,current.settings),s=>perform({action:'settings',settings:s}))),
-      button(say('Herhaal volgende week','Repeat next week'),safe(()=>perform({action:'repeat'}))),
-      button(say('Uitloggen','Sign out'),safe(async()=>{await P.api(base+'/logout',{},{token:P.token(id)});P.remember(id,null);current=null;login();})));
+      button(say('Herhaal volgende week','Repeat next week'),safe(()=>perform({action:'repeat'}))));
+    if(!hubRoute)actions(tools,button(say('Uitloggen','Sign out'),safe(async()=>{
+      if(P.token(id))await P.api(base+'/logout',{},{token:P.token(id)}).catch(e=>{if(e.status!==401)throw e;});
+      await P.api('/hub/logout',{});P.remember(id,null);current=null;login();
+    })));
     content.append(section,tools);groups(data,true);
   }
   async function load(force=false){
     if((pending && !force) || !id)return;
-    const serial=++sequence,authorized=admin && P.token(id);
+    const serial=++sequence;
     try{
-      const data=await P.api(base+(authorized?'/admin':''),undefined,authorized?{token:authorized}:{person:who()});
+      const data=await P.api(base+(admin?'/admin':''),undefined,admin?{token:adminToken()}:{person:who()});
       if(serial!==sequence)return;
-      if(admin && !authorized){header(data.settings,data.phase);if(!$('content').querySelector('[autocomplete=current-password]'))login();return;}
       if(admin){if(force || data.revision!==current?.revision)managePage(data);}
       else if(force || JSON.stringify(data)!==JSON.stringify(current) || (data.phase==='open' && !$('groups')))publicPage(data);
     }catch(error){
       if(serial!==sequence)return;
       if(!admin){resetEditor();current=null;}
-      if(admin && error.status===401){P.remember(id,null);current=null;login();}
+      if(admin && error.status===401){
+        if(hubRoute){hub.lock();return;}
+        P.remember(id,null);current=null;
+        if(!content.querySelector('[autocomplete=current-password]')){
+          try{const data=await P.api(base);if(serial!==sequence)return;header(data.settings,data.phase);}catch{}
+          login();
+        }
+        if(!force)return;
+      }
       $('message').textContent=friendly(error);
     }finally{content.setAttribute('aria-busy','false');}
   }
-  $('language').onclick=()=>{en=!en;P.preference('toss-poll-lang',en?'en':'nl');resetEditor();current=null;if(id)load(true);else create();};
-  function active(){return !document.hidden && !$('dialog').open && !dragId && (!admin || P.token(id));}
+  $('language').onclick=()=>{en=!en;P.preference('toss-poll-lang',en?'en':'nl');resetEditor();current=null;if(hubRoute){header(null);hub.translate();}else if(id)load(true);else create();};
+  function active(){return !document.hidden && !$('dialog').open && !dragId && (!admin || current || P.token(id));}
   document.addEventListener('visibilitychange',()=>{
     if(document.hidden && !admin){sequence++;$('groups')?.remove();}
     else if(!document.hidden)load();
   });
   window.addEventListener('pageshow',()=>{if(id)load();});
-  header(null);if(!id){create();content.setAttribute('aria-busy','false');}
+  header(null);
+  if(hubRoute){
+    hub=window.TossOrganizerHub({P,say,modeName,dateText,el,button,link,card,field,input,actions,friendly,content,
+      canSwitch:()=>!pending && !$('dialog').open && !dragId,
+      select:async key=>{
+        ++sequence;id=key;base=id?'/'+id:'';current=null;resetEditor();header(null);
+        if(id)await load(true);
+      }});
+    hub.start();
+    setInterval(()=>{if(id && active())load();},5000);
+  }else if(!id){create();content.setAttribute('aria-busy','false');}
   else {load();setInterval(()=>{if(active())load();},5000);}
 })();

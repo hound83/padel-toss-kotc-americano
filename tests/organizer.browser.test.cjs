@@ -1,0 +1,74 @@
+const test=require('node:test');
+const assert=require('node:assert/strict');
+const {randomBytes}=require('node:crypto');
+const http=require('node:http');
+const {chromium}=require('playwright');
+
+test('one central login reaches existing and new events, live schedules, and the inline roster on a phone', {timeout:90000},async t=>{
+  let url=process.env.PADEL_SESSION_SITE_URL;
+  const password=url?process.env.PADEL_TEST_ORGANIZER_PASSWORD:randomBytes(18).toString('hex');
+  assert.ok(password);
+  if(!url){
+    const {localSessionApp}=await import('../sessions/local.mjs');
+    const app=await localSessionApp(':memory:',password);t.after(()=>app.close());
+    const server=http.createServer(async(req,res)=>{
+      const result=await app.fetch(new Request(url+req.url,{method:req.method,headers:req.headers,
+        body:['GET','HEAD'].includes(req.method)?null:req,duplex:'half'}));
+      res.writeHead(result.status,Object.fromEntries(result.headers));res.end(Buffer.from(await result.arrayBuffer()));
+    });
+    await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));url='http://127.0.0.1:'+server.address().port;
+    t.after(()=>new Promise(resolve=>{server.closeAllConnections();server.close(resolve);}));
+  }
+  const browser=await chromium.launch({executablePath:process.env.CHROMIUM_EXECUTABLE_PATH});t.after(()=>browser.close());
+  const phone=await browser.newContext({viewport:{width:390,height:844},hasTouch:true}),guest=await browser.newContext();
+  const host=await phone.newPage(), publicPage=await guest.newPage(), errors=[];
+  host.setDefaultTimeout(7500);host.on('pageerror',err=>errors.push(err.message));
+  const date=new Intl.DateTimeFormat('sv-SE',{timeZone:'Europe/Amsterdam'}).format(new Date());
+  const title='Woensdag '+randomBytes(4).toString('hex');
+  const settings={title,format:'koc',date,start:'21:00',end:'23:00',courts:2,capacity:8};
+  const created=await guest.request.post(url+'/api/polls',{data:{settings,password:randomBytes(12).toString('hex')}});
+  assert.equal(created.status(),201);const {id}=await created.json();
+  await host.goto(url);await host.locator('.app-footer [data-organizer-link]').click();
+  await host.getByLabel('Beheerwachtwoord').fill(password);await host.getByRole('button',{name:'Inloggen'}).click();
+  const event=host.getByRole('button',{name:new RegExp(title)});
+  await event.focus();await host.keyboard.press('Enter');
+  await host.getByRole('button',{name:'Speler toevoegen'}).click();
+  await host.getByLabel('Naam',{exact:true}).fill('Mira');
+  await host.getByRole('button',{name:'Opslaan',exact:true}).click();
+  await host.locator('[data-place=in] li').filter({hasText:'Mira'}).waitFor();
+  assert.equal(new URL(host.url()).searchParams.get('avond'),id);
+  await event.filter({hasText:'1 / 8'}).waitFor();
+  assert.match(await event.locator('img').getAttribute('src'),/mode-koc\.svg/);
+  assert.ok(await host.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+  await publicPage.goto(url+'/aanmelden/'+id);await publicPage.locator('#groups').getByText('Mira').waitFor();
+  await publicPage.locator('footer [data-organizer-link]').click();await publicPage.getByLabel('Beheerwachtwoord').waitFor();
+  assert.equal(await publicPage.getByText('Mira').count(),0);
+  assert.equal((await guest.request.get(url+'/api/polls/hub')).status(),401);
+  await host.getByRole('button',{name:'Herhaal volgende week'}).click();
+  await host.waitForFunction(old=>new URL(location.href).searchParams.get('avond')!==old,id);
+  await host.getByRole('button',{name:'Speler toevoegen'}).waitFor();assert.equal(await host.locator('#groups li').count(),0);
+  await host.getByRole('link',{name:'Nieuwe avond'}).click();
+  assert.equal(await host.getByLabel('Kies een beheerwachtwoord').count(),0);
+  const title2='Donderdag '+randomBytes(4).toString('hex');
+  await host.getByLabel('Naam van de avond').fill(title2);await host.getByRole('button',{name:'Aanmelding openen'}).click();
+  await host.getByRole('button',{name:'Speler toevoegen'}).waitFor();
+  assert.equal(new URL(host.url()).pathname,'/beheer');
+  await host.locator('#language').click();await host.getByRole('button',{name:'Add a player'}).waitFor();
+  // Each standalone planner is opened with the central cookie, never a copied owner key.
+  const names=['A','B','C','D','E','F','G','H'];
+  const plan={state:{format:'toss',activeRoster:names,activeRosterLevels:[],scores:{},laterAdditions:{},pools:[{id:'main',players:names,rounds:[]}]},
+    view:{title:'Los '+id,en:false,rounds:[{n:1,rows:[]}],boards:[],playerIds:Object.fromEntries(names.map((n,i)=>[n,'p'+i]))}};
+  const shared=await guest.request.post(url+'/api/sessions',{data:plan});assert.equal(shared.status(),201);
+  const viewerCode=(await shared.json()).links[0].code;
+  await host.reload();const standalone=host.locator('.hub-session').filter({hasText:'Los '+id});
+  await standalone.getByRole('link',{name:'Open live view'}).waitFor();
+  const plannerPath=await standalone.getByRole('link',{name:'Open planner'}).getAttribute('href');
+  assert.match(plannerPath,/^\/beheer\/sessie\/[a-f0-9-]{36}$/);
+  assert.equal((await guest.request.get(url+'/api/manage/'+plannerPath.split('/').pop())).status(),401);
+  await publicPage.goto(url+'/s/'+viewerCode);assert.ok(await publicPage.locator('footer [data-organizer-link]').isVisible());
+  await host.getByRole('button',{name:'Sign out'}).click();await host.getByLabel('Organizer password').waitFor();
+  assert.equal(await host.locator('.hub-row,.hub-session').count(),0);
+  await host.reload();await host.getByLabel('Organizer password').waitFor();
+  assert.equal((await phone.request.get(url+'/api/polls/'+id+'/admin')).status(),401);
+  assert.deepEqual(errors,[]);
+});
