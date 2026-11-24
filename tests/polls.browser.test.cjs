@@ -88,13 +88,15 @@ test('signup poll through the real planner, mobile visitor, password and live fo
   await host.locator('#kocRoll:visible').waitFor();await host.waitForFunction(()=>[...document.querySelectorAll('#kocRoster input')].some(i=>i.value==='Test 7'));
   await player.getByText('De indeling wordt gemaakt').waitFor({timeout:12000});
   assert.equal(await player.locator('#groups').count(),0);assert.equal(await player.getByLabel('Jouw naam').count(),0);
-  await host.locator('#kocRoll').click();await host.locator('#kocPresent').click();
-  assert.match(await host.locator('#liveArt').getAttribute('src'),/mode-koc\.svg/);
+  await host.locator('#kocRoll').click();
   await host.setViewportSize({width:320,height:740});
+  await host.locator('#kocPresent').click();
+  assert.match(await host.locator('#liveArt').getAttribute('src'),/mode-koc\.svg/);
   const manager=await host.locator('#livePresentation .organizer-button').boundingBox();
   const exit=await host.locator('#presentExit').boundingBox();
   assert.ok(manager && exit && manager.height>=44 && manager.x+manager.width<=exit.x,'both live controls fit on a small phone');
   await host.locator('#presentExit').click();
+  await host.waitForFunction(()=>!document.fullscreenElement);
   await host.setViewportSize({width:1280,height:720});
   await host.getByRole('button',{name:'Publiceer op de aanmeldlink'}).click();
   await player.getByRole('link',{name:'Bekijk de baanindeling'}).click({timeout:15000});
