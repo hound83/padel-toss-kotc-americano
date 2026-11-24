@@ -39,10 +39,12 @@ test('short links have separate roles, protected owner state and atomic results 
   const data={slot:'main-1-1',ticket:'ticket0',player:'person0',score:[21,17]};
   assert.equal((await visitor(code,{...data,player:'person6'})).status,403);
   assert.equal((await visitor(code,{...data,score:[-2,20]})).status,422);
-  const same=await Promise.all([visitor(code,data),visitor(code,{...data,score:[22,16]})]);
-  assert.deepEqual(same.map(x=>x.status).sort(),[200,409]);
-  const master=await owner();assert.deepEqual(master.state.scores[data.slot],{t1:21,t2:17});
-  const board=(await visitor(view)).view.boards[0].rows;assert.ok(board.some(r=>r[1]==='Emma' && r[2]===21));
+  const submitted=[data,{...data,score:[22,16]}];
+  const responses=await Promise.all(submitted.map(entry=>visitor(code,entry)));
+  assert.deepEqual(responses.map(response=>response.status).sort(),[200,409]);
+  const [t1,t2]=submitted[responses.findIndex(response=>response.status===200)].score;
+  const master=await owner();assert.deepEqual(master.state.scores[data.slot],{t1,t2});
+  const board=(await visitor(view)).view.boards[0].rows;assert.ok(board.some(r=>r[1]==='Emma' && r[2]===t1));
   assert.equal((await owner({action:'save',revision:group.revision,document:fixture()})).status,409);
   const personal=await owner({action:'mode',revision:master.revision,mode:'personal'});
   assert.equal((await visitor(code)).status,404);
