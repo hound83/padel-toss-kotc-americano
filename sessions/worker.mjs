@@ -1,19 +1,16 @@
 import schema from './schema.sql';
 import {serve} from './routes.mjs';
 import {cleanup} from './api.mjs';
+import {needsSchema,schemaInitializer} from './schema-init.mjs';
 
-let initialized;
-async function initialize(env){
-  if(!initialized){
-    const statements=schema.split(';').map(s=>s.trim()).filter(Boolean);
-    initialized=env.DB.batch(statements.map(s=>env.DB.prepare(s))).catch(error=>{initialized=null;throw error;});
-  }
-  return initialized;
-}
+const initialize=schemaInitializer(schema);
 export default {
   async fetch(request,env){
-    if(new URL(request.url).pathname.startsWith('/api/'))await initialize(env);
+    if(needsSchema(request,new URL(request.url).pathname)){
+      try{await initialize(env.DB);}
+      catch{return Response.json({error:'unavailable'},{status:503,headers:{'Cache-Control':'private, no-store','Retry-After':'1'}});}
+    }
     return serve(request,env);
   },
-  async scheduled(event,env){await initialize(env);await cleanup(env.DB);}
+  async scheduled(event,env){await initialize(env.DB);await cleanup(env.DB);}
 };

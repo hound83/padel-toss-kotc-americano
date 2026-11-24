@@ -6,6 +6,15 @@ const {chromium}=require('playwright');
   const browser=await chromium.launch();
   try{
     const page=await browser.newPage({viewport:{width:390,height:844},hasTouch:true});
+    async function protectedRoute(path){
+      const response=await page.request.get(new URL(path,base).href),status=response.status();
+      let problem='';
+      if(status>=500){
+        const matches=(await response.text()).match(/(?:error(?: code)?[: #]*|error-code">)\s*(1\d{3})\b/i);
+        problem=' edge '+(matches?.[1]||'unspecified')+' ray '+(response.headers()['cf-ray']||'unspecified');
+      }
+      assert.equal(status,401,path+' returned '+status+problem);
+    }
     let live=false;
     for(let i=0;i<36;i++){
       await page.goto(base);
@@ -32,7 +41,7 @@ const {chromium}=require('playwright');
     await page.getByRole('link',{name:'Mijn polls openen'}).tap();
     await page.getByRole('heading',{name:'Mijn polls',exact:true}).waitFor();
     await page.getByLabel('Jouw naam',{exact:true}).waitFor();
-    assert.equal((await page.request.get(new URL('/api/polls/mine',base).href)).status(),401);
+    await protectedRoute('/api/polls/mine');
     await page.locator('#language').tap();
     await page.getByRole('button',{name:'Open my polls'}).waitFor();
     await page.getByLabel('Your name',{exact:true}).waitFor();
@@ -71,8 +80,12 @@ const {chromium}=require('playwright');
     assert.equal(await page.title(),'Manage events · Padel Planner');
     await page.locator('#language').tap();
     await page.getByLabel('Algemeen beheerwachtwoord',{exact:true}).waitFor();
-    assert.equal((await page.request.get(new URL('/api/polls/hub',base).href)).status(),401);
-    assert.equal((await page.request.get(new URL('/api/polls/hub/organizers',base).href)).status(),401);
+    await protectedRoute('/api/polls/hub');
+    await protectedRoute('/api/polls/hub/organizers');
+    const hubAsset=await page.request.get(new URL('/organizer-hub.js',base).href);
+    assert.ok(hubAsset.ok() && (await hubAsset.text()).includes('Organisatoren beheren'));
+    const pollAsset=await page.request.get(new URL('/poll.js',base).href);
+    assert.ok(pollAsset.ok() && (await pollAsset.text()).includes('Speler verwijderen'));
     await page.goto(base);
     await page.locator('.format-btn[data-format=toss]').tap();
     await page.locator('#continueTo2').tap();await page.locator('#generateBtn').tap();
