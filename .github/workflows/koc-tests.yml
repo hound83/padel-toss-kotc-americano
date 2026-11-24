@@ -24,6 +24,7 @@ jobs:
           npm install --no-save --no-package-lock playwright@1.58.0
           # The Ubuntu runner already has the libraries needed for headless Chromium.
           npx playwright install chromium
+          npx playwright install --with-deps webkit
       - name: All browser integration tests
         run: timeout 120s node --test --test-timeout=60000 --test-reporter=spec tests/*.browser.test.cjs
         env:

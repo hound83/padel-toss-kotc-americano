@@ -27,6 +27,10 @@ test('everyone can see names, each browser only changes its own response, and ye
   assert.equal(page.groups.in.length,16);assert.equal(page.groups.wait[0].name,'Player 17');
   assert.equal(page.mine,undefined);assert.deepEqual(Object.keys(page.groups.in[0]),['name']);
   const privateData=await f.read(),first=privateData.entries.find(e=>e.name==='Player 1');
+  assert.equal((await f.send(f.root,undefined,f.key(1))).data.mine.name,'Player 1');
+  await f.vote(1,'Player 1');
+  const same=await f.read();
+  assert.deepEqual(same.entries,privateData.entries,'reading or repeating the same answer preserves timestamps and order');
   assert.equal((await f.send(f.root,{id:first.id,name:'Player 1',answer:'cancel'},f.key(999))).status,404);
   assert.equal((await f.vote(999,'Player 1','no')).status,409);
   await f.send(f.root,{id:first.id,name:'Player 4',answer:'cancel'},f.key(4));

@@ -2,7 +2,7 @@ const test=require('node:test');
 const assert=require('node:assert/strict');
 const http=require('node:http');
 const {randomBytes}=require('node:crypto');
-const {chromium}=require('playwright');
+const {chromium,webkit,devices}=require('playwright');
 
 test('signup poll through the real planner, mobile visitor, password and live format artwork', {timeout:90000},async t=>{
   const {localSessionApp}=await import('../sessions/local.mjs');
@@ -18,9 +18,16 @@ test('signup poll through the real planner, mobile visitor, password and live fo
     t.after(()=>new Promise(resolve=>{server.closeAllConnections();server.close(resolve);}));
   }
   const browser=await chromium.launch({executablePath:process.env.CHROMIUM_EXECUTABLE_PATH});t.after(()=>browser.close());
-  const owner=await browser.newContext(),phone=await browser.newContext({viewport:{width:390,height:844},hasTouch:true}),other=await browser.newContext();
-  const host=await owner.newPage(),player=await phone.newPage(),visitor=await other.newPage();
-  const errors=[];for(const p of [host,player,visitor]){p.setDefaultTimeout(7500);p.on('pageerror',err=>errors.push(err.message));}
+  const safari=await webkit.launch();t.after(()=>safari.close());
+  const owner=await browser.newContext(),phone=await browser.newContext(devices['Pixel 7']),other=await safari.newContext(devices['iPhone 13']);
+  const errors=[];
+  async function tab(context){
+    const page=await context.newPage();page.setDefaultTimeout(7500);
+    page.on('pageerror',err=>errors.push(err.message));
+    return page;
+  }
+  const host=await tab(owner);
+  let player=await tab(phone),visitor=await tab(other);
   const password=randomBytes(14).toString('hex');
   await host.goto(url);await host.getByRole('link',{name:'Aanmeldpoll maken'}).click();
   await host.getByLabel('Speelvorm').selectOption('koc');await host.getByLabel('Naam van de avond').fill('Test KOC');
@@ -30,11 +37,28 @@ test('signup poll through the real planner, mobile visitor, password and live fo
   await host.getByRole('button',{name:'Ga indelen'}).waitFor();
   const id=new URL(host.url()).pathname.split('/').pop(),publicUrl=url+'/aanmelden/'+id;
   await player.goto(publicUrl);assert.equal(await player.locator('#listJump:visible').innerText(),'0 / 8 · Bekijk aanmeldingen');await player.getByLabel('Jouw naam').fill('Mila');await player.getByRole('button',{name:'Ja, ik doe mee'}).click();await player.getByText('Je staat bij Deelnemers.').waitFor();
+  async function reopenSignup(previous,context,name,status,answer){
+    await previous.close();
+    const returning=await tab(context), writes=[];
+    returning.on('request',req=>{if(req.method()==='POST')writes.push(req.url());});
+    await returning.goto(publicUrl);await returning.getByText(status,{exact:true}).waitFor();
+    assert.equal(await returning.getByLabel('Jouw naam').inputValue(),name);
+    assert.equal(await returning.locator('[data-answer="'+answer+'"]').getAttribute('aria-pressed'),'true');
+    assert.ok(await returning.getByRole('button',{name:'Mijn aanmelding intrekken'}).isVisible());
+    assert.deepEqual(writes,[],'reopening must not submit another response or change queue order');
+    return returning;
+  }
+  player=await reopenSignup(player,phone,'Mila','Je staat bij Deelnemers.','yes');
   await visitor.goto(publicUrl);await visitor.locator('#groups').getByText('Mila').waitFor();assert.equal(await visitor.getByRole('button',{name:'Mijn aanmelding intrekken'}).count(),0);
-  visitor.on('dialog',d=>d.accept());
+  await visitor.getByLabel('Jouw naam').fill('Mila');
+  await visitor.getByRole('button',{name:'Ja, ik doe mee'}).click();
+  await visitor.getByText(/Die naam staat al op de lijst/).waitFor();
+  assert.equal(await visitor.getByRole('button',{name:'Mijn aanmelding intrekken'}).count(),0);
   await visitor.getByLabel('Jouw naam').fill('Testreserve');
   await visitor.getByRole('button',{name:'Alleen reserve',exact:true}).click();
   await visitor.getByText('Je staat bij Reserve.').waitFor();
+  visitor=await reopenSignup(visitor,other,'Testreserve','Je staat bij Reserve.','reserve');
+  visitor.on('dialog',d=>d.accept());
   await visitor.getByRole('button',{name:'Mijn aanmelding intrekken'}).click();await visitor.getByText('Je aanmelding is ingetrokken.').waitFor();
   assert.ok(await visitor.locator('#groups').getByText('Mila',{exact:true}).isVisible());
   assert.match(await player.locator('#art').getAttribute('src'),/mode-koc\.svg/);
@@ -64,9 +88,16 @@ test('signup poll through the real planner, mobile visitor, password and live fo
   await host.locator('#kocRoll:visible').waitFor();await host.waitForFunction(()=>[...document.querySelectorAll('#kocRoster input')].some(i=>i.value==='Test 7'));
   await player.getByText('De indeling wordt gemaakt').waitFor({timeout:12000});
   assert.equal(await player.locator('#groups').count(),0);assert.equal(await player.getByLabel('Jouw naam').count(),0);
-  await host.locator('#kocRoll').click();await host.locator('#kocPresent').click();
+  await host.locator('#kocRoll').click();
+  await host.setViewportSize({width:320,height:740});
+  await host.locator('#kocPresent').click();
   assert.match(await host.locator('#liveArt').getAttribute('src'),/mode-koc\.svg/);
+  const manager=await host.locator('#livePresentation .organizer-button').boundingBox();
+  const exit=await host.locator('#presentExit').boundingBox();
+  assert.ok(manager && exit && manager.height>=44 && manager.x+manager.width<=exit.x,'both live controls fit on a small phone');
   await host.locator('#presentExit').click();
+  await host.waitForFunction(()=>!document.fullscreenElement);
+  await host.setViewportSize({width:1280,height:720});
   await host.getByRole('button',{name:'Publiceer op de aanmeldlink'}).click();
   await player.getByRole('link',{name:'Bekijk de baanindeling'}).click({timeout:15000});
   await player.locator('#rounds article').first().waitFor();assert.match(await player.locator('#modeArt').getAttribute('src'),/mode-koc\.svg/);

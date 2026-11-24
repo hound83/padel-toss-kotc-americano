@@ -13,6 +13,9 @@ const {chromium}=require('playwright');
       await new Promise(resolve=>setTimeout(resolve,5000));
     }
     assert.ok(live,'the production planner serves 3.3');
+    const manage=page.locator('footer .organizer-button');
+    const homeBox=await manage.boundingBox();
+    assert.ok(homeBox && homeBox.height>=44);
     await page.locator('#pollHome').click();
     for(const [format,file] of [['toss','toss'],['koc','koc'],['americano','americano'],['splitToss','split']]){
       await page.getByLabel('Speelvorm',{exact:true}).selectOption(format);
@@ -20,7 +23,9 @@ const {chromium}=require('playwright');
     }
     const missing=await page.request.get(new URL('/api/polls/00000000000000',base).href);
     assert.equal(missing.status(),404);assert.deepEqual(await missing.json(),{error:'missing'});
-    await page.locator('footer [data-organizer-link]').click();
+    const signupBox=await manage.boundingBox();
+    assert.ok(signupBox && signupBox.height>=44);
+    await manage.tap();
     await page.getByRole('heading',{name:'Centraal beheer'}).waitFor();
     await page.getByLabel('Beheerwachtwoord').waitFor();
     assert.equal((await page.request.get(new URL('/api/polls/hub',base).href)).status(),401);
