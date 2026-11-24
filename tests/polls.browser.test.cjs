@@ -31,15 +31,19 @@ test('signup poll through the real planner, mobile visitor, password and live fo
   }
   const host=await tab(owner);
   let player=await tab(phone),visitor=await tab(other);
-  const password=randomBytes(14).toString('hex'),ownerName='Werner '+randomBytes(4).toString('hex');
+  const password=randomBytes(3).toString('hex'),legacyPassword=randomBytes(14).toString('hex'),ownerName='Werner '+randomBytes(4).toString('hex');
   await host.goto(url);await host.getByRole('link',{name:'Aanmeldpoll maken'}).click();
   await host.getByLabel('Speelvorm').selectOption('koc');await host.getByLabel('Naam van de avond').fill('Test KOC');
   await host.getByLabel('Banen',{exact:true}).fill('2');await host.getByLabel('Plekken',{exact:true}).fill('8');
   assert.equal(await host.getByLabel('Plekken',{exact:true}).inputValue(),'8');
   await host.getByLabel('Jouw naam',{exact:true}).fill(ownerName);
-  await host.getByLabel('Wachtwoord',{exact:true}).fill(password);
+  const firstPassword=host.getByLabel('Wachtwoord',{exact:true});
+  await firstPassword.fill(password.slice(0,5));
+  assert.equal(await firstPassword.evaluate(el=>el.validity.tooShort),true);
+  await firstPassword.fill(password);
   await host.getByRole('button',{name:'Nieuwe poll aanmaken',exact:true}).click();
   await host.getByRole('button',{name:'Ga indelen'}).waitFor();
+  assert.equal(await host.getByRole('button',{name:'Aanpassen',exact:true}).count(),0);
   const id=new URL(host.url()).pathname.split('/').pop(),publicUrl=url+'/aanmelden/'+id;
   await visitor.goto(url+'/aanmaken');
   const visitorName=visitor.getByLabel('Jouw naam',{exact:true}),visitorPassword=visitor.getByLabel('Wachtwoord',{exact:true});
@@ -96,14 +100,24 @@ test('signup poll through the real planner, mobile visitor, password and live fo
   assert.match(await player.locator('#art').getAttribute('src'),/mode-koc\.svg/);
   assert.ok(await player.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
   for(let i=1;i<=7;i++){const res=await host.request.post(url+'/api/polls/'+id,{headers:{'X-Signup-Key':randomBytes(32).toString('hex')},data:{name:'Test '+i,answer:'yes'}});assert.equal(res.status(),200);}
-  await host.reload();await host.getByRole('button',{name:'Wijzig Test 7',exact:true}).click();
+  await host.reload();
+  const tools=host.locator('section.card').filter({has:host.getByRole('heading',{name:'Aanmeldlijst beheren'})});
+  assert.equal(await host.locator('nav').getByRole('link',{name:'Mijn polls',exact:true}).getAttribute('href'),'/mijn-polls');
+  assert.equal(await tools.getByRole('link',{name:'Mijn polls',exact:true}).count(),0);
+  await tools.getByRole('button',{name:'Aanpassen',exact:true}).click();
+  const picker=host.getByLabel('Kies een speler',{exact:true});
+  assert.equal(await picker.inputValue(),'');
+  assert.equal(await picker.locator('option').count(),10);
+  await picker.selectOption({label:'Test 6'});await picker.selectOption({label:'Test 7'});
+  assert.equal(await host.getByLabel('Naam',{exact:true}).inputValue(),'Test 7');
   await host.getByLabel('Plek',{exact:true}).selectOption('2');await host.getByRole('button',{name:'Opslaan',exact:true}).click();
   await host.waitForFunction(()=>document.querySelector('[data-place=in] li:nth-child(2) .person')?.textContent.startsWith('Test 7'));
   const playing=host.locator('[data-place=in]');
   assert.equal(await playing.locator('.count').innerText(),'8 / 8');
   await playing.locator('li').filter({hasText:'Test 6'}).dragTo(host.locator('[data-place=reserve]'));
   await host.locator('[data-place=reserve] li').filter({hasText:'Test 6'}).waitFor();
-  await host.getByRole('button',{name:'Wijzig Test 6',exact:true}).click();
+  await host.getByRole('button',{name:'Test 6 aanpassen',exact:true}).click();
+  assert.equal(await picker.locator('option:checked').innerText(),'Test 6');
   await host.getByLabel('Verplaats naar',{exact:true}).selectOption('in');
   await host.getByLabel('Plek',{exact:true}).selectOption('8');
   await host.getByRole('button',{name:'Opslaan',exact:true}).click();await playing.locator('li').filter({hasText:'Test 6'}).waitFor();
@@ -160,10 +174,10 @@ test('signup poll through the real planner, mobile visitor, password and live fo
   assert.equal(await visitor.locator('#groups li').count(),0);
   for(const [format,asset] of [['toss','toss'],['americano','americano'],['splitToss','split']]){
     const settings={title:'Test '+format,format,capacity:8,courts:2,date:new Date().toISOString().slice(0,10),start:'11:00',end:'13:00'};
-    const created=await host.request.post(url+'/api/polls',{data:{settings,password}});assert.equal(created.status(),201);
+    const created=await host.request.post(url+'/api/polls',{data:{settings,password:legacyPassword}});assert.equal(created.status(),201);
     const poll=await created.json(),api=url+'/api/polls/'+poll.id;
     for(let i=1;i<=8;i++)await host.request.post(api,{headers:{'X-Signup-Key':randomBytes(32).toString('hex')},data:{name:'Naam '+i,answer:'yes'}});
-    await host.goto(url+'/beheer/'+poll.id);await host.getByLabel('Beheercode van deze poll').fill(password);await host.getByRole('button',{name:'Inloggen'}).click();
+    await host.goto(url+'/beheer/'+poll.id);await host.getByLabel('Beheercode van deze poll').fill(legacyPassword);await host.getByRole('button',{name:'Inloggen'}).click();
     if(format==='toss'){
       await host.getByRole('button',{name:'Toevoegen aan Mijn polls'}).click();
       const dlg=host.getByRole('dialog');

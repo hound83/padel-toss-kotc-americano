@@ -12,7 +12,7 @@ window.TossMyPolls=({P,say,modeName,dateText,el,button,link,card,field,input,act
     const name=field(grid,say('Jouw naam','Your name'),input('text'));
     name.autocomplete='username';name.required=true;name.maxLength=80;name.placeholder=say('Bijvoorbeeld Werner','For example, Werner');
     const password=field(grid,say('Wachtwoord','Password'),input('password'));
-    password.autocomplete=setup?'new-password':'current-password';password.required=true;password.minLength=8;password.maxLength=128;
+    password.autocomplete=setup?'new-password':'current-password';password.required=true;password.minLength=6;password.maxLength=128;
     if(setup){
       const hints=[
         [name,say('Kies bij je eerste poll een naam die nog vrij is. Is Werner bezet? Gebruik bijvoorbeeld Werner V.',

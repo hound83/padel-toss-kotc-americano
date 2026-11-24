@@ -22,6 +22,7 @@ const {chromium}=require('playwright');
     assert.equal(await page.getByLabel('Naam van de avond',{exact:true}).inputValue(),'Toss');
     const helpText=async label=>page.locator('#'+await page.getByLabel(label,{exact:true}).getAttribute('aria-describedby')).innerText();
     assert.match(await helpText('Jouw naam'),/Werner V\./);
+    assert.equal(await page.getByLabel('Wachtwoord',{exact:true}).getAttribute('minlength'),'6');
     assert.match(await helpText('Wachtwoord'),/Alleen je naam moet uniek zijn/);
     await page.locator('#language').tap();
     await page.getByLabel('Your name',{exact:true}).waitFor();
@@ -61,6 +62,7 @@ const {chromium}=require('playwright');
     await page.locator('#continueTo2').tap();await page.locator('#generateBtn').tap();
     await page.getByRole('button',{name:'Schema delen'}).filter({visible:true}).tap();
     assert.equal(await page.getByLabel('Speeldatum',{exact:true}).inputValue(),'');
+    await page.getByLabel('Jouw naam',{exact:true}).waitFor();
     await page.getByRole('button',{name:'Inplannen en delen'}).waitFor();
     console.log('Cloudflare production serves Toss 3.3, the four mode illustrations and the protected organizer dashboard.');
   }finally{await browser.close();}

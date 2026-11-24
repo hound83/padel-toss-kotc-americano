@@ -1,7 +1,7 @@
 import {centralLogin} from './organizer.mjs';
 import {acceptablePassword,hash,random,verifier} from './poll-auth.mjs';
 import {currentOrganizer,organizerCredentials,organizerSession} from './poll-organizers.mjs';
-import {emptyPoll, changeSettings, adminEntry, nameKey, publicPoll, respond, invalid} from './poll-roster.mjs';
+import {creatorName, emptyPoll, changeSettings, adminEntry, nameKey, publicPoll, respond, invalid} from './poll-roster.mjs';
 
 const day=86400000;
 const stmt=(db,sql,...args)=>db.prepare(sql).bind(...args);
@@ -45,6 +45,8 @@ export async function pollApi(request,db,now,{json,requestJson,counter},adminPas
       if(viaHub)invalid('field');
       owner=await organizerCredentials(request,db,now,body,counter,true);
     }
+    doc.createdAt=now;
+    doc.createdBy=owner?.display_name || (viaHub && body.creatorName!==undefined ? creatorName(body.creatorName) : null);
     const salt=owner?.salt||random(16);
     const password=owner?.verifier||await verifier(viaHub?random(32):acceptablePassword(body.password),salt);
     const writes=[stmt(db,'INSERT INTO signup_series VALUES(?,?,?)',series,salt,password),rowInsert(db,id,series,doc,now)];
@@ -71,7 +73,8 @@ export async function pollApi(request,db,now,{json,requestJson,counter},adminPas
     return json({token:await issueLogin(db,row.series,now)});
   }
   const membership=(kind==='admin' || kind==='organizer') &&
-    await first(db,'SELECT organizer FROM poll_organizer_series WHERE series=?',row.series);
+    await first(db,`SELECT m.organizer,o.display_name FROM poll_organizer_series m JOIN poll_organizers o ON o.name_key=m.organizer
+      WHERE m.series=?`,row.series);
   if(kind==='organizer'){
     if(request.method!=='POST')invalid('method',405);
     // Linking a legacy series needs both its existing poll login and the organizer's credentials.
@@ -96,7 +99,11 @@ export async function pollApi(request,db,now,{json,requestJson,counter},adminPas
   async function organizerView(version,doc){
     const view=adminView(version,doc);
     view.hasOrganizer=Boolean(membership);
+    view.askRepeatName=!ownPoll;
     if(siteAdmin){
+      view.createdAt=doc.createdAt??null;
+      view.createdBy=doc.createdBy??null;
+      view.seriesOrganizer=membership?.display_name??null;
       // A central login opens the planner with its cookie. Never hand a long-lived
       // owner link to that browser as a side effect of viewing a signup list.
       delete view.plannerKey;
@@ -182,8 +189,11 @@ export async function pollApi(request,db,now,{json,requestJson,counter},adminPas
           guardValues=[existing.id,now,next.date];
         }else{
           doc.next=random(7);
+          const nextPoll=emptyPoll(next);
+          nextPoll.createdAt=now;
+          nextPoll.createdBy=ownPoll?membership.display_name:body.creatorName===undefined?null:creatorName(body.creatorName);
           extra.push(stmt(db,'INSERT INTO signup_polls(id,series,revision,expires,document) SELECT ?,?,1,?,? WHERE EXISTS(SELECT 1 FROM signup_polls WHERE id=? AND revision=?)',
-            doc.next,row.series,ttl(next,now),JSON.stringify(emptyPoll(next)),id,row.revision));
+            doc.next,row.series,ttl(next,now),JSON.stringify(nextPoll),id,row.revision));
         }
       }else invalid('action');
     }

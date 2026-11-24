@@ -36,6 +36,7 @@ async function listEvents(db, now, after, sessions) {
   // entries remain in D1 until the organizer opens a particular event.
   const source = sessions ? `
     SELECT s.id, s.revision, s.closed, l.code AS viewCode,
+      json_extract(s.document,'$.createdAt') AS createdAt, json_extract(s.document,'$.createdBy') AS createdBy,
       json_extract(s.document,'$.planning.date') AS date,
       json_extract(s.document,'$.state.format') AS format,
       json_extract(s.document,'$.view.title') AS title
@@ -44,13 +45,17 @@ async function listEvents(db, now, after, sessions) {
       AND json_extract(s.document,'$.planning.pollId') IS NULL AND NOT EXISTS (
       SELECT 1 FROM signup_polls p WHERE p.expires>? AND json_extract(p.document,'$.viewCode')=l.code
     ) ORDER BY s.id LIMIT 65` : `
-    WITH page AS (SELECT id, revision, document FROM signup_polls WHERE expires>? AND id>? ORDER BY id LIMIT 65)
+    WITH page AS (SELECT id, series, revision, document FROM signup_polls WHERE expires>? AND id>? ORDER BY id LIMIT 65)
     SELECT p.id, p.revision, json_extract(p.document,'$.settings') AS settings,
       json_extract(p.document,'$.phase') AS phase,
+      json_extract(p.document,'$.createdAt') AS createdAt, json_extract(p.document,'$.createdBy') AS createdBy,
+      o.display_name AS seriesOrganizer,
       COUNT(CASE WHEN json_extract(e.value,'$.place')='in' THEN 1 END) AS playing,
       COUNT(CASE WHEN json_extract(e.value,'$.place')='wait' THEN 1 END) AS waiting,
       COUNT(CASE WHEN json_extract(e.value,'$.place')='reserve' THEN 1 END) AS standby
-    FROM page p LEFT JOIN json_each(p.document,'$.entries') e ON 1 GROUP BY p.id ORDER BY p.id`;
+    FROM page p LEFT JOIN poll_organizer_series m ON m.series=p.series
+    LEFT JOIN poll_organizers o ON o.name_key=m.organizer
+    LEFT JOIN json_each(p.document,'$.entries') e ON 1 GROUP BY p.id ORDER BY p.id`;
   const values = sessions ? [now,after,now] : [now,after];
   const {results} = await db.prepare(source).bind(...values).all();
   const items = results.slice(0,64);

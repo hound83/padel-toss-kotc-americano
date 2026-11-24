@@ -201,7 +201,12 @@ test('only explicitly dated shares enter the planner and a poll always owns its 
 
 test('an organizer can reopen only their own polls by name and password on a new device',async t=>{
   const {app,send,settings,now}=await setup(t);
-  const credentials={organizerName:'Werner de Vries',password:randomBytes(16).toString('hex')};
+  const credentials={organizerName:'Werner de Vries',password:randomBytes(3).toString('hex')};
+  const short={...credentials,password:credentials.password.slice(0,5)};
+  for(const [path,body] of [['polls',{settings,...short}],['polls/mine/login',short]]){
+    const result=await send(path,body);assert.equal(result.status,422);assert.equal(result.data.error,'organizer-password-length');
+  }
+  assert.equal(app.sql.prepare('SELECT count(*) AS n FROM poll_organizers').get().n,0);
   const cookie=res=>({Cookie:res.headers.get('Set-Cookie').split(';')[0]});
   const first=await send('polls',{settings,...credentials});assert.equal(first.status,201);
   const own=cookie(first),id=first.data.id;
@@ -288,4 +293,26 @@ test('the private organizer list pages through all available evenings and keeps 
   const fresh=await send('polls/mine/login',credentials,{},undefined,poll.expires+2);assert.equal(fresh.status,200);
   const privateList=await send('polls/mine',undefined,{Cookie:fresh.headers.get('Set-Cookie').split(';')[0]},undefined,poll.expires+3);
   assert.deepEqual(privateList.data.items,[]);
+});
+
+test('the hub shows the original creator and time of each edition without guessing historical data',async t=>{
+  const {app,send,login,settings,now}=await setup(t),site=await login();
+  const personal=await send('polls',{settings,organizerName:'Mara V.',password:'abcdef',createdAt:1,creatorName:'Someone else'});
+  const own={Cookie:personal.headers.get('Set-Cookie').split(';')[0]},path='polls/'+personal.data.id;
+  const original=await send(path+'/admin',undefined,site);
+  assert.equal(original.data.createdBy,'Mara V.');assert.equal(original.data.createdAt,now);
+  const next=await send(path+'/admin',{action:'repeat',revision:1,creatorName:'  Alex  P. '},site,undefined,now+60000);
+  const central=await send('polls',{settings,central:true,creatorName:'Sam'},site,undefined,now+70000);
+  const cards=(await send('polls/hub',undefined,site)).data.items;
+  for(const [id,name,time] of [[personal.data.id,'Mara V.',now],[next.data.id,'Alex P.',now+60000],[central.data.id,'Sam',now+70000]]){
+    const card=cards.find(p=>p.id===id),detail=(await send('polls/'+id+'/admin',undefined,site)).data;
+    assert.equal(card.createdAt,time);assert.equal(card.createdBy,name);
+    assert.equal(detail.createdAt,time);assert.equal(detail.createdBy,name);
+    assert.doesNotMatch(JSON.stringify((await send('polls/'+id)).data),/createdBy|createdAt|seriesOrganizer/);
+  }
+  await send(path+'/admin',{revision:2,action:'settings',settings:{...settings,title:'New title'},createdAt:123,createdBy:'Editor'},own);
+  assert.equal((await send(path+'/admin',undefined,site)).data.createdAt,now);
+  app.sql.prepare("UPDATE signup_polls SET document=json_remove(document,'$.createdAt','$.createdBy') WHERE id=?").run(personal.data.id);
+  const old=(await send('polls/hub',undefined,site)).data.items.find(p=>p.id===personal.data.id);
+  assert.equal(old.createdAt,null);assert.equal(old.createdBy,null);assert.equal(old.seriesOrganizer,'Mara V.');
 });

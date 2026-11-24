@@ -17,6 +17,12 @@ export function settings(input){
     input.end<=input.start)invalid('settings');
   return {title:clean(input.title,80),format:input.format,date:input.date,start:input.start,end:input.end,courts:input.courts,capacity:input.capacity};
 }
+export function creatorName(value){
+  if(typeof value!=='string' || value.length>160 || /[\p{Cc}\p{Cf}]/u.test(value))invalid('organizer-name');
+  const label=value.normalize('NFKC').trim().replace(/\s+/gu,' ');
+  if(!label || label.length>80)invalid('organizer-name');
+  return label;
+}
 export function emptyPoll(config){return {settings:settings(config),phase:'open',entries:[],viewCode:null};}
 function uniqueName(doc,value,entry){
   const name=clean(value,50);

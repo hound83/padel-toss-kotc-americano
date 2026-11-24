@@ -51,3 +51,5 @@ dialog{border:1px solid var(--line);border-radius:1rem;padding:1.4rem;width:min(
 .organizer-credentials{align-items:start}
 .organizer-credentials .field>small{font-weight:400}
 @media(max-width:480px){.grid.organizer-credentials{grid-template-columns:1fr}}
+.poll-nav-actions{display:flex;align-items:center;gap:.75rem}.poll-nav-actions a{display:inline-flex;align-items:center;min-height:44px}.shell>nav{flex-wrap:wrap;gap:.5rem}
+.creation-info{display:block;color:var(--muted);overflow-wrap:anywhere;line-height:1.45}dialog .creation-info{margin:.3rem 0 .8rem}

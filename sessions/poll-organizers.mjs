@@ -1,16 +1,9 @@
-import {invalid} from './poll-roster.mjs';
+import {creatorName,invalid} from './poll-roster.mjs';
 import {acceptablePassword,hash,random,verifier} from './poll-auth.mjs';
 
 const lifetime=12*60*60;
 const cookieName='__Host-padel-polls';
 const dummySalt='4768a1fd67cbdf0085f178862b525940';
-
-function organizerName(value){
-  if(typeof value!=='string' || value.length>160 || /[\p{Cc}\p{Cf}]/u.test(value))invalid('organizer-name');
-  const label=value.normalize('NFKC').trim().replace(/\s+/gu,' ');
-  if(!label || label.length>80)invalid('organizer-name');
-  return {label,key:label.toLowerCase()};
-}
 
 async function currentToken(request){
   const token=request.headers.get('Cookie')?.match(/(?:^|;\s*)__Host-padel-polls=([a-f0-9]{64})(?:;|$)/)?.[1];
@@ -35,14 +28,14 @@ export async function organizerSession(request,db,now,key){
 
 // A new name is claimed atomically. Two concurrent first polls can't assign the same name to different passwords.
 export async function organizerCredentials(request,db,now,body,counter,allowNew){
-  const {label,key}=organizerName(body.organizerName);
+  const label=creatorName(body.organizerName),key=label.toLowerCase();
   if(body.useSession===true){
     const session=await currentOrganizer(request,db,now);
     if(session?.name_key!==key)invalid('organizer-login',401);
     return db.prepare('SELECT * FROM poll_organizers WHERE name_key=?').bind(key).first();
   }
   await counter(db,request,'poll-organizer-password',now,12,true);
-  const password=acceptablePassword(body.password);
+  const password=acceptablePassword(body.password,6,'organizer-password-length');
   const select=()=>db.prepare('SELECT * FROM poll_organizers WHERE name_key=?').bind(key).first();
   let owner=await select();
   if(!owner && allowNew){
