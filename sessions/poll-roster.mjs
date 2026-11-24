@@ -24,6 +24,13 @@ export function creatorName(value){
   return label;
 }
 export function emptyPoll(config){return {settings:settings(config),phase:'open',entries:[],viewCode:null};}
+// A legacy standby in another format needs an organizer decision before taking a place.
+export function prepareRoster(doc){
+  if(doc.settings.format!=='koc'){
+    for(const entry of doc.entries)if(entry.place==='reserve')entry.place='review';
+  }
+  return doc;
+}
 function uniqueName(doc,value,entry){
   const name=clean(value,50);
   if(doc.entries.some(e=>e!==entry && nameKey(e.name)===nameKey(name)))invalid('duplicate',409);
@@ -42,7 +49,7 @@ function admitted(doc){return doc.entries.filter(e=>e.place==='in');}
 function seat(doc,allowReserve=false,exclude){
   while(admitted(doc).length<doc.settings.capacity){
     const first=doc.entries.find(e=>e.place==='wait' && e!==exclude) ||
-      (allowReserve && doc.entries.find(e=>e.place==='reserve' && e!==exclude));
+      (allowReserve && doc.settings.format==='koc' && doc.entries.find(e=>e.place==='reserve' && e!==exclude));
     if(!first)break;
     insert(doc,first,'in');
   }
@@ -54,6 +61,7 @@ function limitSeats(doc){
 export function respond(doc,person,body,now,held){
   if(doc.phase!=='open')invalid('locked',409);
   if(!answers.includes(body.answer))invalid('answer');
+  if(body.answer==='reserve' && doc.settings.format!=='koc')invalid('reserve-format');
   let entry=doc.entries.find(e=>e.person===person);
   if(!entry && body.answer==='cancel')invalid('missing',404);
   const name=body.answer==='cancel' && entry ? entry.name : uniqueName(doc,body.name,entry);
@@ -72,6 +80,7 @@ export function respond(doc,person,body,now,held){
 export function adminEntry(doc,body,now){
   let entry=body.id && doc.entries.find(row=>row.id===body.id);
   if(body.id && !entry)invalid('missing',404);
+  if(body.place==='reserve' && doc.settings.format!=='koc')invalid('reserve-format');
   if(!places.includes(body.place) || !Number.isInteger(body.position) || body.position<1 || body.position>401)invalid('place');
   const name=uniqueName(doc,body.name,entry);
   if(!entry){
@@ -94,22 +103,24 @@ export function changeSettings(doc,next){
   const previous=doc.settings;
   const updated=settings(next);
   if(doc.phase==='published' && updated.format!==previous.format)invalid('published-format',409);
-  doc.settings=updated;limitSeats(doc);
+  doc.settings=updated;prepareRoster(doc);limitSeats(doc);
   if(updated.capacity>previous.capacity)seat(doc);
 }
 export function publicPoll(doc,id,person){
   const result={id,settings:doc.settings,phase:doc.phase};
   if(doc.phase==='published')result.viewCode=doc.viewCode;
   if(doc.phase!=='open')return result;
-  result.groups={in:[],wait:[],reserve:[],out:[]};
+  const koc=doc.settings.format==='koc';
+  result.groups=koc?{in:[],wait:[],reserve:[],out:[]}:{in:[],wait:[],out:[]};
   for(const entry of doc.entries){
-    if(entry.answer==='cancel' && entry.place==='out')continue;
+    if((entry.answer==='cancel' && entry.place==='out') || (!koc && entry.place==='review'))continue;
     const place=entry.place==='review'?'reserve':entry.place;
     const label={name:entry.name};
     result.groups[place].push(label);
   }
   const own=person && doc.entries.find(e=>e.person===person);
-  if(own)result.mine={name:own.name,answer:own.answer,place:own.place==='review'?'reserve':own.place};
+  if(own)result.mine={name:own.name,answer:!koc && own.answer==='reserve'?null:own.answer,
+    place:own.place==='review'?(koc?'reserve':'pending'):own.place};
   if(own?.pin)result.mine.hasPin=true;
   return result;
 }

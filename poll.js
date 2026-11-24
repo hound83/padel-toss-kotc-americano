@@ -59,9 +59,10 @@
     if(phase==='planning' && !admin)$('phase').textContent=say('Indeling in voorbereiding','Preparing the schedule')+' · '+modeName(mode);
   }
   function dateText(s,year=false){return new Intl.DateTimeFormat(en?'en-GB':'nl-NL',{weekday:'long',day:'numeric',month:'long',...(year?{year:'numeric'}:{}),timeZone:'UTC'}).format(new Date(s.date+'T12:00:00Z'));}
-  function places(){return {in:say('Deelnemers','Playing'),wait:say('Wachtlijst · Ja','Waiting · Yes'),reserve:say('Reserve','Standby'),review:say('Alleen na akkoord','Needs approval'),out:say('Afgemeld','Unavailable')};}
+  function places(format=current?.settings.format){return {in:say('Deelnemers','Playing'),wait:say('Wachtlijst · Ja','Waiting · Yes'),...(format==='koc'?{reserve:say('Reserve','Standby')}:{}),review:say('Alleen na akkoord','Needs approval'),out:say('Afgemeld','Unavailable')};}
   function friendly(err){
     const labels={'hub-unconfigured':say('Het algemene beheerwachtwoord is nog niet ingesteld.','The site organizer password has not been set.'),storage:say('Sta lokale opslag toe om je eigen reactie te kunnen beheren, of vraag de organisator je aan te melden.','Enable browser storage to manage your own response, or ask the organizer to sign you up.'),duplicate:say('Die naam staat al op de lijst. Gebruik ook een achternaam of initiaal.','That name is taken. Add an initial or last name.'),
+      'reserve-format':say('Alleen bij King of the Court kun je reserve kiezen.','Standby is available for King of the Court only.'),
       'pin-login':say('Controleer je naam en de pincode voor deze avond.','Check your name and the PIN for this event.'),
       'pin-format':say('Vul precies vier cijfers in.','Enter exactly four digits.'),
       'pin-limit':say('Te veel pogingen. Probeer het later opnieuw of vraag de organisator om hulp.','Too many attempts. Try again later or ask the organizer for help.'),
@@ -268,7 +269,9 @@
     name.id='myName';name.autocomplete='given-name';name.maxLength=50;name.required=true;
     const controls=el('div',undefined,'actions'),own=el('p',undefined,'own-state');own.id='ownStatus';
     controls.setAttribute('role','group');controls.setAttribute('aria-label',say('Kies je reactie','Choose your response'));
-    for(const [key,nl,english] of [['yes','Ja, ik doe mee','Yes, I’m playing'],['reserve','Alleen reserve','Standby only'],['no','Ik kan niet','Unavailable']]){
+    const koc=current.settings.format==='koc';
+    const choices=[['yes','Ja, ik doe mee','Yes, I’m playing'],...(koc?[['reserve','Alleen reserve','Standby only']]:[]),['no','Ik kan niet','Unavailable']];
+    for(const [key,nl,english] of choices){
       const choice=button(say(nl,english),()=>{editor.selected=key;responses(current);});
       choice.dataset.answer=key;controls.append(choice);
     }
@@ -285,7 +288,8 @@
     wantPin.onchange=()=>{if(!wantPin.checked)pin.value='';responses(current);if(wantPin.checked)pin.focus();};
     form.onsubmit=event=>event.preventDefault();
     form.append(controls,own,pinOption,notice);actions(form,save);
-    form.append(el('p',say('Vol? Dan komt ‘Ja’ op de wachtlijst, vóór ‘Alleen reserve’.','Full? A ‘Yes’ joins the waitlist ahead of standby volunteers.'),'hint'));
+    form.append(el('p',koc?say('Vol? Dan komt ‘Ja’ op de wachtlijst, vóór ‘Alleen reserve’.','Full? A ‘Yes’ joins the waitlist ahead of standby volunteers.'):
+      say('Is de avond vol? Met ‘Ja’ kom je op de wachtlijst.','Event full? Choose Yes to join the waitlist.'),'hint'));
     section.append(form,open,signupHelp());content.prepend(section);
     return {section,form,name,controls,own,pinOption,wantPin,pinBox,pin,notice,save,open,selected:null,lastName:mine?.name};
   }
@@ -297,7 +301,7 @@
     editor.lastName=mine?.name;
     const selected=editor.selected||mine?.answer;
     for(const choice of controls.children)choice.setAttribute('aria-pressed',String(selected===choice.dataset.answer));
-    own.textContent=mine?(mine.answer==='cancel' && mine.place==='out'?say('Je aanmelding is ingetrokken.','You withdrew your signup.'):say('Je staat bij ','You are listed under ')+places()[mine.place]+'.'):'';
+    own.textContent=mine?.place==='pending'?say('Je reactie wacht op bevestiging door de organisator.','Your response is waiting for organizer confirmation.'):mine?(mine.answer==='cancel' && mine.place==='out'?say('Je aanmelding is ingetrokken.','You withdrew your signup.'):say('Je staat bij ','You are listed under ')+places()[mine.place]+'.'):'';
     pinOption.hidden=Boolean(mine?.hasPin);pinBox.hidden=pin.disabled=pinOption.hidden || !wantPin.checked;
     open.hidden=Boolean(mine);
     const changing=selected!==mine?.answer;
@@ -322,14 +326,19 @@
     }catch(error){$('message').textContent=friendly(error);if(['locked','changed'].includes(error.message))await load(true);}
     finally{pending=false;if(editor){editor.form.inert=false;responses(current);}}
   }
+  let expandedOutFor=null;
   function groups(data,manage){
     const old=$('groups'),list=el('div',undefined,'list'),queues=el('div',undefined,'queues');list.id='groups';
-    const labels=places();
-    const keys=manage?Object.keys(labels):['in','wait','reserve','out'];
+    const labels=places(data.settings.format);
+    const keys=Object.keys(labels).filter(key=>manage || key!=='review');
     for(const key of keys){
       const rows=manage?data.entries.filter(e=>e.place===key):data.groups[key];
-      const box=el('section',undefined,'group');box.dataset.place=key;
-      const title=el('h3',labels[key]);title.append(el('span',key==='in'?rows.length+' / '+data.settings.capacity:String(rows.length),'count'));box.append(title);
+      const collapsed=key==='out',box=el(collapsed?'details':'section',undefined,'group');box.dataset.place=key;
+      const title=el('h3',labels[key]);title.append(el('span',key==='in'?rows.length+' / '+data.settings.capacity:String(rows.length),'count'));
+      if(collapsed){
+        const summary=el('summary');summary.append(title);box.append(summary);box.open=expandedOutFor===data.id;
+        box.ontoggle=()=>{if(box.isConnected)expandedOutFor=box.open?data.id:null;};
+      }else box.append(title);
       if(!rows.length)box.append(el('p',say('Nog niemand','No one yet'),'empty'));
       const ul=el('ol',undefined,'rows');box.append(ul);
       rows.forEach((entry,index)=>{
@@ -355,7 +364,7 @@
     if(old)old.replaceWith(list);else content.append(list);
   }
   function publicPage(data){
-    if(!current || current.phase!==data.phase)resetEditor();
+    if(!current || current.phase!==data.phase || current.settings.format!==data.settings.format)resetEditor();
     current=data;header(data.settings,data.phase);
     if(data.phase==='open'){
       const jump=$('listJump');jump.hidden=false;

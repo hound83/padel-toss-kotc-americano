@@ -75,7 +75,7 @@ test('one central login reaches existing and new events, live schedules, and the
     const pollId=new URL(planner.url()).searchParams.get('avond');
     assert.match(pollId,/^[a-f0-9]{14}$/);
     const signupUrl=url+'/aanmelden/'+pollId;
-    for(const name of ['Nora Reserve',...players,'Ivo Wachtlijst']){
+    for(const name of [...(format==='koc'?['Nora Reserve']:[]),...players,'Ivo Wachtlijst']){
       const response=await guest.request.post(url+'/api/polls/'+pollId,{
         headers:{'X-Signup-Key':randomBytes(32).toString('hex')},
         data:{name,answer:name==='Nora Reserve'?'reserve':'yes'}
@@ -88,7 +88,8 @@ test('one central login reaches existing and new events, live schedules, and the
     const cardTime=await eventCard.locator('time').getAttribute('datetime');
     assert.ok(Number.isFinite(Date.parse(cardTime)));
     await eventCard.click();
-    await planner.locator('[data-place=reserve]').getByRole('button',{name:'Nora Reserve aanpassen',exact:true}).waitFor();
+    if(format==='koc')await planner.locator('[data-place=reserve]').getByRole('button',{name:'Nora Reserve aanpassen',exact:true}).waitFor();
+    else assert.equal(await planner.locator('[data-place=reserve]').count(),0);
     await planner.locator('[data-place=wait]').getByRole('button',{name:'Ivo Wachtlijst aanpassen',exact:true}).waitFor();
     await planner.getByRole('button',{name:'Ga indelen'}).click();
     await planner.getByText('Bevestigde deelnemers overgenomen.',{exact:true}).waitFor();

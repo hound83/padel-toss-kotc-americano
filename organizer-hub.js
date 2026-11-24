@@ -43,8 +43,9 @@ window.TossOrganizerHub=function({P,say,modeName,dateText,el,button,link,card,fi
     label.append(el('small',modeName(settings.format)+' · '+phaseLabel(item.phase)),
       el('strong',settings.title),el('span',dateText(settings)+' · '+settings.start+'–'+settings.end),creationInfo(item));
     const totals=el('span',undefined,'hub-counts');
-    totals.append(el('strong',item.playing+' / '+settings.capacity),
-      el('small',item.waiting+say(' wachtend',' waiting')+' · '+item.standby+say(item.standby===1?' reserve':' reserves',' standby')));
+    const waiting=item.waiting+say(' wachtend',' waiting');
+    const standby=settings.format==='koc'?' · '+item.standby+say(item.standby===1?' reserve':' reserves',' standby'):'';
+    totals.append(el('strong',item.playing+' / '+settings.capacity),el('small',waiting+standby));
     toggle.append(img,label,totals);row.append(toggle);parent.append(row);cards.set(item.id,{row,toggle});
   }
   function removeButton(kind,item){

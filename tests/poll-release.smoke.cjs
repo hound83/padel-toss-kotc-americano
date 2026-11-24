@@ -45,6 +45,21 @@ const {chromium}=require('playwright');
     }
     const missing=await page.request.get(new URL('/api/polls/00000000000000',base).href);
     assert.equal(missing.status(),404);assert.deepEqual(await missing.json(),{error:'missing'});
+    // Exercise the new public controls against live assets without creating a production registration.
+    const writes=[],sample='00000000000000';
+    await page.route('**/api/polls/'+sample,route=>{
+      if(route.request().method()!=='GET')writes.push(route.request().method());
+      return route.fulfill({json:{id:sample,settings:{title:'Voorbeeldavond',format:'toss',date:'2026-11-24',start:'21:00',end:'23:00',capacity:8},phase:'open',groups:{in:[],wait:[],reserve:[],out:[]}}});
+    });
+    await page.goto(new URL('/aanmelden/'+sample,base).href);
+    await page.getByRole('button',{name:'Mijn inschrijving openen'}).waitFor();
+    assert.equal(await page.getByRole('button',{name:'Reactie bevestigen'}).isDisabled(),true);
+    await page.getByLabel('Jouw naam',{exact:true}).fill('Voorbeeld');
+    await page.getByRole('button',{name:'Ja, ik doe mee'}).tap();
+    assert.equal(await page.getByRole('button',{name:'Reactie bevestigen'}).isEnabled(),true);
+    await page.getByText('Wie kan mijn inschrijving aanpassen?',{exact:true}).tap();
+    await page.getByText(/Pincode vergeten of hulp nodig/).waitFor();
+    assert.deepEqual(writes,[]);
     const signupBox=await manage.boundingBox();
     assert.ok(signupBox && signupBox.height>=44);
     await manage.tap();

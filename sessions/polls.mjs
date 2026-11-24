@@ -2,7 +2,7 @@ import {makeSignupPin,recoverSignup,signupPerson} from './poll-signup-pin.mjs';
 import {centralLogin} from './organizer.mjs';
 import {acceptablePassword,hash,random,verifier} from './poll-auth.mjs';
 import {currentOrganizer,organizerCredentials,organizerSession} from './poll-organizers.mjs';
-import {creatorName, emptyPoll, changeSettings, adminEntry, nameKey, publicPoll, respond, invalid} from './poll-roster.mjs';
+import {creatorName, emptyPoll, changeSettings, adminEntry, nameKey, prepareRoster, publicPoll, respond, invalid} from './poll-roster.mjs';
 
 const day=86400000;
 const stmt=(db,sql,...args)=>db.prepare(sql).bind(...args);
@@ -127,7 +127,7 @@ export async function pollApi(request,db,now,{json,requestJson,counter},adminPas
   const device=kind?null:await personKey(request,row.series);
   let person=await signupPerson(db,id,device);
   if(request.method==='GET'){
-    const doc=JSON.parse(row.document);
+    const doc=prepareRoster(JSON.parse(row.document));
     return json(kind?await organizerView(row,doc):publicPoll(doc,id,person));
   }
   if(request.method!=='POST')invalid('method',405);
@@ -143,7 +143,7 @@ export async function pollApi(request,db,now,{json,requestJson,counter},adminPas
   let pendingPin;
   for(let attempt=0;attempt<20;attempt++){
     if(!row)invalid('missing',404);
-    const doc=JSON.parse(row.document),extra=[];
+    const doc=prepareRoster(JSON.parse(row.document)),extra=[];
     let writeGuard='',guardValues=[];
     if(!kind){
       // Receipt order is assigned by the server, including equal-millisecond submissions.

@@ -123,3 +123,38 @@ test('a PIN opens only the original signup in one edition and never changes its 
   assert.equal((await recover(f.root,'Mila','0379',f.key(9))).data.error,'locked');
   assert.equal((await f.send(f.root,undefined,phone)).data.mine,undefined);
 });
+
+test('standby is exclusive to KOC; a previous non-KOC standby stays available to the organizer',async t=>{
+  const f=await fixture(t);await f.vote(1,'Noor','reserve');
+  const row=await f.read(),original=row.entries[0];
+  const change=await f.act({action:'settings',settings:{...f.config,format:'toss'}});
+  assert.equal(change.status,200);assert.equal(change.data.entries[0].place,'review');
+  assert.equal(change.data.entries[0].first,original.first);
+  for(const format of ['toss','americano','splitToss']){
+    await f.act({action:'settings',settings:{...f.config,format}});
+    const page=(await f.send(f.root,undefined,f.key(1))).data;
+    assert.equal(page.groups.reserve,undefined);assert.equal(page.mine.place,'pending');
+    assert.equal((await f.vote(2,'New standby','reserve')).data.error,'reserve-format');
+    assert.equal((await f.act({action:'entry',name:'New standby',place:'reserve',position:1})).data.error,'reserve-format');
+  }
+  const pollId=f.root.slice(1);
+  f.app.sql.prepare("UPDATE signup_polls SET document=json_set(document,'$.entries[0].place','reserve') WHERE id=?").run(pollId);
+  assert.equal((await f.read()).entries[0].place,'review');
+  assert.equal((await f.send(f.root,undefined,f.key(1))).data.mine.place,'pending');
+  assert.equal((await f.vote(1,'Noor','yes')).data.mine.place,'in');
+  assert.equal((await f.read()).entries.length,1);
+});
+
+test('a later Yes gets a new position once ten minutes have elapsed',async()=>{
+  const {emptyPoll,respond}=await import('../sessions/poll-roster.mjs');
+  const start=Date.UTC(2026,10,24,18),minute=60000;
+  for(const delay of [10*minute,2*24*60*minute]){
+    const doc=emptyPoll({title:'Toss',format:'toss',date:'2026-11-26',start:'21:00',end:'23:00',courts:2,capacity:4});
+    const vote=(name,answer,at)=>respond(doc,name,{name,answer},at,false);
+    ['Jan','Bo','Kim','Sam','Noor','Pim'].forEach((name,i)=>vote(name,'yes',start+i));
+    vote('Jan','no',start+minute);vote('Jan','yes',start+minute+delay);
+    const jan=doc.entries.find(e=>e.name==='Jan');
+    assert.equal(jan.at,start+minute+delay);
+    assert.deepEqual(doc.entries.filter(e=>e.place==='wait').map(e=>e.name),['Pim','Jan']);
+  }
+});

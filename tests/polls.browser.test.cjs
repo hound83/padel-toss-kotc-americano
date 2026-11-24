@@ -126,7 +126,9 @@ test('signup poll through the real planner, mobile visitor, password and live fo
   await visitor.getByRole('button',{name:'Ik kan niet'}).tap();
   await visitor.getByRole('button',{name:'Reactie bevestigen'}).tap();
   await visitor.getByText('Je staat bij Afgemeld.').waitFor();
-  await visitor.locator('[data-place=out]').getByText('Testreserve',{exact:true}).waitFor();
+  const outList=visitor.locator('details[data-place=out]');
+  assert.equal(await outList.getAttribute('open'),null);
+  await outList.locator('summary').tap();await outList.getByText('Testreserve',{exact:true}).waitFor();
   assert.ok(await visitor.locator('#groups').getByText('Mila',{exact:true}).isVisible());
   assert.match(await player.locator('#art').getAttribute('src'),/mode-koc\.svg/);
   assert.ok(await player.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
@@ -207,6 +209,9 @@ test('signup poll through the real planner, mobile visitor, password and live fo
     const settings={title:'Test '+format,format,capacity:8,courts:2,date:new Date().toISOString().slice(0,10),start:'11:00',end:'13:00'};
     const created=await host.request.post(url+'/api/polls',{data:{settings,password:legacyPassword}});assert.equal(created.status(),201);
     const poll=await created.json(),api=url+'/api/polls/'+poll.id;
+    await player.goto(url+'/aanmelden/'+poll.id);await player.getByRole('button',{name:'Ik kan niet'}).waitFor();
+    assert.equal(await player.getByRole('button',{name:'Alleen reserve'}).count(),0);
+    assert.equal(await player.locator('[data-place=reserve]').count(),0);
     for(let i=1;i<=8;i++)await host.request.post(api,{headers:{'X-Signup-Key':randomBytes(32).toString('hex')},data:{name:'Naam '+i,answer:'yes'}});
     await host.goto(url+'/beheer/'+poll.id);await host.getByLabel('Beheercode van deze poll').fill(legacyPassword);await host.getByRole('button',{name:'Inloggen'}).click();
     if(format==='toss'){
