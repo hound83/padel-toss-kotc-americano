@@ -1,4 +1,4 @@
-const places = ['in','wait','reserve','review','out'];
+const places = ['in','wait','reserve','out'];
 const answers = ['yes','reserve','no','cancel'];
 export function invalid(code,status=422){throw Object.assign(new Error(code),{status});}
 export const nameKey = name=>name.normalize('NFKC').toLowerCase().replace(/\s+/gu,' ').trim();
@@ -24,10 +24,21 @@ export function creatorName(value){
   return label;
 }
 export function emptyPoll(config){return {settings:settings(config),phase:'open',entries:[],viewCode:null};}
-// A legacy standby in another format needs an organizer decision before taking a place.
+function currentRating(value){
+  if(typeof value!=='string' || !/^\d{1,2}[.,]\d{2}$/.test(value.trim()))invalid('rating-format');
+  return Number(value.trim().replace(',','.')).toFixed(2);
+}
 export function prepareRoster(doc){
-  if(doc.settings.format!=='koc'){
-    for(const entry of doc.entries)if(entry.place==='reserve')entry.place='review';
+  for(const entry of doc.entries){
+    if(doc.settings.format!=='koc')delete entry.rating;
+    // A discontinued placement stays off the public lists until someone chooses a new place.
+    if(entry.place==='review' || (entry.place==='reserve' && doc.settings.format!=='koc')){
+      entry.place='out';
+      entry.answer='cancel';
+      delete entry.correction;
+    }
+    delete entry.held;
+    delete entry.standing;
   }
   return doc;
 }
@@ -79,7 +90,7 @@ function previousPosition(doc,entry,place,priority){
   const later=group.findIndex(row=>row.at>priority.at || (returningParticipant && row.at===priority.at));
   return later===-1?group.length:later;
 }
-export function respond(doc,person,body,now,held){
+export function respond(doc,person,body,now){
   if(doc.phase!=='open')invalid('locked',409);
   if(!answers.includes(body.answer))invalid('answer');
   if(body.answer==='reserve' && doc.settings.format!=='koc')invalid('reserve-format');
@@ -88,16 +99,19 @@ export function respond(doc,person,body,now,held){
   const name=body.answer==='cancel' && entry ? entry.name : uniqueName(doc,body.name,entry);
   if(!entry){
     if(doc.entries.length>=400)invalid('full',409);
-    entry={id:crypto.randomUUID(),person,name,first:now,at:now,held:Boolean(held),standing:Boolean(held)};
+    entry={id:crypto.randomUUID(),person,name,first:now,at:now};
   }
   const old=entry.place,previous=entry.answer;
+  if(doc.settings.format==='koc' && body.answer==='yes'){
+    entry.rating=currentRating(body.rating===undefined?entry.rating:body.rating);
+  }
   entry.name=name;
   if(previous===body.answer)return;
   const priority=previousPriority(doc,entry,now);
-  const restoring=priority && !entry.held && priority.answer===body.answer;
+  const restoring=priority && priority.answer===body.answer;
   if(priority)entry.correction=priority;else delete entry.correction;
   entry.answer=body.answer;entry.at=restoring?priority.at:now;
-  let place=['no','cancel'].includes(entry.answer)?'out':entry.held?'review':entry.answer==='yes'?'wait':'reserve';
+  let place=['no','cancel'].includes(entry.answer)?'out':entry.answer==='yes'?'wait':'reserve';
   if(restoring && priority.place==='in' && admitted(doc).filter(e=>e!==entry).length<doc.settings.capacity)place='in';
   insert(doc,entry,place,restoring?previousPosition(doc,entry,place,priority):undefined);
   seat(doc,old==='in',entry.answer==='reserve'?entry:undefined);
@@ -106,20 +120,32 @@ export function adminEntry(doc,body,now){
   let entry=body.id && doc.entries.find(row=>row.id===body.id);
   if(body.id && !entry)invalid('missing',404);
   if(body.place==='reserve' && doc.settings.format!=='koc')invalid('reserve-format');
-  if(!places.includes(body.place) || !Number.isInteger(body.position) || body.position<1 || body.position>401)invalid('place');
+  if(body.standing===true || !places.includes(body.place) || !Number.isInteger(body.position) || body.position<1 || body.position>401)invalid('place');
   const name=uniqueName(doc,body.name,entry);
   if(!entry){
     if(doc.entries.length>=400)invalid('full',409);
     entry={id:crypto.randomUUID(),person:null,first:now,at:now,answer:body.place==='reserve'?'reserve':body.place==='out'?'cancel':'yes'};
   }
   const old=entry.place;
+  if(doc.settings.format==='koc' && body.rating!==undefined){
+    if(body.rating===null)delete entry.rating;
+    else entry.rating=currentRating(body.rating);
+  }
+  const joiningReserve=body.place==='reserve' && old!=='reserve';
+  const ratingMove=joiningReserve && (old==='in' || old==='wait') && Number(entry.rating)>8;
+  if(joiningReserve)entry.at=now;
+  if(ratingMove)entry.answer='reserve';
   delete entry.correction;
   if(body.level!==undefined){
     if(body.level!==null && ![0,1,2].includes(body.level))invalid('level');
     entry.level=body.level;
   }
-  entry.name=name;entry.held=body.place==='review';
-  insert(doc,entry,body.place,body.place==='in'?Math.min(body.position,doc.settings.capacity)-1:body.position-1);
+  entry.name=name;
+  if(old==='out' && entry.answer==='cancel' && body.place!=='out'){
+    entry.answer=body.place==='reserve'?'reserve':'yes';
+  }
+  const position=body.place==='in'?Math.min(body.position,doc.settings.capacity):body.position;
+  insert(doc,entry,body.place,ratingMove?undefined:position-1);
   limitSeats(doc);
   // A deliberately placed standby stays there. Fill a vacancy from other eligible players.
   if(old==='in' && body.place!=='in')seat(doc,true,entry);
@@ -146,15 +172,14 @@ export function publicPoll(doc,id,person,now){
   const koc=doc.settings.format==='koc';
   result.groups=koc?{in:[],wait:[],reserve:[],out:[]}:{in:[],wait:[],out:[]};
   for(const entry of doc.entries){
-    if((entry.answer==='cancel' && entry.place==='out') || (!koc && entry.place==='review'))continue;
-    const place=entry.place==='review'?'reserve':entry.place;
-    const label={name:entry.name};
-    result.groups[place].push(label);
+    if(entry.answer==='cancel' && entry.place==='out')continue;
+    result.groups[entry.place].push({name:entry.name});
   }
   const own=person && doc.entries.find(e=>e.person===person);
   if(own)result.mine={name:own.name,answer:!koc && own.answer==='reserve'?null:own.answer,
-    place:own.place==='review'?(koc?'reserve':'pending'):own.place};
+    place:own.place};
   if(own?.pin)result.mine.hasPin=true;
+  if(koc && own?.rating)result.mine.rating=own.rating;
   const correction=own?.correction;
   if(correction && now<correction.until && own.answer!==correction.answer && (koc || correction.answer!=='reserve'))
     result.mine.correction={answer:correction.answer,until:correction.until};

@@ -51,13 +51,13 @@ test('all poll series and separate sessions can be managed; the overview sends o
   const second=await send('polls',{settings:{...settings,title:'Toss'},central:true},auth);
   assert.equal(second.status,201);assert.deepEqual(Object.keys(second.data),['id']);
   const path='polls/'+first.id+'/admin';
-  const edit=await send(path,{action:'entry',revision:1,name:'Private assessment',place:'review',position:1,standing:true},auth);
-  assert.equal(edit.status,200);assert.equal(edit.data.entries[0].standing,true);
+  const edit=await send(path,{action:'entry',revision:1,name:'Example player',place:'in',position:1},auth);
+  assert.equal(edit.status,200);assert.equal(edit.data.entries[0].place,'in');
   assert.equal((await send(path,{action:'plan',revision:2},auth)).data.phase,'planning');
   assert.equal((await send('polls/'+first.id)).data.groups,undefined);
   const index=await send('polls/hub',undefined,auth);
   assert.equal(index.data.items.length,2);assert.equal(index.data.items.find(p=>p.id===first.id).phase,'planning');
-  for(const marker of ['Private assessment','plannerKey','person','entries','viewCode'])assert.ok(!JSON.stringify(index.data).includes(marker));
+  for(const marker of ['Example player','plannerKey','person','entries','viewCode'])assert.ok(!JSON.stringify(index.data).includes(marker));
   assert.match(index.headers.get('cache-control'),/no-store/);
   const id='00000000-0000-4000-8000-000000000001',code='TESTVIEW';
   const doc=JSON.stringify({state:{format:'koc'},view:{title:'Zaterdagavond'}});
@@ -100,7 +100,7 @@ test('removing one week is central-only, revision-checked and preserves the othe
   }
   const middle=(await edit(first.id,'repeat')).id;
   const last=(await edit(middle,'repeat')).id;
-  const details=await edit(middle,'entry',{name:'Reservering',place:'review',standing:true,position:1});
+  const details=await edit(middle,'entry',{name:'Reservering',place:'in',position:1});
   await edit(last,'entry',{name:'Volgende week',place:'in',position:1});
   const body={kind:'poll',id:middle,revision:details.revision}, path='polls/hub/remove';
   assert.equal((await send(path,body)).status,401);
@@ -115,7 +115,7 @@ test('removing one week is central-only, revision-checked and preserves the othe
   assert.equal((await send('polls/'+middle+'/admin',undefined,auth)).status,404);
   assert.equal((await send('polls/'+first.id+'/admin',undefined,seriesAuth)).data.next,null);
   assert.equal((await send('polls/'+last)).data.groups.in[0].name,'Volgende week');
-  assert.equal(app.sql.prepare('SELECT COUNT(*) AS n FROM signup_holds').get().n,1);
+  assert.equal((await send('polls/'+first.id+'/admin',undefined,seriesAuth)).data.entries.length,0);
   const replacement=(await edit(first.id,'repeat')).id;
   assert.notEqual(replacement,middle);
   assert.equal((await edit(replacement,'repeat')).id,last);

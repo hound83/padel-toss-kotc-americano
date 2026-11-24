@@ -1,7 +1,7 @@
 import {api} from './api.mjs';
 
 export const publicFiles = [
-  'index.html','kijken.html','aanmelden.html','poll.js','my-polls.js','poll-common.js','organizer-hub.js','poll.css','round-planner.js','ranking.js','session-admin.js','name-hint.js',
+  'index.html','kijken.html','aanmelden.html','poll.js','my-polls.js','poll-common.js','poll-player-cards.js','organizer-hub.js','poll.css','round-planner.js','ranking.js','session-admin.js','name-hint.js',
   'schedule-document.js','share-v3.js','sw.js','manifest.webmanifest','visual-theme.css',
   'icon.svg','icon-192.png','icon-512.png','assets/mode-toss.svg','assets/mode-koc.svg',
   'assets/mode-americano.svg','assets/mode-split.svg','assets/mode-split-en.svg'

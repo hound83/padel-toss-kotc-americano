@@ -45,6 +45,11 @@ test('signup poll through the real planner, mobile visitor, password and live fo
   await host.getByRole('button',{name:'Ga indelen'}).waitFor();
   assert.equal(await host.getByRole('button',{name:'Aanpassen',exact:true}).count(),0);
   const id=new URL(host.url()).pathname.split('/').pop(),publicUrl=url+'/aanmelden/'+id;
+  await host.locator('#language').click();await host.getByRole('button',{name:'Add a player',exact:true}).click();
+  const englishDialog=host.getByRole('dialog');
+  assert.deepEqual(await englishDialog.getByLabel('Move to').locator('option').allTextContents(),['Playing','Waiting · Yes','Standby','Unavailable']);
+  assert.equal(await englishDialog.getByRole('checkbox').count(),0);
+  await host.keyboard.press('Escape');await host.locator('#language').click();
   await visitor.goto(url+'/aanmaken');
   const visitorName=visitor.getByLabel('Jouw naam',{exact:true}),visitorPassword=visitor.getByLabel('Wachtwoord',{exact:true});
   await visitorName.waitFor();
@@ -77,12 +82,21 @@ test('signup poll through the real planner, mobile visitor, password and live fo
   await player.getByText(/Pincode vergeten of hulp nodig/).waitFor();
   assert.equal(await player.locator('nav').getByRole('link',{name:'Mijn polls',exact:true}).count(),0);
   await player.getByLabel('Jouw naam').fill('Mila');
-  await player.getByRole('button',{name:'Ja, ik doe mee'}).tap();
+  const kocYes='Ja, ik doe mee (actuele rating 8,00 of lager)';
+  await player.getByRole('button',{name:kocYes,exact:true}).tap();
+  const rating=player.getByLabel('Jouw actuele rating',{exact:true});
+  await player.getByRole('button',{name:'Reactie bevestigen'}).tap();
+  assert.equal(await rating.evaluate(el=>el.validity.valueMissing),true);
+  await rating.fill('7,8');assert.equal(await rating.evaluate(el=>el.validity.patternMismatch),true);
+  await rating.fill('8,00');assert.equal(await player.locator('#ratingWarning').isVisible(),false);
+  await rating.fill('8.01');await player.getByRole('alert').filter({hasText:'Je rating ligt boven 8,00'}).waitFor();
+  await rating.fill('10,43');
   const pin='0379';
-  await player.getByLabel('Ook op een ander apparaat kunnen wijzigen').check();
+  await player.getByLabel('Mijn voornaam voor deze avond vastleggen met een pincode').check();
+  await player.getByText(/Vul je huidige naam en deze pincode in/).waitFor();
   await player.getByLabel('Kies een pincode van vier cijfers').fill(pin);
   assert.equal((await (await player.request.get(url+'/api/polls/'+id)).json()).groups.in.length,0);
-  await player.getByRole('button',{name:'Reactie bevestigen'}).tap();
+  await player.getByRole('button',{name:'Toch Ja bevestigen'}).tap();
   await player.getByText('Je staat bij Deelnemers.').waitFor();
   async function reopenSignup(previous,context,name,status,answer){
     await previous.close();
@@ -105,6 +119,15 @@ test('signup poll through the real planner, mobile visitor, password and live fo
   await recovery.getByLabel('Pincode voor deze avond').fill(pin);
   await recovery.getByRole('button',{name:'Inschrijving openen',exact:true}).tap();
   await recovery.getByText('Je staat bij Deelnemers.').waitFor();
+  const ratingOnPhone=recovery.getByLabel('Jouw actuele rating',{exact:true});
+  assert.equal(await ratingOnPhone.inputValue(),'10,43');
+  await recovery.getByLabel('Jouw naam',{exact:true}).fill('Mila V.');
+  await Promise.all([recovery.waitForResponse(r=>r.url().endsWith('/api/polls/'+id) && r.request().method()==='POST' && r.ok()),recovery.getByRole('button',{name:'Toch Ja bevestigen'}).tap()]);
+  await player.reload();await player.getByText('Je staat bij Deelnemers.').waitFor();
+  assert.equal(await player.getByLabel('Jouw naam',{exact:true}).inputValue(),'Mila V.');
+  await recovery.getByLabel('Jouw naam',{exact:true}).fill('Mila');await ratingOnPhone.fill('7,89');
+  await Promise.all([recovery.waitForResponse(r=>r.url().endsWith('/api/polls/'+id) && r.request().method()==='POST' && r.ok()),recovery.getByRole('button',{name:'Reactie bevestigen'}).tap()]);
+  await recovery.getByText('Je reactie is opgeslagen.',{exact:true}).waitFor();
   const unsaved=[];recovery.on('request',req=>{if(req.method()==='POST')unsaved.push(req.url());});
   await recovery.getByRole('button',{name:'Ik kan niet'}).tap();
   await recovery.locator('.signup-warning:visible').waitFor();
@@ -114,6 +137,7 @@ test('signup poll through the real planner, mobile visitor, password and live fo
   await visitor.goto(publicUrl);await visitor.locator('#groups').getByText('Mila').waitFor();assert.equal(await visitor.getByRole('button',{name:'Mijn aanmelding intrekken'}).count(),0);
   await visitor.getByLabel('Jouw naam').fill('Mila');
   await visitor.getByRole('button',{name:'Ja, ik doe mee'}).click();
+  await visitor.getByLabel('Jouw actuele rating',{exact:true}).fill('6,23');
   await visitor.getByRole('button',{name:'Reactie bevestigen'}).click();
   await visitor.getByText(/Die naam staat al op de lijst/).waitFor();
   assert.equal(await visitor.getByRole('button',{name:'Mijn aanmelding intrekken'}).count(),0);
@@ -132,7 +156,7 @@ test('signup poll through the real planner, mobile visitor, password and live fo
   assert.ok(await visitor.locator('#groups').getByText('Mila',{exact:true}).isVisible());
   assert.match(await player.locator('#art').getAttribute('src'),/mode-koc\.svg/);
   assert.ok(await player.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
-  for(let i=1;i<=7;i++){const res=await host.request.post(url+'/api/polls/'+id,{headers:{'X-Signup-Key':randomBytes(32).toString('hex')},data:{name:'Test '+i,answer:'yes'}});assert.equal(res.status(),200);}
+  for(let i=1;i<=7;i++){const res=await host.request.post(url+'/api/polls/'+id,{headers:{'X-Signup-Key':randomBytes(32).toString('hex')},data:{name:'Test '+i,answer:'yes',rating:'7.89'}});assert.equal(res.status(),200);}
   await host.reload();
   const tools=host.locator('section.card').filter({has:host.getByRole('heading',{name:'Aanmeldlijst beheren'})});
   assert.equal(await host.locator('nav').getByRole('link',{name:'Mijn polls',exact:true}).getAttribute('href'),'/mijn-polls');
@@ -143,6 +167,9 @@ test('signup poll through the real planner, mobile visitor, password and live fo
   assert.equal(await picker.locator('option').count(),10);
   await picker.selectOption({label:'Test 6'});await picker.selectOption({label:'Test 7'});
   assert.equal(await host.getByLabel('Naam',{exact:true}).inputValue(),'Test 7');
+  assert.deepEqual(await host.getByLabel('Verplaats naar').locator('option').allTextContents(),['Deelnemers','Wachtlijst · Ja','Reserve','Afgemeld']);
+  assert.equal(await host.getByRole('dialog').getByRole('checkbox').count(),0);
+  assert.equal(await host.locator('#groups [data-place=review]').count(),0);
   await host.getByLabel('Plek',{exact:true}).selectOption('2');await host.getByRole('button',{name:'Opslaan',exact:true}).click();
   await host.waitForFunction(()=>document.querySelector('[data-place=in] li:nth-child(2) .person')?.textContent.startsWith('Test 7'));
   const playing=host.locator('[data-place=in]');
@@ -211,9 +238,13 @@ test('signup poll through the real planner, mobile visitor, password and live fo
     const poll=await created.json(),api=url+'/api/polls/'+poll.id;
     await player.goto(url+'/aanmelden/'+poll.id);await player.getByRole('button',{name:'Ik kan niet'}).waitFor();
     assert.equal(await player.getByRole('button',{name:'Alleen reserve'}).count(),0);
+    await player.getByRole('button',{name:'Ja, ik doe mee',exact:true}).tap();
+    assert.equal(await player.getByLabel('Jouw actuele rating').count(),0);
     assert.equal(await player.locator('[data-place=reserve]').count(),0);
     for(let i=1;i<=8;i++)await host.request.post(api,{headers:{'X-Signup-Key':randomBytes(32).toString('hex')},data:{name:'Naam '+i,answer:'yes'}});
     await host.goto(url+'/beheer/'+poll.id);await host.getByLabel('Beheercode van deze poll').fill(legacyPassword);await host.getByRole('button',{name:'Inloggen'}).click();
+    await host.locator('[data-place=in]').waitFor();
+    assert.deepEqual(await host.locator('#groups [data-place]').evaluateAll(rows=>rows.map(row=>row.dataset.place)),['in','wait','out']);
     if(format==='toss'){
       await host.getByRole('button',{name:'Toevoegen aan Mijn polls'}).click();
       const dlg=host.getByRole('dialog');

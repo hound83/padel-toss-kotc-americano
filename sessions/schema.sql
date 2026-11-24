@@ -30,10 +30,6 @@ CREATE INDEX IF NOT EXISTS signup_expiry ON signup_polls(expires);
 CREATE TABLE IF NOT EXISTS signup_logins (
   token TEXT PRIMARY KEY, series TEXT NOT NULL REFERENCES signup_series(id) ON DELETE CASCADE, expires INTEGER NOT NULL
 );
-CREATE TABLE IF NOT EXISTS signup_holds (
-  series TEXT NOT NULL REFERENCES signup_series(id) ON DELETE CASCADE, format TEXT NOT NULL, name TEXT NOT NULL, person TEXT,
-  PRIMARY KEY(series,format,name)
-);
 
 CREATE TABLE IF NOT EXISTS poll_organizers (
   name_key TEXT PRIMARY KEY, display_name TEXT NOT NULL, salt TEXT NOT NULL, verifier TEXT NOT NULL

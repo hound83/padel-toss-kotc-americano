@@ -48,9 +48,26 @@ test('one central login reaches existing and new events, live schedules, and the
   await host.locator('[data-place=in] li').filter({hasText:'Mira'}).waitFor();
   assert.equal(new URL(host.url()).searchParams.get('avond'),id);
   await event.filter({hasText:'1 / 8'}).waitFor();
+  const touch=await phone.newCDPSession(host);
+  async function dragMira(from,to,end){
+    const grip=host.locator('[data-place='+from+'] .player-grip'),target=host.locator('[data-place='+to+'] h3');
+    await grip.evaluate(el=>el.scrollIntoView({block:'center'}));
+    const a=await grip.boundingBox(),b=await target.boundingBox();
+    const point=box=>({x:Math.round(box.x+box.width/2),y:Math.round(box.y+box.height/2)});
+    await touch.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[point(a)]});
+    await touch.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[point(b)]});
+    await host.locator('[data-place='+to+'].over').waitFor();
+    await touch.send('Input.dispatchTouchEvent',{type:end,touchPoints:[]});
+    await host.locator('[data-place='+(end==='touchCancel'?from:to)+'] .player-card').getByText('Mira',{exact:false}).first().waitFor();
+  }
+  await dragMira('in','reserve','touchCancel');
+  await dragMira('in','reserve','touchEnd');
+  await dragMira('reserve','in','touchEnd');
+  await touch.detach();
   assert.match(await event.locator('img').getAttribute('src'),/mode-koc\.svg/);
   assert.ok(await host.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
   await publicPage.goto(url+'/aanmelden/'+id);await publicPage.locator('#groups').getByText('Mira').waitFor();
+  assert.equal(await publicPage.locator('.player-grip,[draggable=true]').count(),0);
   const eventLink=publicPage.locator('footer').getByRole('link',{name:'Deze avond beheren'});
   assert.equal(await eventLink.getAttribute('href'),'/beheer/'+id);
   await (await footerButton(publicPage)).click();await publicPage.getByLabel('Beheerwachtwoord').waitFor();
@@ -78,7 +95,7 @@ test('one central login reaches existing and new events, live schedules, and the
     for(const name of [...(format==='koc'?['Nora Reserve']:[]),...players,'Ivo Wachtlijst']){
       const response=await guest.request.post(url+'/api/polls/'+pollId,{
         headers:{'X-Signup-Key':randomBytes(32).toString('hex')},
-        data:{name,answer:name==='Nora Reserve'?'reserve':'yes'}
+        data:{name,answer:name==='Nora Reserve'?'reserve':'yes',...(format==='koc' && name!=='Nora Reserve'?{rating:'7.89'}:{})}
       });
       assert.equal(response.status(),200);
     }
@@ -189,7 +206,7 @@ test('one central login reaches existing and new events, live schedules, and the
   const accountName='Mara '+randomBytes(4).toString('hex'),accountPass=randomBytes(8).toString('hex');
   const ownEvent=await guest.request.post(url+'/api/polls',{data:{settings:{...settings,title:'Account test '+id},organizerName:accountName,password:accountPass}});
   assert.equal(ownEvent.status(),201);const ownId=(await ownEvent.json()).id;
-  await guest.request.post(url+'/api/polls/'+ownId,{headers:{'X-Signup-Key':randomBytes(32).toString('hex')},data:{name:'Erin',answer:'yes',pin:'0249'}});
+  await guest.request.post(url+'/api/polls/'+ownId,{headers:{'X-Signup-Key':randomBytes(32).toString('hex')},data:{name:'Erin',answer:'yes',rating:'7.89',pin:'0249'}});
   await host.goto(url+'/beheer?lang=en&avond='+ownId);
   const editPlayer=host.getByRole('button',{name:'Edit Erin',exact:true});
   await editPlayer.tap();await host.getByRole('button',{name:'Delete player',exact:true}).tap();

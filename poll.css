@@ -56,3 +56,12 @@ dialog{border:1px solid var(--line);border-radius:1rem;padding:1.4rem;width:min(
 .signup-pin,.signup-help{margin:.8rem 0}.signup-pin .field{max-width:16rem}.signup-pin input[type=password]{max-width:9rem;font-variant-numeric:tabular-nums}.signup-help summary{cursor:pointer;font-weight:650}.signup-help{padding-top:.65rem;border-top:1px solid var(--line)}.signup-warning{background:#fff4d8;color:#654600;border-radius:.5rem;padding:.65rem .8rem}.text-action{border:0;background:transparent;text-decoration:underline;padding:.45rem 0}.actions button:disabled{opacity:.55;cursor:default}
 .group>summary{cursor:pointer;min-height:44px;display:flex;align-items:center;gap:.45rem}.group>summary::before{content:'▸';color:var(--muted)}.group[open]>summary::before{content:'▾'}.group>summary::-webkit-details-marker{display:none}.group>summary h3{margin:0;flex:1}.group[open]>summary{margin-bottom:.55rem}
 .organizer-accounts{margin-top:1.2rem}.organizer-accounts summary{font-weight:700;cursor:pointer;min-height:44px;align-content:center}.account-row{display:flex;align-items:center;justify-content:space-between;gap:.8rem;padding:.65rem 0;border-top:1px solid var(--line)}.account-row>div{min-width:0;overflow-wrap:anywhere}.account-row small{display:block}
+.signup-rating{margin:.8rem 0}.signup-rating input{max-width:9rem;font-variant-numeric:tabular-nums}
+.rating-warning{background:#fff1ef;border-inline-start:4px solid #aa302b;border-radius:.35rem;color:#80221f;padding:.65rem .8rem}
+.row.player-card{background:#f7faf8;border:1px solid #d0ddd7;border-radius:.6rem;padding:.35rem .45rem .35rem .15rem;margin-top:.4rem;gap:.32rem}
+.player-card .rank{min-width:1.1rem}.player-card.dragging{opacity:.65}.player-grip{display:grid;place-items:center;align-self:stretch;width:1.7rem;flex:none;cursor:grab;touch-action:none;user-select:none;-webkit-touch-callout:none}
+.player-grip:before{content:'';width:12px;height:18px;background:radial-gradient(circle,#62766b 1.6px,transparent 1.8px) 0 0/6px 6px}
+.row.player-card{cursor:grab;user-select:none}
+.group.over{background:#f3f8eb;outline:2px solid #62883a}.player-card.drop-before{box-shadow:0 -3px #62883a}.player-card.drop-after{box-shadow:0 3px #62883a}
+.player-drag-preview{position:fixed;z-index:20;max-width:70vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;pointer-events:none;background:var(--navy);color:white;border-radius:.6rem;padding:.4rem .8rem}
+@media(pointer:coarse){.player-grip{width:2.75rem;min-height:2.75rem}}
