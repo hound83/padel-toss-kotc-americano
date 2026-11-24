@@ -101,14 +101,14 @@ async function requestJson(request){
   }
   try{return JSON.parse(parts.join('')+decoder.decode());}catch{fail(400,'json');}
 }
-async function counter(db, request, name, now, max, increment){
-  const span=15*60000,end=(Math.floor(now/span)+1)*span;
-  const ip=request.headers.get('CF-Connecting-IP') || 'local';
+async function counter(db, request, name, now, max, increment, {span=15*60000,shared=false,error='limit'}={}){
+  const end=(Math.floor(now/span)+1)*span;
+  const ip=shared?'all':request.headers.get('CF-Connecting-IP') || 'local';
   const bucket=await digest([name,end,ip].join('/'));
   if(increment){
     const row=await one(db,'INSERT INTO limits VALUES(?,1,?) ON CONFLICT(bucket) DO UPDATE SET hits=hits+1 RETURNING hits',bucket,end);
-    if(row.hits>max)fail(429,'limit');
-  }else if((await one(db,'SELECT hits FROM limits WHERE bucket=?',bucket))?.hits>=max)fail(429,'limit');
+    if(row.hits>max)fail(429,error);
+  }else if((await one(db,'SELECT hits FROM limits WHERE bucket=?',bucket))?.hits>=max)fail(429,error);
 }
 async function resolvePlan(db,state,date,now){
   if(state.signupPoll?.id){

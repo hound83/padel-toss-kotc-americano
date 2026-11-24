@@ -84,3 +84,42 @@ test('simultaneous signups fill only the available places, retries cannot create
   await f.act({action:'entry',id:first.id,name:a,place:'in',position:2});
   const moved=(await f.send(f.root)).data;assert.equal(moved.groups.in[1].name,a);assert.equal(moved.groups.in.length,16);
 });
+
+test('a PIN opens only the original signup in one edition and never changes its priority',async t=>{
+  const f=await fixture(t),first=f.key(1),phone=f.key(2),other=f.key(3);
+  assert.equal((await f.send(f.root,{name:'Mila',answer:'yes',pin:'123'},first)).status,422);
+  const added=await f.send(f.root,{name:'Mila',answer:'yes',pin:'0379'},first);
+  assert.equal(added.data.mine.hasPin,true);
+  await f.vote(3,'Robin');
+  const before=await f.read(),original=before.entries.find(e=>e.name==='Mila');
+  const recover=(path,name,pin,device)=>f.send(path+'/recover',{name,pin},device);
+  assert.equal((await recover(f.root,'Mila','9999',phone)).data.error,'pin-login');
+  assert.equal((await recover(f.root,'mila','0379',other)).data.error,'pin-device');
+  assert.equal((await recover(f.root,'  MILA ','0379',phone)).status,200);
+  assert.equal((await f.send(f.root,undefined,phone)).data.mine.name,'Mila');
+  assert.equal((await f.send(f.root+'/admin',undefined,phone)).status,401);
+  assert.deepEqual((await f.read()).entries,before.entries);
+  assert.equal((await f.read()).revision,before.revision);
+  assert.doesNotMatch(JSON.stringify(before.entries),/"pin"|verifier|salt|0379/);
+  assert.doesNotMatch(JSON.stringify((await f.send(f.root)).data),/pin|verifier|salt|0379/i);
+  assert.equal((await f.send(f.root,{name:'Mila',answer:'reserve'},phone)).status,200);
+  assert.equal((await f.send(f.root,undefined,first)).data.mine.answer,'reserve');
+  assert.equal((await f.read()).entries.find(e=>e.id===original.id).first,original.first);
+  assert.equal((await f.send(f.root,{name:'Robin',answer:'no'},phone)).status,409);
+  const next='/'+(await f.act({action:'repeat'})).data.id;
+  await f.send(next,{name:'Mila',answer:'yes'},first);
+  assert.equal((await f.send(next,undefined,phone)).data.mine,undefined);
+  assert.equal((await recover(next,'Mila','0379',phone)).data.error,'pin-login');
+  assert.equal((await f.send(f.root,{action:'set-pin',pin:'0041'},other)).data.mine.hasPin,true);
+  assert.equal((await f.send(f.root,{action:'set-pin',pin:'0041'},f.key(8))).status,403);
+  const unknown=await recover(f.root,'Unknown','0379',f.key(8));
+  assert.equal(unknown.data.error,'pin-login');
+  for(let i=0;i<5;i++){
+    const attempt=await recover(f.root,'Robin','0000',{...f.key(7),'CF-Connecting-IP':'test-ip-'+i});
+    assert.equal(attempt.status,401);
+  }
+  assert.equal((await recover(f.root,'ROBIN','0000',f.key(8))).data.error,'pin-limit');
+  await f.act({action:'plan'});
+  assert.equal((await recover(f.root,'Mila','0379',f.key(9))).data.error,'locked');
+  assert.equal((await f.send(f.root,undefined,phone)).data.mine,undefined);
+});

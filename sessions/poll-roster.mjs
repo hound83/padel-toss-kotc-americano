@@ -110,5 +110,6 @@ export function publicPoll(doc,id,person){
   }
   const own=person && doc.entries.find(e=>e.person===person);
   if(own)result.mine={name:own.name,answer:own.answer,place:own.place==='review'?'reserve':own.place};
+  if(own?.pin)result.mine.hasPin=true;
   return result;
 }
