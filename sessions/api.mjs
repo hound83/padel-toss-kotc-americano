@@ -1,3 +1,4 @@
+import {expireAccounts} from './poll-accounts.mjs';
 import {centralLogin,organizerApi} from './organizer.mjs';
 import {pollApi,pollCleanup} from './polls.mjs';
 import {myPollsApi} from './poll-organizers.mjs';
@@ -211,6 +212,7 @@ async function manage(db,request,now,sessionId){
 export async function cleanup(db,now=Date.now()){
   await db.batch([...pollCleanup(db,now),query(db,'DELETE FROM organizer_logins WHERE expires<=?',now),query(db,'DELETE FROM links WHERE session_id IN (SELECT id FROM sessions WHERE expires<=?)',now),
     query(db,'DELETE FROM sessions WHERE expires<=?',now),query(db,'DELETE FROM limits WHERE expires<=?',now)]);
+  await expireAccounts(db,now);
 }
 export async function api(request,db,now=Date.now(),adminPassword){
   try{

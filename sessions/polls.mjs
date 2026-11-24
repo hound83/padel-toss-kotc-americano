@@ -1,3 +1,4 @@
+import {registerUse} from './poll-accounts.mjs';
 import {makeSignupPin,recoverSignup,signupPerson} from './poll-signup-pin.mjs';
 import {centralLogin} from './organizer.mjs';
 import {acceptablePassword,hash,random,verifier} from './poll-auth.mjs';
@@ -79,6 +80,9 @@ export async function pollApi(request,db,now,{json,requestJson,counter},adminPas
     const series=await first(db,'SELECT salt,verifier FROM signup_series WHERE id=?',row.series);
     const body=await requestJson(request);
     if(typeof body.password!=='string' || body.password.length>128 || await verifier(body.password,series.salt)!==series.verifier)invalid('login',401);
+    const owner=await first(db,`SELECT o.name_key,o.salt FROM poll_organizer_series m
+      JOIN poll_organizers o ON m.organizer=o.name_key WHERE m.series=? AND o.salt=?`,row.series,series.salt);
+    if(owner)await registerUse(db,owner,now);
     return json({token:await issueLogin(db,row.series,now,series.salt)});
   }
   const membership=(kind==='admin' || kind==='organizer') &&

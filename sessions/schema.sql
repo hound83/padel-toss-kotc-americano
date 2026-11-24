@@ -56,6 +56,6 @@ CREATE TABLE IF NOT EXISTS signup_recovered_devices (
 
 CREATE TABLE IF NOT EXISTS poll_organizer_accounts (
   organizer TEXT PRIMARY KEY REFERENCES poll_organizers(name_key) ON DELETE CASCADE,
-  id TEXT NOT NULL UNIQUE, last_used INTEGER NOT NULL
+  id TEXT NOT NULL UNIQUE, last_used INTEGER NOT NULL, remove_after INTEGER NOT NULL
 );
-CREATE INDEX IF NOT EXISTS poll_organizer_last_use ON poll_organizer_accounts(last_used);
+CREATE INDEX IF NOT EXISTS poll_organizer_retention ON poll_organizer_accounts(remove_after);

@@ -101,6 +101,8 @@ window.TossOrganizerHub=function({P,say,modeName,dateText,el,button,link,card,fi
         const accounts=await allPages('/hub/organizers');
         if(!panel.open || !panel.isConnected)return;
         body.replaceChildren();
+        body.append(el('p',say('Een organisatornaam vervalt na drie maanden zonder gebruik. Zolang er een avond voor vandaag of later gepland staat, blijft de naam beschikbaar.',
+          'An organizer name expires after three months of inactivity. A scheduled event today or later keeps the account available.'),'hint'));
         if(!accounts.length)body.append(el('p',say('Er zijn geen geregistreerde organisatoren.','There are no registered organizers.')));
         for(const account of accounts.sort((a,b)=>a.name.localeCompare(b.name,document.documentElement.lang))){
           const row=el('div',undefined,'account-row'),description=el('div');

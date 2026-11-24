@@ -346,3 +346,24 @@ test('only site organizers can delete a registered organizer, revoke access and 
   assert.deepEqual((await send('polls/mine',undefined,newLogin)).data.items.map(p=>p.id),[recreated.data.id]);
   assert.equal((await send(path+'/admin',undefined,newLogin)).status,401);
 });
+
+test('organizer retention gives legacy names a full period, clamps month ends and protects scheduled evenings',async t=>{
+  const {app,send,settings,now}=await setup(t);
+  const {expireAccounts,registerUse,includeOlderAccounts,retentionEnd}=await import('../sessions/poll-accounts.mjs');
+  assert.equal(retentionEnd(Date.UTC(2027,0,31,12)),Date.UTC(2027,3,30,12));
+  assert.equal(retentionEnd(Date.UTC(2023,10,30,10)),Date.UTC(2024,1,29,10));
+  const end=retentionEnd(now),dueDate=new Date(end+86400000).toISOString().slice(0,10);
+  for(const [name,date] of [['Unoccupied',settings.date],['Planned',dueDate],['Renewed',settings.date],['Old account',settings.date]]){
+    assert.equal((await send('polls',{settings:{...settings,date},organizerName:name,password:'abcdef'})).status,201);
+  }
+  // Model a pre-release account which has no activity row.
+  app.sql.prepare("DELETE FROM poll_organizer_accounts WHERE organizer='old account'").run();
+  await includeOlderAccounts(app.DB,now+86400000);
+  const account=name=>app.sql.prepare('SELECT * FROM poll_organizers WHERE name_key=?').get(name);
+  await registerUse(app.DB,account('renewed'),end-60000);
+  await expireAccounts(app.DB,end-1);assert.ok(account('unoccupied'));
+  await expireAccounts(app.DB,end);assert.equal(account('unoccupied'),undefined);
+  assert.ok(account('old account'));assert.ok(account('renewed'));assert.ok(account('planned'));
+  await expireAccounts(app.DB,end+4*86400000);
+  assert.equal(account('planned'),undefined);assert.equal(account('old account'),undefined);assert.ok(account('renewed'));
+});

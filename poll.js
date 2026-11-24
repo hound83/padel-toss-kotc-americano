@@ -265,7 +265,8 @@
   }
   function responseForm(mine){
     const section=card(say('Jouw reactie','Your response')),form=el('form');
-    const name=field(form,say('Jouw naam','Your name'),input('text',mine?.name||P.preference('toss-poll-name')||''));
+    try{localStorage.removeItem('toss-poll-name');}catch{}
+    const name=field(form,say('Jouw naam','Your name'),input('text',mine?.name||''));
     name.id='myName';name.autocomplete='given-name';name.maxLength=50;name.required=true;
     const controls=el('div',undefined,'actions'),own=el('p',undefined,'own-state');own.id='ownStatus';
     controls.setAttribute('role','group');controls.setAttribute('aria-label',say('Kies je reactie','Choose your response'));
@@ -280,6 +281,7 @@
     const pinBox=el('div');pinOption.append(pinBox);
     const pin=pinField(pinBox,say('Kies een pincode van vier cijfers','Choose a four-digit PIN'),true);
     const hint=el('small',say('Onthoud deze code voor deze avond.','Remember this code for this event.'));
+    hint.textContent+=' '+say('Naam en pincode vervallen met deze poll, doorgaans 14 dagen na de speeldatum.','Your name and PIN expire with this poll, usually 14 days after the playing date.');
     hint.id='signupPinHint';pin.setAttribute('aria-describedby',hint.id);pinBox.append(hint);
     const notice=el('p',undefined,'signup-warning');notice.setAttribute('aria-live','polite');
     const save=button(say('Reactie bevestigen','Confirm response'),vote,true);
@@ -326,7 +328,6 @@
     pending=true;sequence++;editor.form.inert=true;
     try{
       const data=await P.api(base,body,{person:P.personalKey(true)});
-      P.preference('toss-poll-name',data.mine.name);
       editor.selected=null;editor.wantPin.checked=false;editor.pin.value='';editor.name.value=data.mine.name;
       publicPage(data);$('message').textContent=say('Je reactie is opgeslagen.','Your response has been saved.');
     }catch(error){$('message').textContent=friendly(error);if(['locked','changed'].includes(error.message))await load(true);}
