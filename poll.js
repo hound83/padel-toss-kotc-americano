@@ -9,7 +9,7 @@
   let en=new URLSearchParams(location.search).get('lang')==='en' || P.preference('toss-poll-lang')==='en';
   let current=null, pending=false, sequence=0, dialogAction, dragId, editor=null;
   const say=(nl,english)=>en?english:nl;
-  const eventPasswordLabel=()=>say('Beheerwachtwoord voor deze avond','Organizer password for this event');
+  const lastPollLabel=()=>say('Laatste poll op dit apparaat openen','Open the last poll on this device');
   const modeName=mode=>P.modes[mode]?.[en?1:0]||'Padel';
   const content=$('content');
   function el(tag,text,cls){
@@ -55,13 +55,13 @@
   function places(){return {in:say('Deelnemers','Playing'),wait:say('Wachtlijst · Ja','Waiting · Yes'),reserve:say('Reserve','Standby'),review:say('Alleen na akkoord','Needs approval'),out:say('Afgemeld','Unavailable')};}
   function friendly(err){
     const labels={'hub-unconfigured':say('Het algemene beheerwachtwoord is nog niet ingesteld.','The site organizer password has not been set.'),storage:say('Sta lokale opslag toe om je eigen reactie te kunnen beheren, of vraag de organisator je aan te melden.','Enable browser storage to manage your own response, or ask the organizer to sign you up.'),duplicate:say('Die naam staat al op de lijst. Gebruik ook een achternaam of initiaal.','That name is taken. Add an initial or last name.'),
-      login:say('Inloggen vereist. Controleer het beheerwachtwoord.','Sign in with the organizer password.'),
+      login:hubRoute?say('Controleer het algemene beheerwachtwoord.','Check the site organizer password.'):say('Controleer de beheercode van deze poll.','Check the organizer code for this poll.'),
       settings:say('Controleer datum, tijden, banen en aantal plekken.','Check the date, times, courts and places.'),
       field:say('Controleer de ingevulde velden.','Check the fields.'),locked:say('De aanmelding is gesloten.','Signups have closed.'),
       changed:say('De lijst is intussen gewijzigd. De nieuwste lijst is opgehaald. Controleer je keuze.','The list changed. Check your choice against the updated list.'),
       limit:say('Te veel pogingen. Probeer het over een kwartier opnieuw.','Too many attempts. Try again in 15 minutes.'),
       missing:say('Deze avond is niet meer beschikbaar. Controleer de link of neem contact op met de organisator.','This event is unavailable. Check the link or contact the organizer.'),
-      'password-length':say('Kies een wachtwoord van 8 tot 128 tekens.','Choose a password with 8 to 128 characters.'),
+      'password-length':say('Kies een beheercode van 8 tot 128 tekens.','Choose an organizer code with 8 to 128 characters.'),
       'published-format':say('Heropen de aanmelding om de speelvorm te wijzigen.','Reopen signups before changing the format.')};
     return labels[err.message]||say('Opslaan of ophalen lukt niet. Controleer je verbinding en probeer opnieuw.','Could not save or refresh. Check your connection and try again.');
   }
@@ -130,24 +130,59 @@
     const central=new URLSearchParams(location.search).get('beheer')==='1';
     let pw;
     if(!central){
-      pw=field(form,eventPasswordLabel(),input('password'));
+      pw=field(form,say('Kies een beheercode om deze poll later te openen','Choose a code to reopen this poll later'),input('password'));
       pw.autocomplete='new-password';pw.required=true;pw.minLength=8;pw.maxLength=128;
-      const hint=el('small',say('Kies zelf minimaal 8 tekens. Dit wachtwoord geldt ook als je de avond herhaalt. Spelers hebben alleen de aanmeldlink nodig.',
-        'Choose at least 8 characters. This password also works for repeats of this event. Players only need the signup link.'));
+      const hint=el('small',say('Met de aanmeldlink en deze code kun je de poll later op elke telefoon of laptop beheren. Kies minimaal 8 tekens.',
+        'With the signup link and this code, you can manage the poll later on any phone or computer. Choose at least 8 characters.'));
       hint.id='eventPasswordHint';pw.setAttribute('aria-describedby',hint.id);form.append(hint);
+      const help=el('details',undefined,'poll-code-help');
+      const summary=el('summary',say('Hoe open ik mijn poll opnieuw?','How do I reopen my poll?'));
+      summary.title=say('Open je laatste poll op dit apparaat of gebruik de aanmeldlink en je beheercode.','Open the last poll on this device, or use the signup link and your organizer code.');
+      help.append(summary,el('p',say('Open de aanmeldlink uit WhatsApp, kies ‘Deze avond beheren’ en vul je beheercode in. Elke aanmeldlink bevat een unieke poll-ID. Heb je die ID apart bewaard? Vul hem in bij ‘Bestaande poll openen’.',
+        'Open the signup link from WhatsApp, choose “Manage this event” and enter your organizer code. Each signup link contains a unique poll ID. If you saved the ID separately, enter it under “Open an existing poll”.')),
+        el('p',say('In dezelfde browser kun je ook ‘Laatste poll op dit apparaat openen’ kiezen. Bij ‘Herhaal volgende week’ krijgt de nieuwe poll een eigen link en blijft je code geldig. Spelers hebben alleen de link nodig.',
+          'In the same browser, you can also choose “Open the last poll on this device”. Using “Repeat next week” creates a new poll with its own link and keeps your code. Players only need the link.')));
+      form.append(help);
     }
-    const go=el('button',say('Aanmelding openen','Open signups'),'primary');go.type='submit';actions(form,go);
-    const last=P.preference('toss-poll-last');if(!central && /^[a-f0-9]{14}$/.test(last))actions(section,link(say('Vorige poll beheren','Manage previous poll'),'/beheer/'+last));
+    const go=el('button',central?say('Aanmelding openen','Open signups'):say('Nieuwe poll aanmaken','Create new poll'),'primary');go.type='submit';actions(form,go);
+    const recovery=central?null:reopenPoll();
     form.onsubmit=async e=>{e.preventDefault();if(pending)return;pending=true;go.disabled=true;
       try{const r=await P.api('',central?{settings:read(),central:true}:{settings:read(),password:pw.value});
         if(central)location.assign('/beheer?avond='+r.id);else{rememberAdmin(r);location.assign('/beheer/'+r.id);}}
       catch(error){if(central && error.status===401){location.assign('/beheer');return;}$('message').textContent=friendly(error);}finally{pending=false;go.disabled=false;}};
-    content.replaceChildren(section);
+    content.replaceChildren(section);if(recovery)content.append(recovery);
+  }
+  function reopenPoll(){
+    const section=card(say('Bestaande poll openen','Open an existing poll')),form=el('form');
+    const last=P.preference('toss-poll-last'),path=key=>'/beheer/'+key+(en?'?lang=en':'');
+    if(/^[a-f0-9]{14}$/.test(last))actions(section,link(lastPollLabel(),path(last)));
+    const ref=field(form,say('Aanmeldlink of poll-ID','Signup link or poll ID'),input('text'));
+    ref.required=true;ref.autocapitalize='none';ref.spellcheck=false;
+    const hint=el('small',say('Vul daarna je beheercode in als daarom wordt gevraagd. Dit werkt op elk apparaat.',
+      'Enter your organizer code when asked. This works on any device.'));
+    hint.id='pollLookupHint';ref.setAttribute('aria-describedby',hint.id);form.append(hint);
+    const open=el('button',say('Poll openen','Open poll'));open.type='submit';actions(form,open);
+    ref.oninput=()=>ref.setCustomValidity('');
+    form.onsubmit=event=>{
+      event.preventDefault();
+      let key=ref.value.trim();
+      if(!/^[a-f0-9]{14}$/i.test(key)){
+        try{
+          const url=new URL(key,location.origin);
+          key=url.origin===location.origin && (url.pathname.match(/^\/(?:aanmelden|beheer)\/([a-f0-9]{14})\/?$/i)?.[1] ||
+            (/^\/beheer\/?$/.test(url.pathname) && url.searchParams.get('avond')));
+        }catch{key=null;}
+      }
+      if(typeof key==='string' && /^[a-f0-9]{14}$/i.test(key)){location.assign(path(key.toLowerCase()));return;}
+      ref.setCustomValidity(say('Plak de aanmeldlink van deze planner of vul de poll-ID van 14 tekens in.',
+        'Paste a signup link from this planner or enter the 14-character poll ID.'));ref.reportValidity();
+    };
+    section.append(form);return section;
   }
   function rememberAdmin(r){P.remember(r.id,r.token);P.preference('toss-poll-last',r.id);}
   function login(){
     content.replaceChildren();const section=card(say('Inloggen voor beheer','Organizer sign-in')),form=el('form');
-    const pw=field(form,eventPasswordLabel(),input('password'));pw.required=true;pw.autocomplete='current-password';
+    const pw=field(form,say('Beheercode van deze poll','Organizer code for this poll'),input('password'));pw.required=true;pw.autocomplete='current-password';
     const go=el('button',say('Inloggen','Sign in'),'primary');go.type='submit';actions(form,go,link(say('Openbare aanmeldpagina','Public signup page'),'/aanmelden/'+id));section.append(form);content.append(section);
     form.onsubmit=async e=>{e.preventDefault();go.disabled=true;
       try{const result=await P.api(base+'/login',{password:pw.value});rememberAdmin({...result,id});$('message').textContent='';await load();}
@@ -301,6 +336,7 @@
     controls.append(button(say('Groepslink kopiëren','Copy group link'),copyPublic),link(say('Bekijk als bezoeker','Public view'),'/aanmelden/'+id));
     if(data.phase==='published' && data.viewCode)controls.append(link(say('Open liveweergave','Open live view'),'/s/'+data.viewCode));
     const url=input('text',location.origin+'/aanmelden/'+id);url.id='publicUrl';url.readOnly=true;url.hidden=true;section.append(url);
+    const identifier=el('p',say('Poll-ID · ','Poll ID · '),'hint');identifier.append(el('code',id));section.append(identifier);
     const tools=card(say('Aanmeldlijst beheren','Manage signup list'));
     actions(tools,button(say('Speler toevoegen','Add a player'),()=>entryModal()),button(say('Avond wijzigen','Edit event'),()=>modal(say('Avond wijzigen','Edit event'),r=>configFields(r,current.settings),s=>perform({action:'settings',settings:s}))),
       button(say('Herhaal volgende week','Repeat next week'),safe(()=>perform({action:'repeat'}))));
@@ -324,6 +360,10 @@
       if(error.status===404){
         current=null;resetEditor();header(null);
         if(hubRoute)await hub.refresh();
+        else if(admin){
+          if(P.preference('toss-poll-last')===id)P.preference('toss-poll-last','');
+          actions(content,link(say('Nieuwe poll aanmaken','Create new poll'),'/aanmaken'+(en?'?lang=en':'')));
+        }
         $('message').textContent=friendly(error);return;
       }
       if(!admin){resetEditor();current=null;}

@@ -36,12 +36,11 @@ window.TossOrganizerHub=function({P,say,modeName,dateText,el,button,link,card,fi
       el('small',item.waiting+say(' wachtend',' waiting')+' · '+item.standby+say(item.standby===1?' reserve':' reserves',' standby')));
     toggle.append(img,label,totals);row.append(toggle);parent.append(row);cards.set(item.id,{row,toggle});
   }
-  const sessionTime=session=>new Intl.DateTimeFormat(document.documentElement.lang,{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit',timeZone:'Europe/Amsterdam'}).format(session.changed);
   function removeButton(kind,item){
     const event=kind==='poll', format=event?item.settings.format:item.format;
     const label=event?say('Avond verwijderen','Delete event'):say('Schema verwijderen','Delete schedule');
     const name=event?item.settings.title:(item.title||modeName(format));
-    const when=event?dateText(item.settings)+' · '+item.settings.start+'–'+item.settings.end:sessionTime(item);
+    const when=event?dateText(item.settings)+' · '+item.settings.start+'–'+item.settings.end:dateText(item);
     const trigger=button(label,()=>{
       modal(label+'?',root=>{
         root.append(el('strong',name+' · '+when));
@@ -71,6 +70,14 @@ window.TossOrganizerHub=function({P,say,modeName,dateText,el,button,link,card,fi
     trigger.className='remove-item';
     return trigger;
   }
+  function scheduleCard(section,session){
+    const row=el('article',undefined,'hub-session');
+    const art=el('img');art.src=P.art(session.format,document.documentElement.lang==='en');art.alt='';
+    const body=el('div');body.append(el('h3',session.title||modeName(session.format)),el('small',dateText(session)+' · '+
+      (session.closed?say('Eindstand','Final results'):say('Gedeeld speelschema','Shared schedule'))));
+    actions(body,link(say('Open planner','Open planner'),'/beheer/sessie/'+session.id),link(say('Open liveweergave','Open live view'),'/s/'+session.viewCode),removeButton('session',session));
+    row.append(art,body);section.append(row);
+  }
   function render(){
     const focused=document.activeElement, focusId=[...cards].find(([,v])=>v.toggle===focused)?.[0];
     const heldFocus=content.contains(focused)?focused:null;
@@ -81,32 +88,23 @@ window.TossOrganizerHub=function({P,say,modeName,dateText,el,button,link,card,fi
       try{await P.api('/hub/logout',{});eventInUrl(null);lock();}
       catch(error){message.textContent=friendly(error);}
     }));index.append(toolbar);
-    const day=today(), dates=polls.slice().sort((a,b)=>
-      (a.settings.date+a.settings.start).localeCompare(b.settings.date+b.settings.start)||a.settings.title.localeCompare(b.settings.title));
+    const day=today(), dates=[...polls,...sessions].map(item=>({
+      item,date:item.settings?.date||item.date,time:item.settings?.start||'',title:item.settings?.title||item.title||modeName(item.format)
+    })).sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time)||a.title.localeCompare(b.title));
     for(const [title,entries] of [
-      [say('Vandaag','Today'),dates.filter(p=>p.settings.date===day)],
-      [say('Komende avonden','Upcoming events'),dates.filter(p=>p.settings.date>day)],
-      [say('Eerdere avonden','Past events'),dates.filter(p=>p.settings.date<day).reverse()]
+      [say('Vandaag','Today'),dates.filter(p=>p.date===day)],
+      [say('Komende avonden','Upcoming events'),dates.filter(p=>p.date>day)],
+      [say('Eerdere avonden','Past events'),dates.filter(p=>p.date<day).reverse()]
     ]){
       if(!entries.length)continue;
       const section=el('section',undefined,'hub-section');section.append(el('h2',title));
-      for(const item of entries)recordCard(section,item);
-      index.append(section);
-    }
-    if(sessions.length){
-      const section=el('section',undefined,'hub-section');section.append(el('h2',say('Losse online speelschema’s','Standalone online schedules')));
-      for(const session of sessions.slice().sort((a,b)=>b.changed-a.changed)){
-        const row=el('article',undefined,'hub-session');
-        const art=el('img');art.src=P.art(session.format,document.documentElement.lang==='en');art.alt='';
-        const body=el('div');body.append(el('h3',session.title||modeName(session.format)),el('small',modeName(session.format)+' · '+
-          (session.closed?say('Eindstand','Final results'):say('Live','Live'))+' · '+
-          sessionTime(session)));
-        actions(body,link(say('Open planner','Open planner'),'/beheer/sessie/'+session.id),link(say('Open liveweergave','Open live view'),'/s/'+session.viewCode),removeButton('session',session));
-        row.append(art,body);section.append(row);
+      for(const {item} of entries){
+        if(item.settings)recordCard(section,item);
+        else scheduleCard(section,item);
       }
       index.append(section);
     }
-    if(!polls.length && !sessions.length)index.append(el('p',say('Er zijn nog geen avonden.','There are no events yet.'),'hub-empty'));
+    if(!dates.length)index.append(el('p',say('Er zijn nog geen geplande avonden.','There are no scheduled events yet.'),'hub-empty'));
     const target=cards.get(selected);
     if(target)target.row.append(content);
     if(heldFocus?.isConnected)heldFocus.focus({preventScroll:true});

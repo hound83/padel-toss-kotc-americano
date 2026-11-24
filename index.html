@@ -1758,6 +1758,7 @@
   <dialog id="shareDialog" aria-labelledby="shareTitle">
     <h2 id="shareTitle" data-i18n="shareAction">Schema delen</h2><p id="shareInfo" role="status"></p>
     <div class="share-fields">
+      <section id="shareDateGroup" hidden><label id="shareDateLabel" for="shareDate">Speeldatum</label><input id="shareDate" type="date" required></section>
       <button id="sharePublish" class="btn btn-primary" type="button" data-i18n="makeLink"></button>
       <section id="viewGroup"><label id="viewCaption" for="shareUrl" hidden></label><input id="shareUrl" type="url" readonly hidden data-i18n-aria-label="viewLink"><button id="shareCopy" class="btn btn-primary" type="button" data-i18n="copyLink" hidden></button></section>
       <section id="entryGroup" hidden><label id="modeCaption" for="entryMode"></label><select id="entryMode"><option value="view"></option><option value="group"></option><option value="personal"></option></select>
@@ -6828,6 +6829,7 @@
   });
 
   function doStartOver(){
+    if(signupId || state.signupPoll){location.assign('/');return;}
     window.detachTossSession?.();
     editSession = null;
     var keepLang = state.lang;
@@ -6953,6 +6955,8 @@
   function backToModePicker(){
     if (state.pools.length || (state.koc && state.koc.assignment)){
       showConfirmModal(t('modalStartOverText'), t('confirmStartOverBtn'), doStartOver);
+    } else if(signupId || state.signupPoll){
+      doStartOver();
     } else {
       goToStep(0);
     }

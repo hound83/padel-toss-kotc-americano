@@ -39,7 +39,15 @@ test('an organizer can close the laptop, players score, and the organizer contin
   await organizer.locator('.format-btn[data-format=americano]').click();
   await organizer.locator('#continueTo2').click();await organizer.locator('#generateBtn').click();
   await organizer.getByRole('button',{name:'Schema delen'}).last().click();
-  await organizer.locator('#sharePublish').click();
+  const playDate=new Date(Date.now()+18*86400000).toISOString().slice(0,10);
+  const creations=[];organizer.on('request',req=>{if(req.method()==='POST' && new URL(req.url()).pathname==='/api/sessions')creations.push(req);});
+  const dateField=organizer.getByLabel('Speeldatum',{exact:true});
+  assert.equal(await dateField.inputValue(),'');
+  await organizer.getByRole('button',{name:'Inplannen en delen'}).click();
+  assert.equal(await dateField.evaluate(input=>input.validity.valueMissing),true);
+  assert.equal(await organizer.locator('#shareUrl').isVisible(),false);
+  assert.equal(creations.length,0);
+  await dateField.fill(playDate);await organizer.getByRole('button',{name:'Inplannen en delen'}).click();
   await organizer.locator('#ownerUrl:visible').waitFor();
   const organizerPoll=req=>req.method()==='GET' && new URL(req.url()).pathname==='/api/manage';
   await organizer.waitForResponse(res=>organizerPoll(res.request()) && res.status()===304);
@@ -59,6 +67,10 @@ test('an organizer can close the laptop, players score, and the organizer contin
   await central.page.getByRole('button',{name:'Inloggen'}).click();
   const liveCode=new URL(viewLink).pathname.split('/').pop().replace('-','');
   const liveCard=central.page.locator('.hub-session').filter({has:central.page.locator('a[href="/s/'+liveCode+'"]')});
+  await liveCard.waitFor();
+  assert.equal(await liveCard.locator('..').getByRole('heading',{level:2}).innerText(),'Komende avonden');
+  assert.equal(await liveCard.count(),1);
+  assert.equal(creations.length,1);
   await liveCard.getByRole('link',{name:'Open planner'}).click();
   await central.page.locator('#panel3:visible .match-card input').first().waitFor();
   assert.match(new URL(central.page.url()).pathname,/^\/beheer\/sessie\//);
@@ -80,6 +92,8 @@ test('an organizer can close the laptop, players score, and the organizer contin
   },hidden);
   await watch.goto(viewLink);await watch.locator('#rounds article').first().waitFor();
   assert.equal(reads,1);
+  const dateText=new Date(playDate+'T12:00:00Z').toLocaleDateString('nl-NL',{weekday:'long',day:'numeric',month:'long',timeZone:'UTC'});
+  assert.equal(await watch.locator('#playDate').innerText(),dateText);
   await player.goto(entryLink.replace(/-([A-Z0-9]{4})$/,'$1').toLowerCase());
   const first=player.locator('article').first();const name=await first.locator('.person').first().textContent();
   await player.locator('#player').selectOption(name);
@@ -163,7 +177,9 @@ test('an organizer can close the laptop, players score, and the organizer contin
       await planner.locator('#generateBtn').click();
     }
     await planner.getByRole('button',{name:'Schema delen'}).filter({visible:true}).click();
-    await planner.locator('#sharePublish').click();await planner.locator('#ownerUrl:visible').waitFor();
+    assert.equal(await planner.getByLabel('Speeldatum').inputValue(),'');
+    await planner.getByLabel('Speeldatum').fill(playDate);
+    await planner.getByRole('button',{name:'Inplannen en delen'}).click();await planner.locator('#ownerUrl:visible').waitFor();
     assert.equal(await planner.locator('#entryGroup').isVisible(),entry,mode);
     const handoff=await planner.locator('#ownerUrl').inputValue();
     const another=await device(true);await another.page.goto(handoff);

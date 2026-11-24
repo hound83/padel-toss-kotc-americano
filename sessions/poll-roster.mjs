@@ -3,12 +3,16 @@ const answers = ['yes','reserve','no','cancel'];
 export function invalid(code,status=422){throw Object.assign(new Error(code),{status});}
 export const nameKey = name=>name.normalize('NFKC').toLowerCase().replace(/\s+/gu,' ').trim();
 const clean = (s,max)=>typeof s==='string' && s.trim().length && s.trim().length<=max && !/[\u0000-\u001f\u007f]/u.test(s) ? s.trim().replace(/\s+/gu,' ') : invalid('field');
+export function validPlayDate(value,now=Infinity){
+  return typeof value==='string' && /^\d{4}-\d{2}-\d{2}$/.test(value) &&
+    Number.isFinite(Date.parse(value)) && new Date(value).toISOString().slice(0,10)===value &&
+    Date.parse(value)<=now+370*86400000;
+}
 export function settings(input){
   if(!input || !['toss','koc','americano','splitToss'].includes(input.format) ||
     !Number.isInteger(input.courts) || input.courts<2 || input.courts>12 ||
     !Number.isInteger(input.capacity) || input.capacity<4 || input.capacity>96 ||
-    !/^\d{4}-\d{2}-\d{2}$/.test(input.date) || !Number.isFinite(Date.parse(input.date)) ||
-    new Date(input.date).toISOString().slice(0,10)!==input.date ||
+    !validPlayDate(input.date) ||
     ![input.start,input.end].every(v=>typeof v==='string' && /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(v)) ||
     input.end<=input.start)invalid('settings');
   return {title:clean(input.title,80),format:input.format,date:input.date,start:input.start,end:input.end,courts:input.courts,capacity:input.capacity};

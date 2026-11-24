@@ -164,6 +164,15 @@ export async function pollApi(request,db,now,{json,requestJson,counter},adminPas
         }
       }else invalid('action');
     }
+    // Keep an already shared link on the poll's date, even after a later reopening.
+    if(kind && doc.viewCode && (body.action==='publish' || body.action==='settings')){
+      extra.push(stmt(db,`UPDATE sessions SET document=json_set(document,'$.planning',json_object('date',?,'pollId',?)),
+        expires=MAX(expires,?),revision=revision+1
+        WHERE id=(SELECT session_id FROM links WHERE code=? AND role='view') AND expires>?
+        AND (json_extract(document,'$.planning.pollId') IS NOT ? OR json_extract(document,'$.planning.date') IS NOT ?)
+        AND EXISTS(SELECT 1 FROM signup_polls WHERE id=? AND revision=?)`,
+        doc.settings.date,id,Date.parse(doc.settings.date)+7*day,doc.viewCode,now,id,doc.settings.date,id,row.revision));
+    }
     const updated=stmt(db,'UPDATE signup_polls SET document=?,revision=revision+1,expires=? WHERE id=? AND revision=?'+writeGuard,
       JSON.stringify(doc),ttl(doc.settings,now),id,row.revision,...guardValues);
     const last=(await db.batch([...extra,updated])).at(-1);

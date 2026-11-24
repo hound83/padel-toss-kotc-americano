@@ -35,11 +35,13 @@ async function listEvents(db, now, after, sessions) {
   // Select only the fields needed for each card. Large schedules and all private
   // entries remain in D1 until the organizer opens a particular event.
   const source = sessions ? `
-    SELECT s.id, s.revision, s.changed, s.closed, l.code AS viewCode,
+    SELECT s.id, s.revision, s.closed, l.code AS viewCode,
+      json_extract(s.document,'$.planning.date') AS date,
       json_extract(s.document,'$.state.format') AS format,
       json_extract(s.document,'$.view.title') AS title
     FROM sessions s JOIN links l ON l.session_id=s.id AND l.role='view'
-    WHERE s.expires>? AND s.id>? AND NOT EXISTS (
+    WHERE s.expires>? AND s.id>? AND json_extract(s.document,'$.planning.date') IS NOT NULL
+      AND json_extract(s.document,'$.planning.pollId') IS NULL AND NOT EXISTS (
       SELECT 1 FROM signup_polls p WHERE p.expires>? AND json_extract(p.document,'$.viewCode')=l.code
     ) ORDER BY s.id LIMIT 65` : `
     WITH page AS (SELECT id, revision, document FROM signup_polls WHERE expires>? AND id>? ORDER BY id LIMIT 65)

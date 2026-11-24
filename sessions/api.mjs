@@ -1,6 +1,7 @@
 import {centralLogin,organizerApi} from './organizer.mjs';
 import {pollApi,pollCleanup} from './polls.mjs';
 import createRanking from '../ranking.js';
+import {validPlayDate} from './poll-roster.mjs';
 
 const WEEK = 7 * 86400000;
 const alphabet = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
@@ -43,8 +44,9 @@ function validDocument(doc){
   return {state,view};
 }
 function guest(row,link){
-  const {state,view}=JSON.parse(row.document);
+  const {state,view,planning}=JSON.parse(row.document);
   view.format=state.format;
+  if(planning)view.playDate=planning.date;
   for(const rd of view.rounds)for(const match of rd.rows){
     if(row.closed || link.role==='view' || (link.role==='personal' && !match.teams.flat().some(n=>view.playerIds[n]===link.player))) delete match.ticket;
   }
@@ -107,9 +109,20 @@ async function counter(db, request, name, now, max, increment){
     if(row.hits>max)fail(429,'limit');
   }else if((await one(db,'SELECT hits FROM limits WHERE bucket=?',bucket))?.hits>=max)fail(429,'limit');
 }
+async function resolvePlan(db,state,date,now){
+  if(state.signupPoll?.id){
+    if(typeof state.signupPoll.id!=='string' || !/^[a-f0-9]{14}$/.test(state.signupPoll.id))fail(422,'poll');
+    const poll=await one(db,"SELECT id,json_extract(document,'$.settings.date') AS date FROM signup_polls WHERE id=? AND expires>?",state.signupPoll.id,now);
+    if(!poll)fail(409,'poll');
+    return {date:poll.date,pollId:poll.id};
+  }
+  if(!validPlayDate(date,now))fail(422,'date');
+  return {date};
+}
 const ownerInfo = async (db,row) => {
   const links=(await query(db,'SELECT code,role,player FROM links WHERE session_id=? AND (role=? OR epoch=?)',row.id,'view',row.epoch).all()).results;
-  return {revision:row.revision,mode:row.mode,closed:!!row.closed,expires:row.expires,links};
+  const planning=JSON.parse(row.document).planning;
+  return {revision:row.revision,mode:row.mode,closed:!!row.closed,expires:row.expires,links,playDate:planning?.date||null};
 };
 async function ownerRow(db, request, now){
   const key=request.headers.get('Authorization')?.match(/^Bearer ([0-9a-f]{48})$/)?.[1];
@@ -124,16 +137,19 @@ async function lookup(db,code,now){
 const insertLink = 'INSERT INTO links(code,session_id,role,epoch,player) VALUES(?,?,?,?,?)';
 async function create(db, request, now){
   await counter(db,request,'create',now,20,true);
-  const doc=validDocument(await requestJson(request)),secret=toHex(random(24)),owner=await digest(secret);
+  const body=await requestJson(request),doc=validDocument(body);
+  doc.planning=await resolvePlan(db,doc.state,body.playDate,now);
+  const expires=Math.max(now,Date.parse(doc.planning.date))+WEEK;
+  const secret=toHex(random(24)),owner=await digest(secret);
   const id=crypto.randomUUID(), epoch=crypto.randomUUID();
   for(let i=0;i<5;i++){
     const code=newCode();
     try{
       await db.batch([
-        query(db,'INSERT INTO sessions(id,owner_hash,revision,mode,epoch,expires,changed,document) VALUES(?,?,1,?,?,?,?,?)',id,owner,'view',epoch,now+WEEK,now,JSON.stringify(doc)),
+        query(db,'INSERT INTO sessions(id,owner_hash,revision,mode,epoch,expires,changed,document) VALUES(?,?,1,?,?,?,?,?)',id,owner,'view',epoch,expires,now,JSON.stringify(doc)),
         query(db,insertLink,code,id,'view','', '')
       ]);
-      return json({secret,revision:1,mode:'view',closed:false,expires:now+WEEK,links:[{role:'view',code,player:''}]},201);
+      return json({secret,revision:1,mode:'view',closed:false,expires,playDate:doc.planning.date,links:[{role:'view',code,player:''}]},201);
     }catch(error){if(!/UNIQUE/i.test(String(error)))throw error;}
   }
   fail(503,'retry');
@@ -164,19 +180,30 @@ async function manage(db,request,now,sessionId){
   if(request.method!=='POST')fail(405,'method');
   const body=await requestJson(request);
   if(body.revision!==row.revision)fail(409,'changed');
-  if(row.closed)fail(409,'closed');
+  if(row.closed && body.action!=='schedule')fail(409,'closed');
   if(body.action==='link')return modeLink(db,row,body.player);
-  let mode=row.mode,epoch=row.epoch,closed=0,doc=row.document;
-  if(body.action==='save')doc=JSON.stringify(validDocument(body.document));
-  else if(body.action==='close')closed=1;
+  let mode=row.mode,epoch=row.epoch,closed=row.closed,doc=row.document,expires=Math.max(row.expires,now+WEEK);
+  if(body.action==='save'){
+    const next=validDocument(body.document),planning=JSON.parse(row.document).planning;
+    if(planning)next.planning=planning;
+    doc=JSON.stringify(next);
+  }else if(body.action==='schedule'){
+    const saved=JSON.parse(row.document);
+    if(saved.planning)fail(409,'changed');
+    const linked=await one(db,`SELECT p.id AS pollId,json_extract(p.document,'$.settings.date') AS date
+      FROM signup_polls p JOIN links l ON l.code=json_extract(p.document,'$.viewCode')
+      WHERE l.session_id=? AND l.role='view' AND p.expires>? LIMIT 1`,row.id,now);
+    saved.planning=linked||await resolvePlan(db,saved.state,body.playDate,now);
+    doc=JSON.stringify(saved);expires=Math.max(expires,Date.parse(saved.planning.date)+WEEK);
+  }else if(body.action==='close')closed=1;
   else if(body.action==='mode' && modes.includes(body.mode)){
     if(body.mode!=='view' && !JSON.parse(doc).view.rounds.some(rd=>rd.rows.some(r=>r.slot)))fail(422,'mode');
     mode=body.mode;if(mode!==row.mode)epoch=crypto.randomUUID();
   }else fail(422,'action');
-  if(!closed && mode===row.mode && doc===row.document)return json(await ownerInfo(db,row));
-  const changed=await run(db,'UPDATE sessions SET document=?,mode=?,epoch=?,closed=?,revision=revision+1,changed=?,expires=? WHERE id=? AND revision=? AND expires>?',doc,mode,epoch,closed,now,now+WEEK,row.id,row.revision,now);
+  if(closed===row.closed && mode===row.mode && doc===row.document)return json(await ownerInfo(db,row));
+  const changed=await run(db,'UPDATE sessions SET document=?,mode=?,epoch=?,closed=?,revision=revision+1,changed=?,expires=? WHERE id=? AND revision=? AND expires>?',doc,mode,epoch,closed,now,expires,row.id,row.revision,now);
   if(!changed.meta.changes)fail(409,'changed');
-  return json(await ownerInfo(db,{...row,revision:row.revision+1,mode,epoch,closed,expires:now+WEEK}));
+  return json(await ownerInfo(db,{...row,document:doc,revision:row.revision+1,mode,epoch,closed,expires}));
 }
 export async function cleanup(db,now=Date.now()){
   await db.batch([...pollCleanup(db,now),query(db,'DELETE FROM organizer_logins WHERE expires<=?',now),query(db,'DELETE FROM links WHERE session_id IN (SELECT id FROM sessions WHERE expires<=?)',now),
@@ -214,7 +241,7 @@ export async function api(request,db,now=Date.now(),adminPassword){
       if(!entry)entry=await requestJson(request);
       const doc=JSON.parse(row.document);
       applyScore(doc,entry,row);
-      const changed=await run(db,'UPDATE sessions SET document=?,changed=?,expires=?,revision=revision+1 WHERE id=? AND revision=? AND closed=0 AND expires>?',JSON.stringify(doc),now,now+WEEK,row.id,row.revision,now);
+      const changed=await run(db,'UPDATE sessions SET document=?,changed=?,expires=?,revision=revision+1 WHERE id=? AND revision=? AND closed=0 AND expires>?',JSON.stringify(doc),now,Math.max(row.expires,now+WEEK),row.id,row.revision,now);
       if(changed.meta.changes)return json(guest({...row,document:JSON.stringify(doc),revision:row.revision+1,changed:now},row));
     }
     fail(409,'changed');
