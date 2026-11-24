@@ -61,7 +61,9 @@ test('all poll series and separate sessions can be managed; the overview sends o
   assert.match(index.headers.get('cache-control'),/no-store/);
   const id='00000000-0000-4000-8000-000000000001',code='TESTVIEW';
   const doc=JSON.stringify({state:{format:'koc'},view:{title:'Zaterdagavond'}});
-  app.sql.prepare('INSERT INTO sessions VALUES (?,?,1,?,?,0,?,?,?)').run(id,'owner-hash','view','epoch',now+3600000,now,doc);
+  const ownerSecret=randomBytes(24).toString('hex');
+  const ownerHash=require('node:crypto').createHash('sha256').update(ownerSecret).digest('hex');
+  app.sql.prepare('INSERT INTO sessions VALUES (?,?,1,?,?,0,?,?,?)').run(id,ownerHash,'view','epoch',now+3600000,now,doc);
   app.sql.prepare('INSERT INTO links VALUES (?,?,?,?,?)').run(code,id,'view','','');
   const standalone=await send('polls/hub/sessions',undefined,auth);
   assert.equal(standalone.status,200);assert.equal(standalone.data.items[0].title,'Zaterdagavond');
@@ -69,7 +71,10 @@ test('all poll series and separate sessions can be managed; the overview sends o
   assert.equal((await send('manage/'+id,undefined,auth)).data.state.format,'koc');
   assert.equal((await send('manage/'+id,{action:'close',revision:1},auth)).data.closed,true);
   // A published poll already contains the session; there must be only one card.
-  app.sql.prepare("UPDATE signup_polls SET document=json_set(document,'$.viewCode',?) WHERE id=?").run(code,first.id);
+  const published=await send(path,{action:'publish',revision:3,sessionKey:ownerSecret},auth);
+  assert.equal(published.status,200);assert.equal(published.data.plannerId,id);assert.equal(published.data.plannerKey,undefined);
+  assert.equal((await send(path,undefined,{Authorization:'Bearer '+first.token})).data.plannerKey,ownerSecret);
+  assert.equal((await send('polls/'+first.id)).data.plannerId,undefined);
   assert.deepEqual((await send('polls/hub/sessions',undefined,auth)).data.items,[]);
   for(let i=0;i<65;i++)app.sql.prepare('INSERT INTO signup_polls SELECT ?,series,revision,expires,document FROM signup_polls WHERE id=?').run(i.toString(16).padStart(14,'0'),first.id);
   const a=(await send('polls/hub',undefined,auth)).data,b=(await send('polls/hub?after='+a.next,undefined,auth)).data;

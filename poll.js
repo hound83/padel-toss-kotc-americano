@@ -222,9 +222,11 @@
   }
   async function perform(body){
     if(pending)throw Error('changed');
+    const eventId=id;
     pending=true;sequence++;
     try{
       const next=await P.api(base+'/admin',{revision:current.revision,...body},{token:adminToken()});
+      if(eventId!==id)return;
       if(body.action==='repeat'){if(hubRoute){await hub.refresh(next.id);return;}P.remember(next.id,P.token(id));P.preference('toss-poll-last',next.id);location.assign('/beheer/'+next.id);return;}
       managePage(next);if(hubRoute)hub.refresh();$('message').textContent=say('Opgeslagen.','Saved.');
       return next;

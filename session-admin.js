@@ -69,7 +69,7 @@
       finally{applying=false;}
     }
     function unavailable(error){
-      if(error.status===401 && centralSession){location.replace('/beheer');return;}
+      if(error.status===401 && centralSession){location.replace('/beheer?sessie='+centralSession);return;}
       if(error.status===404 && secret){
         const local=pending();if(local?.expires>Date.now())conflict(local.document);
         else try{localStorage.removeItem(conflictKey());}catch{}

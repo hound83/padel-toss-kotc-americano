@@ -33,7 +33,7 @@ window.TossOrganizerHub=function({P,say,modeName,dateText,el,button,link,card,fi
       el('strong',settings.title),el('span',dateText(settings)+' · '+settings.start+'–'+settings.end));
     const totals=el('span',undefined,'hub-counts');
     totals.append(el('strong',item.playing+' / '+settings.capacity),
-      el('small',item.waiting+say(' wachtend',' waiting')+' · '+item.standby+say(' reserve',' standby')));
+      el('small',item.waiting+say(' wachtend',' waiting')+' · '+item.standby+say(item.standby===1?' reserve':' reserves',' standby')));
     toggle.append(img,label,totals);row.append(toggle);parent.append(row);cards.set(item.id,{row,toggle});
   }
   function render(){
@@ -111,6 +111,10 @@ window.TossOrganizerHub=function({P,say,modeName,dateText,el,button,link,card,fi
       const [events,draws]=await Promise.all([allPages('/hub'),allPages('/hub/sessions')]);
       if(serial!==generation)return;
       const newLogin=!unlocked;unlocked=true;
+      const resume=new URLSearchParams(location.search).get('sessie');
+      if(newLogin && /^[a-f0-9-]{36}$/.test(resume||'')){
+        location.replace('/beheer/sessie/'+resume);return;
+      }
       const nextSignature=JSON.stringify([events,draws,today(),document.documentElement.lang]);
       if(nextSignature!==signature || newLogin){
         polls=events;sessions=draws;signature=nextSignature;render();
