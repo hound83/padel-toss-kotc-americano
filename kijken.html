@@ -3,6 +3,7 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="no-referrer">
 <title>Speelschema · Koriander Toss</title>
 <link rel="icon" href="./icon.svg">
+<link rel="stylesheet" href="./visual-theme.css">
 <style>
 *{box-sizing:border-box}
 :root{--navy:#213b55;--line:#d5e0e9;--lime:#deec90;--muted:#516779}
@@ -43,7 +44,7 @@ article h3{display:flex;align-items:center;justify-content:space-between;gap:.55
 <header><img id="modeArt" src="./icon.svg" alt=""><div><h1 id="title">Speelschema</h1><div class="meta"><span id="updated"></span><span id="connection" role="status">Kijklink openen…</span></div></div></header>
 <div class="filter"><label id="label" for="player" hidden>Speler</label><select id="player" hidden></select><button id="everyone" hidden type="button">Toon iedereen</button></div>
 <p id="entryHint" hidden></p><p id="entryStatus" role="status"></p><main id="rounds"></main>
-<footer style="margin-block:2rem 1rem"><a data-organizer-link href="https://padel.hound83.workers.dev/beheer" style="color:var(--navy)">Beheer</a></footer>
+<footer class="viewer-footer"><a class="organizer-button" data-organizer-link href="https://padel.hound83.workers.dev/beheer">Beheer</a></footer>
 <dialog id="entryDialog" aria-labelledby="entryTitle">
   <form id="entryForm">
     <div class="score-heading"><img id="entryArt" alt="" width="68" height="50"><h2 id="entryTitle"></h2></div>

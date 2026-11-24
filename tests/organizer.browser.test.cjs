@@ -28,7 +28,17 @@ test('one central login reaches existing and new events, live schedules, and the
   const settings={title,format:'koc',date,start:'21:00',end:'23:00',courts:2,capacity:8};
   const created=await guest.request.post(url+'/api/polls',{data:{settings,password:randomBytes(12).toString('hex')}});
   assert.equal(created.status(),201);const {id}=await created.json();
-  await host.goto(url);await host.locator('.app-footer [data-organizer-link]').click();
+  async function footerButton(page,name='Beheer'){
+    const button=page.locator('footer').getByRole('link',{name,exact:true});
+    await button.waitFor();
+    const box=await button.boundingBox();
+    assert.ok(box && box.width>=44 && box.height>=44,'the footer has a full touch target');
+    assert.notEqual(await button.evaluate(el=>getComputedStyle(el).backgroundColor),'rgba(0, 0, 0, 0)');
+    return button;
+  }
+  await host.goto(url);
+  const homeButton=await footerButton(host);
+  await homeButton.focus();await host.keyboard.press('Enter');
   await host.getByLabel('Beheerwachtwoord').fill(password);await host.getByRole('button',{name:'Inloggen'}).click();
   const event=host.getByRole('button',{name:new RegExp(title)});
   await event.focus();await host.keyboard.press('Enter');
@@ -41,7 +51,9 @@ test('one central login reaches existing and new events, live schedules, and the
   assert.match(await event.locator('img').getAttribute('src'),/mode-koc\.svg/);
   assert.ok(await host.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
   await publicPage.goto(url+'/aanmelden/'+id);await publicPage.locator('#groups').getByText('Mira').waitFor();
-  await publicPage.locator('footer [data-organizer-link]').click();await publicPage.getByLabel('Beheerwachtwoord').waitFor();
+  const eventLink=publicPage.locator('footer').getByRole('link',{name:'Deze avond beheren'});
+  assert.equal(await eventLink.getAttribute('href'),'/beheer/'+id);
+  await (await footerButton(publicPage)).click();await publicPage.getByLabel('Beheerwachtwoord').waitFor();
   assert.equal(await publicPage.getByText('Mira').count(),0);
   assert.equal((await guest.request.get(url+'/api/polls/hub')).status(),401);
   await host.getByRole('button',{name:'Herhaal volgende week'}).click();
@@ -65,7 +77,9 @@ test('one central login reaches existing and new events, live schedules, and the
   const plannerPath=await standalone.getByRole('link',{name:'Open planner'}).getAttribute('href');
   assert.match(plannerPath,/^\/beheer\/sessie\/[a-f0-9-]{36}$/);
   assert.equal((await guest.request.get(url+'/api/manage/'+plannerPath.split('/').pop())).status(),401);
-  await publicPage.goto(url+'/s/'+viewerCode);assert.ok(await publicPage.locator('footer [data-organizer-link]').isVisible());
+  await publicPage.goto(url+'/s/'+viewerCode);
+  assert.equal(await (await footerButton(publicPage)).getAttribute('href'),'/beheer');
+  assert.equal(await (await footerButton(host,'Organizer')).getAttribute('href'),'/beheer?lang=en');
   await host.getByRole('button',{name:'Sign out'}).click();await host.getByLabel('Organizer password').waitFor();
   assert.equal(await host.locator('.hub-row,.hub-session').count(),0);
   await host.reload();await host.getByLabel('Organizer password').waitFor();

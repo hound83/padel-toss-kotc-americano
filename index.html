@@ -169,7 +169,7 @@
   .mode-home .format-btn .mode-icon{font-size:36px;line-height:1;}
   .mode-home .format-btn .fb-name{font-size:clamp(17px,2.1vw,22px);}
   .mode-home .format-btn .fb-desc{font-size:var(--fs-sm);max-width:30ch;}
-  .app-footer{border-top:1px solid var(--line);margin-top:48px;padding:18px 0 0;color:var(--ink-soft);font-size:var(--fs-xs);display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;}
+  .app-footer{align-items:center;border-top:1px solid var(--line);margin-top:48px;padding:18px 0 0;color:var(--ink-soft);font-size:var(--fs-xs);display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;}
   .app-footer details{max-width:480px;}
   .app-footer summary{cursor:pointer;color:var(--teal-700);font-weight:700;}
   .app-footer ul{margin:8px 0 0;padding-left:20px;}
@@ -350,8 +350,7 @@
   .resume-modal .modal-actions{flex-wrap:wrap;}
   .present-exit{display:none;position:fixed;right:18px;bottom:18px;z-index:90;border:0;border-radius:10px;background:var(--ball);color:var(--teal-900);padding:12px 16px;font-weight:800;cursor:pointer;}
   body.presentation-mode .present-exit{display:block;}
-  .live-organizer-link{position:fixed;bottom:15px;left:20px;z-index:85;border-radius:6px;padding:8px 12px;color:var(--ink-soft);background:var(--mist);font-size:.85rem}
-  @media print{.live-organizer-link{display:none}}
+  .live-organizer-link{position:fixed;bottom:max(15px,env(safe-area-inset-bottom));left:max(16px,env(safe-area-inset-left));z-index:85}
   body.presentation-mode .masthead,body.presentation-mode .steps,body.presentation-mode .schedule-actions,body.presentation-mode .app-footer,body.presentation-mode .koc-setup,body.presentation-mode .koc-roster-tools,body.presentation-mode .koc-actions,body.presentation-mode .playcount-wrap{display:none!important;}
   body.presentation-mode .wrap{max-width:1600px;padding:28px;}
   body.presentation-mode .rounds-col{font-size:1.15em;}
@@ -1769,7 +1768,6 @@
     <div class="share-footer"><button id="shareEnd" class="btn btn-ghost" type="button" data-i18n="endShare" hidden></button><button id="shareClose" class="btn btn-ghost" type="button" data-i18n="closeShare"></button></div>
   </dialog>
   <footer class="app-footer">
-    <a data-organizer-link href="https://padel.hound83.workers.dev/beheer">Beheer</a>
     <span id="appVersion">v3.3.0</span>
     <details><summary data-i18n="whatsNew">Wat is nieuw?</summary>
       <ul>
@@ -1783,6 +1781,7 @@
         <li data-i18n="changePwa">Installeerbaar, offline en presentatiemodus.</li>
       </ul>
     </details>
+    <a class="organizer-button" data-organizer-link href="https://padel.hound83.workers.dev/beheer">Beheer</a>
   </footer>
 
 </div>
@@ -1824,7 +1823,7 @@
       <aside id="liveStandings" class="live-standings" tabindex="0"></aside>
     </div>
   </div>
-  <a data-organizer-link class="live-organizer-link" href="https://padel.hound83.workers.dev/beheer">Beheer</a>
+  <a data-organizer-link class="organizer-button live-organizer-link" href="https://padel.hound83.workers.dev/beheer">Beheer</a>
 </section>
 
 <button id="presentExit" class="present-exit" type="button" data-i18n="presentExit">Sluit presentatiemodus</button>

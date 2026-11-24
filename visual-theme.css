@@ -72,3 +72,26 @@
   .live-format-heading img{width:3.55rem}
   .live-format-heading .live-title{font-size:clamp(1.45rem,2.1vw,1.9rem)}
 }
+
+/* Shared on the planner, signup pages, spectator view and live presentation. */
+.organizer-button {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  box-sizing:border-box;
+  min-height:44px;
+  min-width:6rem;
+  padding:.65rem 1.1rem;
+  border:1px solid transparent;
+  border-radius:.6rem;
+  background:#193b57;
+  color:#fff;
+  font:700 1rem/1.2 system-ui,sans-serif;
+  text-decoration:none;
+}
+.organizer-button:visited {color:#fff}
+.organizer-button:hover {background:#102b42}
+.organizer-button:focus-visible {outline:3px solid #347651;outline-offset:3px}
+.app-footer .organizer-button {margin-inline-start:auto}
+.viewer-footer {display:flex;justify-content:flex-end;margin-block:2rem 1rem;padding-block-start:1rem;border-block-start:1px solid var(--line)}
+@media print {.organizer-button{display:none}}

@@ -42,7 +42,7 @@
     document.title=$('heading').textContent+' · '+activity;
     $('listJump').hidden=true;
     const manageLink=$('manageLink');manageLink.hidden=!id || admin;
-    if(id){manageLink.href='/beheer/'+id;manageLink.textContent=say('Beheer','Organizer');}
+    if(id){manageLink.href='/beheer/'+id+(en?'?lang=en':'');manageLink.textContent=say('Deze avond beheren','Manage this event');}
     if(hubRoute){
       $('phase').textContent='Koriander Padel';$('heading').textContent=say('Centraal beheer','Organizer dashboard');
       $('event').textContent='';document.title=$('heading').textContent+' · Koriander Padel';
