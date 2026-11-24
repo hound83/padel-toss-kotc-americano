@@ -268,3 +268,21 @@ test('simultaneous first polls with different passwords cannot claim the same or
   assert.equal(app.sql.prepare('SELECT count(*) AS n FROM poll_organizers').get().n,1);
   assert.equal(app.sql.prepare('SELECT count(*) AS n FROM poll_organizer_series').get().n,1);
 });
+
+test('the private organizer list pages through all available evenings and keeps the name after the last poll expires',async t=>{
+  const {app,send,settings,now}=await setup(t);
+  const credentials={organizerName:'Werner',password:randomBytes(14).toString('hex')};
+  const created=await send('polls',{settings,...credentials});
+  const auth={Cookie:created.headers.get('Set-Cookie').split(';')[0]};
+  const poll=app.sql.prepare('SELECT * FROM signup_polls WHERE id=?').get(created.data.id);
+  const insert=app.sql.prepare('INSERT INTO signup_polls(id,series,revision,expires,document) VALUES(?,?,1,?,?)');
+  for(let i=1;i<=65;i++)insert.run(i.toString(16).padStart(14,'0'),poll.series,poll.expires,poll.document);
+  insert.run('ffffeeeeeeeeee',poll.series,now-1,poll.document);
+  const one=await send('polls/mine',undefined,auth),two=await send('polls/mine?after='+one.data.next,undefined,auth);
+  assert.equal(one.data.items.length,64);assert.equal(two.data.items.length,2);assert.equal(two.data.next,null);
+  const ids=new Set([...one.data.items,...two.data.items].map(p=>p.id));assert.equal(ids.size,66);assert.ok(!ids.has('ffffeeeeeeeeee'));
+  const {cleanup}=await import('../sessions/api.mjs');await cleanup(app.DB,poll.expires+1);
+  const fresh=await send('polls/mine/login',credentials,{},undefined,poll.expires+2);assert.equal(fresh.status,200);
+  const privateList=await send('polls/mine',undefined,{Cookie:fresh.headers.get('Set-Cookie').split(';')[0]},undefined,poll.expires+3);
+  assert.deepEqual(privateList.data.items,[]);
+});

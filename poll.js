@@ -60,8 +60,7 @@
   function places(){return {in:say('Deelnemers','Playing'),wait:say('Wachtlijst · Ja','Waiting · Yes'),reserve:say('Reserve','Standby'),review:say('Alleen na akkoord','Needs approval'),out:say('Afgemeld','Unavailable')};}
   function friendly(err){
     const labels={'hub-unconfigured':say('Het algemene beheerwachtwoord is nog niet ingesteld.','The site organizer password has not been set.'),storage:say('Sta lokale opslag toe om je eigen reactie te kunnen beheren, of vraag de organisator je aan te melden.','Enable browser storage to manage your own response, or ask the organizer to sign you up.'),duplicate:say('Die naam staat al op de lijst. Gebruik ook een achternaam of initiaal.','That name is taken. Add an initial or last name.'),
-      'organizer-login':say('Controleer je naam en wachtwoord. Kies bij een nieuwe poll je naam met een initiaal of achternaam als iemand dezelfde naam al gebruikt.',
-        'Check your name and password. When creating your first poll, add an initial or surname if someone already uses your name.'),
+      'organizer-login':say('Controleer je naam en wachtwoord.','Check your name and password.'),
       'organizer-name':say('Vul je eigen naam in (maximaal 80 tekens).','Enter your own name (up to 80 characters).'),
       'organizer-linked':say('Deze poll hoort al bij een organisator.','This poll already belongs to an organizer.'),
       login:hubRoute?say('Controleer het algemene beheerwachtwoord.','Check the site organizer password.'):say('Controleer de beheercode van deze poll.','Check the organizer code for this poll.'),
@@ -152,8 +151,12 @@
         else{rememberAdmin(result);location.assign('/beheer/'+result.id+(en?'?lang=en':''));}
       }catch(error){
         if(central && error.status===401){location.assign('/beheer');return;}
-        if(!central && error.status===401 && organizerName){organizerName=null;ownerFields();}
+        if(!central && error.status===401 && organizerName){
+          organizerName=null;ownerFields();$('message').textContent=say('Log opnieuw in met je naam en wachtwoord.','Sign in again with your name and password.');return;
+        }
         $('message').textContent=friendly(error);
+        if(error.message==='organizer-login')$('message').textContent+=' '+say('Maakt iemand met dezelfde voornaam al polls? Voeg dan je initiaal of achternaam toe.',
+          'Does another organizer use the same first name? Add an initial or surname.');
       }finally{pending=false;go.disabled=false;}
     };
     if(!central)actions(section,link(say('Mijn polls openen','Open my polls'),'/mijn-polls'+(en?'?lang=en':'')));
