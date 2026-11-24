@@ -2,7 +2,7 @@ import {makeSignupPin,recoverSignup,signupPerson} from './poll-signup-pin.mjs';
 import {centralLogin} from './organizer.mjs';
 import {acceptablePassword,hash,random,verifier} from './poll-auth.mjs';
 import {currentOrganizer,organizerCredentials,organizerSession} from './poll-organizers.mjs';
-import {creatorName, emptyPoll, changeSettings, adminEntry, nameKey, prepareRoster, publicPoll, respond, invalid} from './poll-roster.mjs';
+import {creatorName, emptyPoll, changeSettings, adminEntry, nameKey, prepareRoster, publicPoll, removeEntry, respond, invalid} from './poll-roster.mjs';
 
 const day=86400000;
 const stmt=(db,sql,...args)=>db.prepare(sql).bind(...args);
@@ -186,6 +186,10 @@ export async function pollApi(request,db,now,{json,requestJson,counter},adminPas
             row.series,doc.settings.format,nameKey(entry.name),entry.person,id,row.revision));
           entry.standing=body.standing;
         }
+      }else if(body.action==='remove-entry'){
+        const removed=removeEntry(doc,body.id);
+        if(removed.person)extra.push(stmt(db,`DELETE FROM signup_recovered_devices WHERE poll=? AND person=?
+          AND EXISTS(SELECT 1 FROM signup_polls WHERE id=? AND revision=?)`,id,removed.person,id,row.revision));
       }else if(body.action==='withdraw'){
         const entry=doc.entries.find(e=>e.id===body.id);
         if(!entry)invalid('missing',404);

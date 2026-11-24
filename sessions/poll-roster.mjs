@@ -125,6 +125,13 @@ export function adminEntry(doc,body,now){
   if(old==='in' && body.place!=='in')seat(doc,true,entry);
   return entry;
 }
+export function removeEntry(doc,id){
+  const entry=doc.entries.find(row=>row.id===id);
+  if(!entry)invalid('missing',404);
+  doc.entries=doc.entries.filter(row=>row.id!==id);
+  if(entry.place==='in')seat(doc,true);
+  return entry;
+}
 export function changeSettings(doc,next){
   const previous=doc.settings;
   const updated=settings(next);

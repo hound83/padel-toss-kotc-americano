@@ -89,7 +89,7 @@
     $('submitEdit').textContent=submitLabel||(remove?say('Ja, verwijderen','Yes, delete'):say('Opslaan','Save'));
     $('submitEdit').className=remove?'confirm-remove':'primary';
     $('dismiss').textContent=remove?say('Annuleren','Cancel'):say('Sluiten','Close');
-    const read=build($('fields'));dialogAction=()=>save(read());$('dialog').showModal();
+    const read=build($('fields'));dialogAction=()=>save(read());if(!$('dialog').open)$('dialog').showModal();
     if(remove)$('dismiss').focus();
   }
   $('dismiss').onclick=()=>$('dialog').close();
@@ -420,6 +420,17 @@
         try{await perform({action:'withdraw',id:entry.id,revision:poll.revision});$('dialog').close();}
         catch(error){$('dialogError').textContent=friendly(error);}
       }));
+    }
+    if(entry){
+      const remove=button(say('Speler verwijderen','Delete player'),()=>{
+        modal(say('Speler verwijderen?','Delete player?'),confirmation=>{
+          confirmation.append(el('strong',entry.name+' · '+poll.settings.title),el('p',say(
+            'Deze speler verdwijnt uit de aanmeldlijst van deze avond. Ook de eventuele pincode vervalt. Een vrijgekomen plek gaat naar de eerstvolgende speler. Een al gepubliceerd speelschema kun je afzonderlijk wijzigen.',
+            'This player will be removed from this event’s signup list. Their PIN, if set, will expire. The next eligible player takes a freed place. A published schedule can be edited separately.')));
+          return ()=>({action:'remove-entry',id:entry.id,revision:poll.revision});
+        },perform,{remove:true,format:poll.settings.format});
+      });
+      remove.className='remove-item';actions(root,remove);
     }
     return ()=>({action:'entry',revision:poll.revision,id:entry?.id,name:name.value.trim(),place:place.value,position:Number(pos.value),level:level?.value?Number(level.value):null,standing:standing.checked});
   }
