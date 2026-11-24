@@ -18,6 +18,12 @@ const {chromium}=require('playwright');
     assert.ok(homeBox && homeBox.height>=44);
     await page.locator('#pollHome').click();
     assert.equal(await page.locator('nav .brand').innerText(),'Padel Planner');
+    const eventPassword=page.getByLabel('Beheerwachtwoord voor deze avond',{exact:true});
+    await eventPassword.waitFor();
+    assert.match(await page.locator('#'+await eventPassword.getAttribute('aria-describedby')).innerText(),/avond herhaalt/);
+    await page.locator('#language').tap();
+    await page.getByLabel('Organizer password for this event',{exact:true}).waitFor();
+    await page.locator('#language').tap();
     for(const [format,file] of [['toss','toss'],['koc','koc'],['americano','americano'],['splitToss','split']]){
       await page.getByLabel('Speelvorm',{exact:true}).selectOption(format);
       await page.waitForFunction(file=>{const img=document.querySelector('#art');return img.src.endsWith('/mode-'+file+'.svg') && img.complete && img.naturalWidth>0;},file);
@@ -34,7 +40,7 @@ const {chromium}=require('playwright');
     await page.getByRole('heading',{name:'Manage events',exact:true}).waitFor();
     assert.equal(await page.title(),'Manage events · Padel Planner');
     await page.locator('#language').tap();
-    await page.getByLabel('Beheerwachtwoord').waitFor();
+    await page.getByLabel('Algemeen beheerwachtwoord',{exact:true}).waitFor();
     assert.equal((await page.request.get(new URL('/api/polls/hub',base).href)).status(),401);
     console.log('Cloudflare production serves Toss 3.3, the four mode illustrations and the protected organizer dashboard.');
   }finally{await browser.close();}

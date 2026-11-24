@@ -101,13 +101,37 @@ test('one central login reaches existing and new events, live schedules, and the
     const courts=await publicPage.locator('#rounds').innerText();
     for(const name of players)assert.ok(courts.includes(name),name);
     assert.doesNotMatch(courts,/Nora Reserve|Ivo Wachtlijst/);
+    if(format==='koc'){
+      const viewCode=new URL(publicPage.url()).pathname.split('/').pop();
+      await planner.goto(url+'/beheer?avond='+pollId);
+      const remove=planner.getByRole('button',{name:'Avond verwijderen',exact:true});
+      await remove.tap();
+      const confirmation=planner.getByRole('dialog',{name:'Avond verwijderen?'});
+      await confirmation.getByText(eventTitle,{exact:false}).waitFor();
+      assert.match(await confirmation.innerText(),/aanmeldlink vervalt/);
+      assert.match(await confirmation.innerText(),/gepubliceerde speelschema/);
+      assert.equal(await planner.evaluate(()=>document.activeElement.textContent),'Annuleren');
+      await confirmation.getByRole('button',{name:'Annuleren'}).tap();
+      assert.equal((await guest.request.get(url+'/api/s/'+viewCode)).status(),200);
+      await remove.focus();await planner.keyboard.press('Enter');await planner.keyboard.press('Escape');
+      assert.equal(await confirmation.isVisible(),false);
+      await remove.tap();
+      await confirmation.getByRole('button',{name:'Ja, verwijderen'}).tap();
+      await planner.getByText('Avond verwijderd.',{exact:true}).waitFor();
+      assert.equal(new URL(planner.url()).searchParams.has('avond'),false);
+      assert.equal(await planner.getByRole('button',{name:new RegExp(eventTitle)}).count(),0);
+      assert.equal((await guest.request.get(url+'/api/s/'+viewCode)).status(),404);
+      await publicPage.goto(signupUrl);
+      await publicPage.getByText(/Deze avond is niet meer beschikbaar/).waitFor();
+      assert.equal(await publicPage.getByRole('link',{name:'Bekijk de baanindeling'}).count(),0);
+    }
   }
   await planner.close();
   await host.getByRole('button',{name:'Herhaal volgende week'}).click();
   await host.waitForFunction(old=>new URL(location.href).searchParams.get('avond')!==old,id);
   await host.getByRole('button',{name:'Speler toevoegen'}).waitFor();assert.equal(await host.locator('#groups li').count(),0);
   await host.getByRole('link',{name:'Nieuwe avond'}).click();
-  assert.equal(await host.getByLabel('Kies een beheerwachtwoord').count(),0);
+  assert.equal(await host.getByLabel('Beheerwachtwoord voor deze avond',{exact:true}).count(),0);
   const title2='Donderdag '+randomBytes(4).toString('hex');
   await host.getByLabel('Naam van de avond').fill(title2);await host.getByRole('button',{name:'Aanmelding openen'}).click();
   await host.getByRole('button',{name:'Speler toevoegen'}).waitFor();
@@ -127,6 +151,18 @@ test('one central login reaches existing and new events, live schedules, and the
   await publicPage.goto(url+'/s/'+viewerCode);
   assert.equal(await (await footerButton(publicPage)).getAttribute('href'),'/beheer');
   assert.equal(await (await footerButton(host,'Organizer')).getAttribute('href'),'/beheer?lang=en');
+  const removeSchedule=standalone.getByRole('button',{name:'Delete schedule',exact:true});
+  await removeSchedule.tap();
+  const confirmation=host.getByRole('dialog',{name:'Delete schedule?'});
+  await confirmation.getByText('Los '+id,{exact:false}).waitFor();
+  await confirmation.getByRole('button',{name:'Cancel'}).tap();
+  assert.equal((await guest.request.get(url+'/api/s/'+viewerCode)).status(),200);
+  await removeSchedule.tap();
+  await confirmation.getByRole('button',{name:'Yes, delete'}).tap();
+  await host.getByText('Schedule deleted.',{exact:true}).waitFor();
+  await host.reload();await host.getByRole('button',{name:'Sign out'}).waitFor();
+  assert.equal(await standalone.count(),0);
+  assert.equal((await guest.request.get(url+'/api/s/'+viewerCode)).status(),404);
   await host.getByRole('button',{name:'Sign out'}).click();await host.getByLabel('Organizer password').waitFor();
   assert.equal(await host.locator('.hub-row,.hub-session').count(),0);
   await host.reload();await host.getByLabel('Organizer password').waitFor();

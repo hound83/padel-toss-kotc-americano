@@ -35,7 +35,7 @@ async function listEvents(db, now, after, sessions) {
   // Select only the fields needed for each card. Large schedules and all private
   // entries remain in D1 until the organizer opens a particular event.
   const source = sessions ? `
-    SELECT s.id, s.changed, s.closed, l.code AS viewCode,
+    SELECT s.id, s.revision, s.changed, s.closed, l.code AS viewCode,
       json_extract(s.document,'$.state.format') AS format,
       json_extract(s.document,'$.view.title') AS title
     FROM sessions s JOIN links l ON l.session_id=s.id AND l.role='view'
@@ -55,6 +55,37 @@ async function listEvents(db, now, after, sessions) {
   if (!sessions) for (const item of items) item.settings = JSON.parse(item.settings);
   return {items, next:results.length>items.length ? items.at(-1).id : null};
 }
+// Every destructive statement uses the revision shown in the confirmation. D1
+// executes the batch as one transaction, including cascades to access links.
+async function removePoll(db, id, revision, now) {
+  const target = 'SELECT series FROM signup_polls WHERE id=? AND revision=? AND expires>?';
+  const params = [id,revision,now];
+  const row = await db.prepare('SELECT series FROM signup_polls WHERE id=? AND expires>?').bind(id,now).first();
+  if (!row) return;
+  const results = await db.batch([
+    db.prepare(`DELETE FROM sessions WHERE id IN (
+      SELECT l.session_id FROM signup_polls p JOIN links l ON l.code=json_extract(p.document,'$.viewCode') AND l.role='view'
+      WHERE p.id=? AND p.revision=? AND p.expires>? AND NOT EXISTS (
+        SELECT 1 FROM signup_polls other WHERE other.id<>p.id AND other.expires>?
+        AND json_extract(other.document,'$.viewCode')=l.code))`).bind(...params,now),
+    db.prepare(`UPDATE signup_polls SET document=json_remove(document,'$.next'), revision=revision+1
+      WHERE series=(${target}) AND json_extract(document,'$.next')=?`).bind(...params,id),
+    db.prepare('DELETE FROM signup_polls WHERE id=? AND revision=? AND expires>?').bind(...params),
+    db.prepare(`DELETE FROM signup_series WHERE id=?
+      AND NOT EXISTS (SELECT 1 FROM signup_polls WHERE series=signup_series.id)`).bind(row.series)
+  ]);
+  if (!results[2].meta.changes &&
+      await db.prepare('SELECT 1 FROM signup_polls WHERE id=? AND expires>?').bind(id,now).first()) invalid('changed',409);
+}
+
+async function removeStandalone(db, id, revision, now) {
+  const result = await db.prepare(`DELETE FROM sessions WHERE id=? AND revision=? AND expires>?
+    AND NOT EXISTS (SELECT 1 FROM links l JOIN signup_polls p ON json_extract(p.document,'$.viewCode')=l.code
+      WHERE l.session_id=sessions.id AND l.role='view' AND p.expires>?)`).bind(id,revision,now,now).run();
+  if (!result.meta.changes &&
+      await db.prepare('SELECT 1 FROM sessions WHERE id=? AND expires>?').bind(id,now).first()) invalid('changed',409);
+}
+
 export async function organizerApi(request, db, now, password, {json,requestJson,counter}) {
   const url = new URL(request.url), action = url.pathname.slice('/api/polls/hub'.length);
   if (action === '/login' && request.method === 'POST') {
@@ -77,6 +108,14 @@ export async function organizerApi(request, db, now, password, {json,requestJson
     return response;
   }
   if (!await centralLogin(request,db,now,password)) invalid('login',401);
+  if (action === '/remove' && request.method === 'POST') {
+    const {kind,id,revision} = await requestJson(request) || {};
+    if (!Number.isSafeInteger(revision) || revision<1 || typeof id!=='string') invalid('field');
+    if (kind==='poll' && /^[a-f0-9]{14}$/.test(id)) await removePoll(db,id,revision,now);
+    else if (kind==='session' && /^[a-f0-9-]{36}$/.test(id)) await removeStandalone(db,id,revision,now);
+    else invalid('field');
+    return json({ok:true});
+  }
   if (request.method !== 'GET') invalid('method',405);
   if (action === '/status') return json({ok:true});
   if (action !== '' && action !== '/sessions') invalid('missing',404);

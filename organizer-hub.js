@@ -1,5 +1,5 @@
 /* Central organizer dashboard. The selected event uses the regular poll editor. */
-window.TossOrganizerHub=function({P,say,modeName,dateText,el,button,link,card,field,input,actions,friendly,content,canSwitch,select}){
+window.TossOrganizerHub=function({P,say,modeName,dateText,el,button,link,card,field,input,actions,modal,friendly,content,canSwitch,select}){
   const main=document.getElementById('pollMain'), index=document.getElementById('hubIndex');
   const message=document.getElementById('message');
   let unlocked=false, selected=null, generation=0, signature='', cards=new Map();
@@ -36,6 +36,41 @@ window.TossOrganizerHub=function({P,say,modeName,dateText,el,button,link,card,fi
       el('small',item.waiting+say(' wachtend',' waiting')+' · '+item.standby+say(item.standby===1?' reserve':' reserves',' standby')));
     toggle.append(img,label,totals);row.append(toggle);parent.append(row);cards.set(item.id,{row,toggle});
   }
+  const sessionTime=session=>new Intl.DateTimeFormat(document.documentElement.lang,{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit',timeZone:'Europe/Amsterdam'}).format(session.changed);
+  function removeButton(kind,item){
+    const event=kind==='poll', format=event?item.settings.format:item.format;
+    const label=event?say('Avond verwijderen','Delete event'):say('Schema verwijderen','Delete schedule');
+    const name=event?item.settings.title:(item.title||modeName(format));
+    const when=event?dateText(item.settings)+' · '+item.settings.start+'–'+item.settings.end:sessionTime(item);
+    const trigger=button(label,()=>{
+      modal(label+'?',root=>{
+        root.append(el('strong',name+' · '+when));
+        const detail=event?
+          say('De aanmeldingen verdwijnen en de aanmeldlink vervalt.','The signups will be deleted and the signup link will stop working.'):
+          say('Het online speelschema en de uitslagen verdwijnen. De kijklink en scorelinks vervallen.','The online schedule and results will be deleted. Viewing and score links will stop working.');
+        root.append(el('p',detail));
+        if(event && item.viewCode)root.append(el('p',say('Het gepubliceerde speelschema wordt ook verwijderd als het alleen bij deze avond hoort.',
+          'The published schedule will also be deleted if it belongs only to this event.')));
+        return ()=>({kind,id:item.id,revision:item.revision});
+      },async body=>{
+        try{await P.api('/hub/remove',body);}
+        catch(error){
+          if(error.status===401)lock();
+          if(error.status===409){await refresh();if(event && selected===item.id)await pick(selected,false);}
+          throw error;
+        }
+        ++generation;signature='';
+        if(event)polls=polls.filter(p=>p.id!==item.id);
+        else sessions=sessions.filter(s=>s.id!==item.id);
+        render();
+        if(event && selected===item.id)await pick(null);
+        message.textContent=event?say('Avond verwijderd.','Event deleted.'):say('Speelschema verwijderd.','Schedule deleted.');
+        return index.querySelector('.hub-toolbar a');
+      },{format,remove:true});
+    });
+    trigger.className='remove-item';
+    return trigger;
+  }
   function render(){
     const focused=document.activeElement, focusId=[...cards].find(([,v])=>v.toggle===focused)?.[0];
     const heldFocus=content.contains(focused)?focused:null;
@@ -65,8 +100,8 @@ window.TossOrganizerHub=function({P,say,modeName,dateText,el,button,link,card,fi
         const art=el('img');art.src=P.art(session.format,document.documentElement.lang==='en');art.alt='';
         const body=el('div');body.append(el('h3',session.title||modeName(session.format)),el('small',modeName(session.format)+' · '+
           (session.closed?say('Eindstand','Final results'):say('Live','Live'))+' · '+
-          new Intl.DateTimeFormat(document.documentElement.lang,{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit',timeZone:'Europe/Amsterdam'}).format(session.changed)));
-        actions(body,link(say('Open planner','Open planner'),'/beheer/sessie/'+session.id),link(say('Open liveweergave','Open live view'),'/s/'+session.viewCode));
+          sessionTime(session)));
+        actions(body,link(say('Open planner','Open planner'),'/beheer/sessie/'+session.id),link(say('Open liveweergave','Open live view'),'/s/'+session.viewCode),removeButton('session',session));
         row.append(art,body);section.append(row);
       }
       index.append(section);
@@ -86,7 +121,7 @@ window.TossOrganizerHub=function({P,say,modeName,dateText,el,button,link,card,fi
   function lock(){
     clear();content.hidden=false;content.setAttribute('aria-busy','false');
     const section=card(say('Inloggen voor beheer','Organizer sign-in')),form=el('form');
-    const password=field(form,say('Beheerwachtwoord','Organizer password'),input('password'));
+    const password=field(form,say('Algemeen beheerwachtwoord','Site organizer password'),input('password'));
     password.autocomplete='current-password';password.required=true;
     const submit=el('button',say('Inloggen','Sign in'),'primary');submit.type='submit';actions(form,submit);
     form.onsubmit=async event=>{
@@ -140,5 +175,5 @@ window.TossOrganizerHub=function({P,say,modeName,dateText,el,button,link,card,fi
     window.addEventListener('pageshow',event=>{if(event.persisted)refresh();});
     document.addEventListener('visibilitychange',()=>{if(!document.hidden && unlocked)refresh();});
   }
-  return {start,refresh,lock,translate};
+  return {start,refresh,lock,translate,removeButton};
 };
