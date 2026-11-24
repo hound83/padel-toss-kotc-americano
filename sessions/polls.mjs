@@ -105,6 +105,7 @@ export async function pollApi(request,db,now,{json,requestJson,counter},adminPas
   for(let attempt=0;attempt<20;attempt++){
     if(!row)invalid('missing',404);
     const doc=JSON.parse(row.document),extra=[];
+    let writeGuard='',guardValues=[];
     if(!kind){
       // Receipt order is assigned by the server, including equal-millisecond submissions.
       const accepted=Math.max(now,doc.lastAccepted||0);
@@ -143,17 +144,28 @@ export async function pollApi(request,db,now,{json,requestJson,counter},adminPas
         if(!/^[a-f0-9]{48}$/.test(body.sessionKey||''))invalid('session',422);
         const link=await first(db,"SELECT l.code,s.document FROM sessions s JOIN links l ON l.session_id=s.id AND l.role='view' WHERE s.owner_hash=? AND s.expires>?",await hash(body.sessionKey),now);
         if(!link || JSON.parse(link.document).state.format!==doc.settings.format)invalid('session',422);
+        // The organizer can remove a standalone schedule while another browser publishes it.
+        writeGuard=" AND EXISTS(SELECT 1 FROM links l JOIN sessions s ON s.id=l.session_id WHERE l.code=? AND l.role='view' AND s.expires>?)";
+        guardValues=[link.code,now];
         doc.phase='published';doc.viewCode=link.code;doc.plannerKey=body.sessionKey;
       }else if(body.action==='repeat'){
         if(doc.next)return json({id:doc.next});
         const next={...doc.settings,date:new Date(Date.parse(doc.settings.date)+7*day).toISOString().slice(0,10)};
-        const nextId=random(7),fresh=emptyPoll(next);
-        extra.push(stmt(db,'INSERT INTO signup_polls(id,series,revision,expires,document) SELECT ?,?,1,?,? WHERE EXISTS(SELECT 1 FROM signup_polls WHERE id=? AND revision=?)',
-          nextId,row.series,ttl(next,now),JSON.stringify(fresh),id,row.revision));
-        doc.next=nextId;
+        // A later week can survive deletion and re-creation of the week before it.
+        const existing=await first(db,"SELECT id FROM signup_polls WHERE series=? AND expires>? AND json_extract(document,'$.settings.date')=? ORDER BY id LIMIT 1",row.series,now,next.date);
+        if(existing){
+          doc.next=existing.id;
+          writeGuard=" AND EXISTS(SELECT 1 FROM signup_polls WHERE id=? AND expires>? AND json_extract(document,'$.settings.date')=?)";
+          guardValues=[existing.id,now,next.date];
+        }else{
+          doc.next=random(7);
+          extra.push(stmt(db,'INSERT INTO signup_polls(id,series,revision,expires,document) SELECT ?,?,1,?,? WHERE EXISTS(SELECT 1 FROM signup_polls WHERE id=? AND revision=?)',
+            doc.next,row.series,ttl(next,now),JSON.stringify(emptyPoll(next)),id,row.revision));
+        }
       }else invalid('action');
     }
-    const updated=stmt(db,'UPDATE signup_polls SET document=?,revision=revision+1,expires=? WHERE id=? AND revision=?',JSON.stringify(doc),ttl(doc.settings,now),id,row.revision);
+    const updated=stmt(db,'UPDATE signup_polls SET document=?,revision=revision+1,expires=? WHERE id=? AND revision=?'+writeGuard,
+      JSON.stringify(doc),ttl(doc.settings,now),id,row.revision,...guardValues);
     const last=(await db.batch([...extra,updated])).at(-1);
     if(last.meta.changes){
       if(kind && body.action==='repeat')return json({id:doc.next});

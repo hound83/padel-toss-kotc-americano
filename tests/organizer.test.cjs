@@ -80,3 +80,78 @@ test('all poll series and separate sessions can be managed; the overview sends o
   const a=(await send('polls/hub',undefined,auth)).data,b=(await send('polls/hub?after='+a.next,undefined,auth)).data;
   assert.equal(a.items.length,64);assert.equal(b.next,null);assert.equal(new Set([...a.items,...b.items].map(p=>p.id)).size,67);
 });
+
+test('removing one week is central-only, revision-checked and preserves the other weeks and series access',async t=>{
+  const {app,send,login,settings}=await setup(t), auth=await login();
+  const first=(await send('polls',{settings,password:randomBytes(16).toString('hex')})).data;
+  const seriesAuth={Authorization:'Bearer '+first.token};
+  async function edit(id,action,fields={}){
+    const path='polls/'+id+'/admin';
+    const current=(await send(path,undefined,seriesAuth)).data;
+    const response=await send(path,{action,revision:current.revision,...fields},seriesAuth);
+    assert.equal(response.status,200);return response.data;
+  }
+  const middle=(await edit(first.id,'repeat')).id;
+  const last=(await edit(middle,'repeat')).id;
+  const details=await edit(middle,'entry',{name:'Reservering',place:'review',standing:true,position:1});
+  await edit(last,'entry',{name:'Volgende week',place:'in',position:1});
+  const body={kind:'poll',id:middle,revision:details.revision}, path='polls/hub/remove';
+  assert.equal((await send(path,body)).status,401);
+  assert.equal((await send(path,body,seriesAuth)).status,401);
+  assert.equal((await send(path,body,{...auth,Origin:'https://other.test'})).status,403);
+  assert.equal((await send(path,{...body,revision:details.revision-1},auth)).status,409);
+  assert.equal((await send('polls/'+first.id+'/admin',undefined,seriesAuth)).data.next,middle);
+  assert.equal((await send('polls/'+middle+'/admin',undefined,seriesAuth)).data.entries.length,1);
+  assert.equal((await send(path,body,auth)).status,200);
+  assert.equal((await send(path,body,auth)).status,200);
+  assert.equal((await send('polls/'+middle)).status,404);
+  assert.equal((await send('polls/'+middle+'/admin',undefined,auth)).status,404);
+  assert.equal((await send('polls/'+first.id+'/admin',undefined,seriesAuth)).data.next,null);
+  assert.equal((await send('polls/'+last)).data.groups.in[0].name,'Volgende week');
+  assert.equal(app.sql.prepare('SELECT COUNT(*) AS n FROM signup_holds').get().n,1);
+  const replacement=(await edit(first.id,'repeat')).id;
+  assert.notEqual(replacement,middle);
+  assert.equal((await edit(replacement,'repeat')).id,last);
+  assert.equal(app.sql.prepare('SELECT COUNT(*) AS n FROM signup_polls').get().n,3);
+});
+
+test('removing a schedule revokes its links and deleting a published event preserves schedules used by another event',async t=>{
+  const {app,send,login,settings}=await setup(t), auth=await login();
+  const schedule={state:{format:'koc',koc:{}},view:{title:'Zaterdag',rounds:[{n:1,rows:[
+    {label:'Baan 1',slot:'baan1',teams:[['Ada'],['Bram']]}]}],boards:[],playerIds:{Ada:'a',Bram:'b'}}};
+  const created=(await send('sessions',schedule)).data, standalone=(await send('polls/hub/sessions',undefined,auth)).data.items[0];
+  const owner={Authorization:'Bearer '+created.secret}, path='polls/hub/remove';
+  const remove={kind:'session',id:standalone.id,revision:standalone.revision};
+  const edit=await send('manage',{action:'mode',mode:'group',revision:1},owner);
+  const scoreCode=(await send('manage',{action:'link',revision:edit.data.revision},owner)).data.code;
+  assert.equal((await send(path,remove,auth)).status,409);
+  assert.equal((await send('s/'+scoreCode)).status,200);
+  remove.revision=edit.data.revision;
+  assert.equal((await send(path,remove,owner)).status,401);
+  assert.equal((await send(path,remove,auth)).status,200);
+  assert.equal((await send(path,remove,auth)).status,200);
+  for(const endpoint of ['s/'+standalone.viewCode,'s/'+scoreCode,'manage/'+standalone.id])assert.equal((await send(endpoint,undefined,auth)).status,404);
+  assert.equal((await send('manage',undefined,owner)).status,404);
+
+  const shared=(await send('sessions',schedule)).data;
+  const listed=(await send('polls/hub/sessions',undefined,auth)).data.items[0];
+  const events=[];
+  for(const title of ['Woensdag','Zaterdag']){
+    const poll=(await send('polls',{settings:{...settings,title},central:true},auth)).data;
+    const endpoint='polls/'+poll.id+'/admin';
+    await send(endpoint,{action:'plan',revision:1},auth);
+    const published=await send(endpoint,{action:'publish',revision:2,sessionKey:shared.secret},auth);
+    assert.equal(published.status,200);
+    events.push({kind:'poll',id:poll.id,revision:published.data.revision});
+  }
+  assert.equal((await send(path,{kind:'session',id:listed.id,revision:listed.revision},auth)).status,409);
+  assert.equal((await send(path,{...events[0],revision:1},auth)).status,409);
+  assert.equal((await send(path,events[0],auth)).status,200);
+  assert.equal((await send('s/'+listed.viewCode)).status,200);
+  assert.equal((await send('polls/'+events[1].id)).data.viewCode,listed.viewCode);
+  assert.equal((await send(path,events[1],auth)).status,200);
+  assert.equal((await send('s/'+listed.viewCode)).status,404);
+  assert.deepEqual((await send('polls/hub/sessions',undefined,auth)).data.items,[]);
+  assert.equal(app.sql.prepare('SELECT COUNT(*) AS n FROM links').get().n,0);
+  assert.equal(app.sql.prepare('SELECT COUNT(*) AS n FROM signup_series').get().n,0);
+});

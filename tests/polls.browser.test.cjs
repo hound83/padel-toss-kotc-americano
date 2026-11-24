@@ -33,7 +33,7 @@ test('signup poll through the real planner, mobile visitor, password and live fo
   await host.getByLabel('Speelvorm').selectOption('koc');await host.getByLabel('Naam van de avond').fill('Test KOC');
   await host.getByLabel('Banen',{exact:true}).fill('2');await host.getByLabel('Plekken',{exact:true}).fill('8');
   assert.equal(await host.getByLabel('Plekken',{exact:true}).inputValue(),'8');
-  await host.getByLabel('Kies een beheerwachtwoord').fill(password);await host.getByRole('button',{name:'Aanmelding openen'}).click();
+  await host.getByLabel('Beheerwachtwoord voor deze avond',{exact:true}).fill(password);await host.getByRole('button',{name:'Aanmelding openen'}).click();
   await host.getByRole('button',{name:'Ga indelen'}).waitFor();
   const id=new URL(host.url()).pathname.split('/').pop(),publicUrl=url+'/aanmelden/'+id;
   await player.goto(publicUrl);assert.equal(await player.locator('#listJump:visible').innerText(),'0 / 8 · Bekijk aanmeldingen');await player.getByLabel('Jouw naam').fill('Mila');await player.getByRole('button',{name:'Ja, ik doe mee'}).click();await player.getByText('Je staat bij Deelnemers.').waitFor();

@@ -9,6 +9,7 @@
   let en=new URLSearchParams(location.search).get('lang')==='en' || P.preference('toss-poll-lang')==='en';
   let current=null, pending=false, sequence=0, dialogAction, dragId, editor=null;
   const say=(nl,english)=>en?english:nl;
+  const eventPasswordLabel=()=>say('Beheerwachtwoord voor deze avond','Organizer password for this event');
   const modeName=mode=>P.modes[mode]?.[en?1:0]||'Padel';
   const content=$('content');
   function el(tag,text,cls){
@@ -59,27 +60,34 @@
       field:say('Controleer de ingevulde velden.','Check the fields.'),locked:say('De aanmelding is gesloten.','Signups have closed.'),
       changed:say('De lijst is intussen gewijzigd. De nieuwste lijst is opgehaald. Controleer je keuze.','The list changed. Check your choice against the updated list.'),
       limit:say('Te veel pogingen. Probeer het over een kwartier opnieuw.','Too many attempts. Try again in 15 minutes.'),
-      missing:say('Deze poll is verlopen of de link is onjuist.','This poll expired or the link is incorrect.'),
+      missing:say('Deze avond is niet meer beschikbaar. Controleer de link of neem contact op met de organisator.','This event is unavailable. Check the link or contact the organizer.'),
       'password-length':say('Kies een wachtwoord van 8 tot 128 tekens.','Choose a password with 8 to 128 characters.'),
       'published-format':say('Heropen de aanmelding om de speelvorm te wijzigen.','Reopen signups before changing the format.')};
     return labels[err.message]||say('Opslaan of ophalen lukt niet. Controleer je verbinding en probeer opnieuw.','Could not save or refresh. Check your connection and try again.');
   }
-  function modal(title,build,save){
-    $('dialogArt').src=P.art(current.settings.format,en);$('dialogTitle').textContent=title;$('fields').replaceChildren();$('dialogError').textContent='';
-    $('submitEdit').textContent=say('Opslaan','Save');$('dismiss').textContent=say('Sluiten','Close');
+  function modal(title,build,save,{format=current?.settings.format,remove=false}={}){
+    $('dialogArt').src=P.art(format,en);$('dialogTitle').textContent=title;$('fields').replaceChildren();$('dialogError').textContent='';
+    $('submitEdit').textContent=remove?say('Ja, verwijderen','Yes, delete'):say('Opslaan','Save');
+    $('submitEdit').className=remove?'confirm-remove':'primary';
+    $('dismiss').textContent=remove?say('Annuleren','Cancel'):say('Sluiten','Close');
     const read=build($('fields'));dialogAction=()=>save(read());$('dialog').showModal();
+    if(remove)$('dismiss').focus();
   }
   $('dismiss').onclick=()=>$('dialog').close();
+  $('dialog').oncancel=e=>{if($('submitEdit').disabled)e.preventDefault();};
   $('dialogForm').onsubmit=async e=>{
-    e.preventDefault();if(pending)return;
-    $('submitEdit').disabled=true;
-    try{await dialogAction();$('dialog').close();}
+    e.preventDefault();if(pending || $('submitEdit').disabled)return;
+    $('submitEdit').disabled=$('dismiss').disabled=true;
+    try{
+      const focusAfter=await dialogAction();$('dialog').close();
+      if(focusAfter instanceof HTMLElement)focusAfter.focus({preventScroll:true});
+    }
     catch(error){
       if(error.message==='changed' || error.status===401){
         $('dialog').close();$('message').textContent=friendly(error);
       }else $('dialogError').textContent=friendly(error);
     }
-    finally{$('submitEdit').disabled=false;}
+    finally{$('submitEdit').disabled=$('dismiss').disabled=false;}
   };
   function configFields(root,initial,onChange){
     const grid=el('div',undefined,'grid');root.append(grid);
@@ -122,9 +130,11 @@
     const central=new URLSearchParams(location.search).get('beheer')==='1';
     let pw;
     if(!central){
-      pw=field(form,say('Kies een beheerwachtwoord','Choose an organizer password'),input('password'));
+      pw=field(form,eventPasswordLabel(),input('password'));
       pw.autocomplete='new-password';pw.required=true;pw.minLength=8;pw.maxLength=128;
-      form.append(el('small',say('Minimaal 8 tekens. Bewaar dit voor beheer op een ander apparaat.','At least 8 characters. Keep this for managing on another device.')));
+      const hint=el('small',say('Kies zelf minimaal 8 tekens. Dit wachtwoord geldt ook als je de avond herhaalt. Spelers hebben alleen de aanmeldlink nodig.',
+        'Choose at least 8 characters. This password also works for repeats of this event. Players only need the signup link.'));
+      hint.id='eventPasswordHint';pw.setAttribute('aria-describedby',hint.id);form.append(hint);
     }
     const go=el('button',say('Aanmelding openen','Open signups'),'primary');go.type='submit';actions(form,go);
     const last=P.preference('toss-poll-last');if(!central && /^[a-f0-9]{14}$/.test(last))actions(section,link(say('Vorige poll beheren','Manage previous poll'),'/beheer/'+last));
@@ -137,7 +147,7 @@
   function rememberAdmin(r){P.remember(r.id,r.token);P.preference('toss-poll-last',r.id);}
   function login(){
     content.replaceChildren();const section=card(say('Inloggen voor beheer','Organizer sign-in')),form=el('form');
-    const pw=field(form,say('Beheerwachtwoord','Organizer password'),input('password'));pw.required=true;pw.autocomplete='current-password';
+    const pw=field(form,eventPasswordLabel(),input('password'));pw.required=true;pw.autocomplete='current-password';
     const go=el('button',say('Inloggen','Sign in'),'primary');go.type='submit';actions(form,go,link(say('Openbare aanmeldpagina','Public signup page'),'/aanmelden/'+id));section.append(form);content.append(section);
     form.onsubmit=async e=>{e.preventDefault();go.disabled=true;
       try{const result=await P.api(base+'/login',{password:pw.value});rememberAdmin({...result,id});$('message').textContent='';await load();}
@@ -294,7 +304,8 @@
     const tools=card(say('Aanmeldlijst beheren','Manage signup list'));
     actions(tools,button(say('Speler toevoegen','Add a player'),()=>entryModal()),button(say('Avond wijzigen','Edit event'),()=>modal(say('Avond wijzigen','Edit event'),r=>configFields(r,current.settings),s=>perform({action:'settings',settings:s}))),
       button(say('Herhaal volgende week','Repeat next week'),safe(()=>perform({action:'repeat'}))));
-    if(!hubRoute)actions(tools,button(say('Uitloggen','Sign out'),safe(async()=>{
+    if(hubRoute)actions(tools,hub.removeButton('poll',data));
+    else actions(tools,button(say('Uitloggen','Sign out'),safe(async()=>{
       if(P.token(id))await P.api(base+'/logout',{},{token:P.token(id)}).catch(e=>{if(e.status!==401)throw e;});
       await P.api('/hub/logout',{});P.remember(id,null);current=null;login();
     })));
@@ -310,6 +321,11 @@
       else if(force || JSON.stringify(data)!==JSON.stringify(current) || (data.phase==='open' && !$('groups')))publicPage(data);
     }catch(error){
       if(serial!==sequence)return;
+      if(error.status===404){
+        current=null;resetEditor();header(null);
+        if(hubRoute)await hub.refresh();
+        $('message').textContent=friendly(error);return;
+      }
       if(!admin){resetEditor();current=null;}
       if(admin && error.status===401){
         if(hubRoute){hub.lock();return;}
@@ -332,7 +348,7 @@
   window.addEventListener('pageshow',()=>{if(id)load();});
   header(null);
   if(hubRoute){
-    hub=window.TossOrganizerHub({P,say,modeName,dateText,el,button,link,card,field,input,actions,friendly,content,
+    hub=window.TossOrganizerHub({P,say,modeName,dateText,el,button,link,card,field,input,actions,modal,friendly,content,
       canSwitch:()=>!pending && !$('dialog').open && !dragId,
       select:async key=>{
         ++sequence;id=key;base=id?'/'+id:'';current=null;resetEditor();header(null);
