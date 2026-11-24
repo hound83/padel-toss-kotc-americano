@@ -98,3 +98,29 @@ test('guided KOC accepts the current round only and needs a deciding rally',asyn
   assert.equal((await visitor(code,{...base,score:[21,20]})).status,200);
   assert.deepEqual((await owner()).state.koc.roundPlan[0].matches[0].score,[21,20]);
 });
+
+test('cold requests finish independently; a complete or warm D1 schema needs no schema writes',async()=>{
+  const {schemaInitializer,needsSchema}=await import('../sessions/schema-init.mjs');
+  const schema='CREATE TABLE IF NOT EXISTS sample (id TEXT); CREATE INDEX IF NOT EXISTS sample_id ON sample(id);';
+  const initialize=schemaInitializer(schema),release=[];
+  let written=0,complete=false,reads=0;
+  const db={prepare(sql){
+    return {bind:(...names)=>({first:async()=>{
+      assert.deepEqual(names,['sample','sample_id']);reads++;
+      if(!complete)await new Promise(resolve=>release.push(resolve));
+      return {total:complete?2:0};
+    }})};
+  },batch:async items=>{assert.equal(items.length,2);written++;complete=true;}};
+  const pending=initialize(db),next=initialize(db);
+  assert.equal(release.length,2);
+  release[1]();await next;assert.equal(written,1);
+  release[0]();await pending;await initialize(db);assert.equal(reads,2);assert.equal(written,1);
+  await schemaInitializer(schema)(db);assert.equal(reads,3);assert.equal(written,1);
+  for(const path of ['/api/polls/mine','/api/polls/mine/status','/api/polls/hub/organizers']){
+    assert.equal(needsSchema(new Request('https://club.test'+path),path),false);
+    assert.equal(needsSchema(new Request('https://club.test'+path,{headers:{Cookie:'example=x'}}),path),true);
+  }
+  const path='/api/polls/mine/login';
+  assert.equal(needsSchema(new Request('https://club.test'+path,{method:'POST'}),path),true);
+  assert.equal(needsSchema(new Request('https://club.test/api/polls/00000000000000'),'/api/polls/00000000000000'),true);
+});
