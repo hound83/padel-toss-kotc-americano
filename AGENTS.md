@@ -25,7 +25,7 @@ These are standing instructions for `hound83/padel-toss-kotc-americano`. The use
 ## Repository orientation
 
 - Inspect the current branch, user changes, recent remote commits/PRs if available, and `README.md`. Start with the relevant parts of `index.html`, `tests/`, and `sw.js`, and follow related code or documentation as needed. Do not trust older chat snapshots as current state.
-- This is a static GitHub Pages app: `index.html` contains the HTML, CSS, JavaScript and actual assignment logic. There is no current `package.json` or server-side scheduler. Avoid introducing dependencies or a framework without a demonstrated need.
+- Cloudflare serves the public planner and session API. GitHub Pages builds the move notice from `_config.yml`, `pages/` and `_layouts/verhuisd.html`. In the planner source, `index.html` contains the HTML, CSS, JavaScript and actual assignment logic. There is no current `package.json` or server-side scheduler. Avoid introducing dependencies or a framework without a demonstrated need.
 - The four distinct modes are **Toss**, **Split Toss** (Silver/Gold/Platinum groups), **Americano** (scoring/ranking), and **King of the Court** (Startindeling or Rondeplanner). Never conflate their rules.
 
 ## Product and data invariants
@@ -46,9 +46,9 @@ These are standing instructions for `hound83/padel-toss-kotc-americano`. The use
 ## Git, autonomous publication and delivery
 
 - For meaningful changes, use a feature branch and a reviewable PR. Keep `main` runnable and preserve unrelated work. Never force-push or overwrite prior user data or accepted history.
-- **Standing owner authorization:** after an authorized implementation milestone passes all applicable release gates, **merge its PR and let the configured GitHub Pages publication complete without asking for another GO**. Do not treat a review/diagnosis-only request as implementation authorization.
+- **Standing owner authorization:** after an authorized implementation milestone passes all applicable release gates, **merge its PR and let the configured Cloudflare and GitHub Pages publications complete without asking for another GO**. Do not treat a review/diagnosis-only request as implementation authorization.
 - **Required gates:** the four-mode product contract and scoped acceptance tests are satisfied; changed algorithms have suitable regression coverage; the existing KOC test passes where applicable; changed user journeys were exercised in a real browser, including mobile/keyboard/touch as relevant; storage/session, privacy and offline/PWA update behavior remain correct; the exact PR revision passes relevant automated checks; no high-severity or unapproved changes remain. Verify the diff, live target, and recoverable prior commit. For scheduling-logic changes, if appropriate CI coverage is absent, establish it as part of the release-ready milestone before auto-merging.
 - Respect required GitHub reviews, branch protection, permissions and deployment approval. If required evidence or access is missing, **do not merge**; leave a ready PR and the exact blocker. The current KOC test alone is insufficient proof for changes to other modes.
-- After merging, verify GitHub Pages and a fresh-session browser load of the **live site**; if the change affects cached files, confirm an existing PWA/client can receive the update. If verification fails, repair safely or report the failed publication, never claim it is live.
+- After merging, verify the GitHub Pages move notice and a fresh-session browser load of the **live Cloudflare planner**; if the change affects cached files, confirm an existing PWA/client can receive the update. If verification fails, repair safely or report the failed publication, never claim it is live.
 - Avoid cosmetic micro-version bumps. Finish with the user-visible change, tests and manual checks, before/after evidence when applicable, PR/merge/live links and any limitations. Do not end by proposing obvious remaining steps within the assigned milestone.
 

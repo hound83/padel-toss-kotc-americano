@@ -54,6 +54,18 @@ test('Old links retain the event, query and fragment, and a local-only draw can 
     assert.equal(await page.locator('#open').getAttribute('href'),cloud+next);
     assert.equal(await page.locator('.format-btn').count(),0);
   }
+  const channel='koriander-11111111-2222-4333-a444-555555555555';
+  const final={closed:true,at:12,rounds:[{n:1,rows:[{label:'Baan 1',teams:[['Speler A'],['Speler B']],score:[24,16]}]}],boards:[]};
+  const sourceHash=channel+'.'+'a'.repeat(43)+'.'+'b'.repeat(87)+'.early';
+  await page.evaluate(({channel,final})=>localStorage.setItem('padel-view-final-'+channel,JSON.stringify(final)),{channel,final});
+  await page.goto(old+'kijken.html#'+sourceHash);
+  await page.reload(); // A second visit with the old device's cached final score.
+  await page.waitForFunction(()=>!document.getElementById('open').hash.endsWith('.early'));
+  const viewerTarget=new URL(await page.locator('#open').getAttribute('href'));
+  assert.equal(viewerTarget.origin,cloud);assert.equal(viewerTarget.search,'');
+  const fields=viewerTarget.hash.slice(1).split('.');
+  assert.deepEqual(fields.slice(0,3),sourceHash.split('.').slice(0,3));
+  assert.deepEqual(JSON.parse(require('node:zlib').gunzipSync(Buffer.from(fields[3],'base64url'))),final);
   await page.goto(old+'?preview=3.1');
   await page.waitForURL(cloud+'/');
   assert.equal(await page.locator('#appVersion').innerText(),'v3.3.0');

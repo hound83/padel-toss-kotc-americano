@@ -10,7 +10,7 @@ test('A legacy viewer opens the shared draw, follows a signed score and caches t
   const root=path.join(__dirname,'..');
   const server=http.createServer((req,res)=>{
     const file=path.basename(new URL(req.url,'http://localhost').pathname);
-    if(!['kijken.html','share-v3.js','poll-common.js'].includes(file))return res.writeHead(404).end();
+    if(!['kijken.html','share-v3.js','poll-common.js','name-hint.js'].includes(file))return res.writeHead(404).end();
     res.writeHead(200,{'Content-Type':file.endsWith('.html')?'text/html':'text/javascript'}).end(fs.readFileSync(path.join(root,file)));
   });
   await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
@@ -47,11 +47,11 @@ test('A legacy viewer opens the shared draw, follows a signed score and caches t
       await TossShare.send(window.session,snapshot);
     },closed);
     await viewer.evaluate(message=>window.testStream.dispatchEvent(new MessageEvent('message',{data:JSON.stringify(message)})),envelope);
-    await viewer.getByText(closed?'24-16':'13-8',{exact:true}).first().waitFor({state:'attached'});
+    await viewer.getByText(closed?'24–16':'13–8',{exact:true}).first().waitFor({state:'attached'});
   }
   await viewer.locator('#connection.closed').waitFor();
   await viewer.reload();await viewer.locator('#connection.closed').waitFor();
-  assert.ok(await viewer.getByText('24-16',{exact:true}).count());
+  assert.ok(await viewer.getByText('24–16',{exact:true}).count());
   assert.equal(await viewer.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
 });
 
