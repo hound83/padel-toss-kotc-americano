@@ -28,24 +28,28 @@ test('signup poll through the real planner, mobile visitor, password and live fo
   }
   const host=await tab(owner);
   let player=await tab(phone),visitor=await tab(other);
-  const password=randomBytes(14).toString('hex');
+  const password=randomBytes(14).toString('hex'),ownerName='Werner '+randomBytes(4).toString('hex');
   await host.goto(url);await host.getByRole('link',{name:'Aanmeldpoll maken'}).click();
   await host.getByLabel('Speelvorm').selectOption('koc');await host.getByLabel('Naam van de avond').fill('Test KOC');
   await host.getByLabel('Banen',{exact:true}).fill('2');await host.getByLabel('Plekken',{exact:true}).fill('8');
   assert.equal(await host.getByLabel('Plekken',{exact:true}).inputValue(),'8');
-  const code=host.getByLabel('Kies een beheercode om deze poll later te openen',{exact:true});
-  await host.locator('.poll-code-help summary').focus();await host.keyboard.press('Enter');
-  await host.getByText(/Elke aanmeldlink bevat een unieke poll-ID/).waitFor();
-  await code.fill(password);await host.getByRole('button',{name:'Nieuwe poll aanmaken',exact:true}).click();
+  await host.getByLabel('Jouw naam',{exact:true}).fill(ownerName);
+  await host.getByLabel('Wachtwoord',{exact:true}).fill(password);
+  await host.getByRole('button',{name:'Nieuwe poll aanmaken',exact:true}).click();
   await host.getByRole('button',{name:'Ga indelen'}).waitFor();
   const id=new URL(host.url()).pathname.split('/').pop(),publicUrl=url+'/aanmelden/'+id;
   const remembered=await tab(owner);
-  await remembered.goto(url+'/aanmaken');
-  await remembered.getByRole('link',{name:'Laatste poll op dit apparaat openen'}).click();
-  await remembered.getByLabel('Beheercode van deze poll').fill(password);
-  await remembered.getByRole('button',{name:'Inloggen'}).click();
+  await remembered.goto(url);await remembered.getByRole('link',{name:'Mijn polls',exact:true}).click();
+  await remembered.getByRole('heading',{name:ownerName,exact:true}).waitFor();
+  await remembered.getByRole('link',{name:/Test KOC/}).focus();await remembered.keyboard.press('Enter');
   await remembered.getByRole('button',{name:'Ga indelen'}).waitFor();
   assert.equal(new URL(remembered.url()).pathname,'/beheer/'+id);
+  await remembered.getByRole('link',{name:'Mijn polls',exact:true}).click();
+  await remembered.getByRole('link',{name:'Nieuwe poll aanmaken'}).click();
+  await remembered.getByText('Ingelogd als '+ownerName).waitFor();
+  await remembered.getByLabel('Naam van de avond').fill('Extra eigen avond');
+  await remembered.getByRole('button',{name:'Nieuwe poll aanmaken'}).click();
+  await remembered.getByRole('button',{name:'Ga indelen'}).waitFor();
   await remembered.close();
   await player.goto(publicUrl);assert.equal(await player.locator('#listJump:visible').innerText(),'0 / 8 · Bekijk aanmeldingen');await player.getByLabel('Jouw naam').fill('Mila');await player.getByRole('button',{name:'Ja, ik doe mee'}).click();await player.getByText('Je staat bij Deelnemers.').waitFor();
   async function reopenSignup(previous,context,name,status,answer){
@@ -101,12 +105,18 @@ test('signup poll through the real planner, mobile visitor, password and live fo
   await phoneOrganizer.getByRole('button',{name:'Speler toevoegen'}).waitFor();
   assert.equal(new URL(phoneOrganizer.url()).pathname,'/beheer/'+id);
   await phoneOrganizer.close();
-  await visitor.goto(url+'/aanmaken');
-  assert.equal(await visitor.getByRole('link',{name:'Laatste poll op dit apparaat openen'}).count(),0);
-  await visitor.getByLabel('Aanmeldlink of poll-ID').fill(id);
-  await visitor.getByRole('button',{name:'Poll openen',exact:true}).click();
-  await visitor.getByLabel('Beheercode van deze poll').waitFor();assert.equal(await visitor.getByRole('button',{name:'Speler toevoegen'}).count(),0);
-  await visitor.getByLabel('Beheercode van deze poll').fill(password);await visitor.getByRole('button',{name:'Inloggen'}).click();await visitor.getByRole('button',{name:'Speler toevoegen'}).waitFor();
+  await visitor.goto(url);await visitor.getByRole('link',{name:'Mijn polls',exact:true}).tap();
+  assert.equal(await visitor.getByRole('link',{name:/Test KOC/}).count(),0);
+  await visitor.getByLabel('Jouw naam',{exact:true}).fill(ownerName.toLowerCase());
+  await visitor.getByLabel('Wachtwoord',{exact:true}).fill('onjuist-wachtwoord');
+  await visitor.getByRole('button',{name:'Mijn polls openen'}).tap();
+  await visitor.getByText(/Controleer je naam en wachtwoord/).waitFor();
+  assert.equal(await visitor.getByText('Extra eigen avond').count(),0);
+  await visitor.getByLabel('Wachtwoord',{exact:true}).fill(password);
+  await visitor.getByRole('button',{name:'Mijn polls openen'}).tap();
+  await visitor.getByRole('link',{name:/Extra eigen avond/}).waitFor();
+  await visitor.getByRole('link',{name:/Test KOC/}).tap();
+  await visitor.getByRole('button',{name:'Speler toevoegen'}).waitFor();
   host.on('dialog',d=>d.accept());await host.getByRole('button',{name:'Ga indelen'}).click();
   await host.locator('#kocRoll:visible').waitFor();await host.waitForFunction(()=>[...document.querySelectorAll('#kocRoster input')].some(i=>i.value==='Test 7'));
   await player.getByText('De indeling wordt gemaakt').waitFor({timeout:12000});
@@ -134,6 +144,13 @@ test('signup poll through the real planner, mobile visitor, password and live fo
     const poll=await created.json(),api=url+'/api/polls/'+poll.id;
     for(let i=1;i<=8;i++)await host.request.post(api,{headers:{'X-Signup-Key':randomBytes(32).toString('hex')},data:{name:'Naam '+i,answer:'yes'}});
     await host.goto(url+'/beheer/'+poll.id);await host.getByLabel('Beheercode van deze poll').fill(password);await host.getByRole('button',{name:'Inloggen'}).click();
+    if(format==='toss'){
+      await host.getByRole('button',{name:'Toevoegen aan Mijn polls'}).click();
+      const dlg=host.getByRole('dialog');
+      await dlg.getByText('Ingelogd als '+ownerName).waitFor();
+      await dlg.getByRole('button',{name:'Opslaan'}).click();
+      await host.getByText('Toegevoegd aan Mijn polls.').waitFor();
+    }
     await host.getByRole('button',{name:'Ga indelen'}).click();await host.locator('#generateBtn:visible').waitFor();
     assert.equal(await host.locator('#panel2 .name-field input:visible').count(),8);
     await host.locator('#generateBtn').click();await host.locator('#presentBtn').click();

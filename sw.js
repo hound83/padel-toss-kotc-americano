@@ -1,5 +1,5 @@
 /* Offline application shell for the Toss planner. */
-const CACHE_NAME = 'padel-toss-americano-v33-planned-sharing1';
+const CACHE_NAME = 'padel-toss-americano-v33-personal-polls1';
 const SHELL = ['./', './index.html', './round-planner.js', './ranking.js', './session-admin.js', './poll-common.js', './name-hint.js', './schedule-document.js', './share-v3.js', './kijken.html', './manifest.webmanifest', './icon.svg', './icon-192.png', './icon-512.png', './visual-theme.css', './assets/mode-toss.svg', './assets/mode-koc.svg', './assets/mode-americano.svg', './assets/mode-split.svg', './assets/mode-split-en.svg'];
 const SHELL_URLS = SHELL.map(file => new URL(file, self.registration.scope).href);
 const INDEX_URL = new URL('./index.html', self.registration.scope).href;
@@ -33,7 +33,7 @@ self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
   if (url.origin !== self.location.origin || !url.pathname.startsWith(new URL(self.registration.scope).pathname)) return;
   if (/(?:^|\/)(?:api|s|b|aanmelden|beheer)\//.test(url.pathname)) return;
-  if (url.searchParams.has('poll') || /\/(?:aanmaken|beheer)\/?$/.test(url.pathname)) return;
+  if (url.searchParams.has('poll') || /\/(?:aanmaken|mijn-polls|beheer)\/?$/.test(url.pathname)) return;
   event.respondWith(
     fetch(event.request).then(response => {
       if (response.ok) {

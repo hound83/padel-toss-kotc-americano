@@ -34,3 +34,17 @@ CREATE TABLE IF NOT EXISTS signup_holds (
   series TEXT NOT NULL REFERENCES signup_series(id) ON DELETE CASCADE, format TEXT NOT NULL, name TEXT NOT NULL, person TEXT,
   PRIMARY KEY(series,format,name)
 );
+
+CREATE TABLE IF NOT EXISTS poll_organizers (
+  name_key TEXT PRIMARY KEY, display_name TEXT NOT NULL, salt TEXT NOT NULL, verifier TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS poll_organizer_series (
+  series TEXT PRIMARY KEY REFERENCES signup_series(id) ON DELETE CASCADE,
+  organizer TEXT NOT NULL REFERENCES poll_organizers(name_key)
+);
+CREATE INDEX IF NOT EXISTS poll_series_by_organizer ON poll_organizer_series(organizer);
+CREATE INDEX IF NOT EXISTS signup_by_series ON signup_polls(series,id);
+CREATE TABLE IF NOT EXISTS poll_organizer_logins (
+  token TEXT PRIMARY KEY, organizer TEXT NOT NULL REFERENCES poll_organizers(name_key), expires INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS poll_organizer_login_expiry ON poll_organizer_logins(expires);

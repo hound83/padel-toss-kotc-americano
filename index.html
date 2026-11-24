@@ -1377,7 +1377,7 @@
       </button>
       <button class="format-btn" type="button" data-format="americano">
         <span class="mode-copy">
-          <span class="fb-name" data-i18n="homeAmericanoName">Americano / Competitieve Toss</span>
+          <span class="fb-name" data-i18n="homeAmericanoName">Americano / Toss met klassement</span>
           <span class="fb-desc">
             <span data-i18n="homeAmericanoDesc">Speel met wisselende partners.</span>
             <span data-i18n="homeAmericanoDescDetail">Vul de uitslagen in voor een individueel klassement.</span>
@@ -1398,7 +1398,7 @@
         <img class="mode-illustration" id="splitTossIllustration" src="./assets/mode-split.svg" width="420" height="355" alt="" aria-hidden="true" decoding="async">
       </button>
     </div>
-    <a class="btn btn-ghost" id="pollHome" href="/aanmaken" hidden>Aanmeldpoll maken</a>
+    <div class="poll-home-actions"><a class="btn btn-ghost" id="pollHome" href="/aanmaken" hidden>Aanmeldpoll maken</a><a class="btn btn-ghost" id="myPollsHome" href="/mijn-polls" hidden>Mijn polls</a></div>
   </section>
 
   <!-- STEP 1 -->
@@ -2004,7 +2004,7 @@
       backToModes: '← Speelvormen',
       chosenFormat: 'Gekozen speelvorm',
       homeTossDesc: 'Recreatief spelen en kennismaken met wisselende partners.', homeTossDescDetail: 'Uitslagen worden niet bijgehouden.', homeTossAction: 'Kies Toss',
-      homeAmericanoName: 'Americano / Competitieve Toss', homeSplitTossName: 'Gesplitste Toss',
+      homeAmericanoName: 'Americano / Toss met klassement', homeSplitTossName: 'Gesplitste Toss',
       homeKocDesc: 'Winnaars schuiven een baan omhoog, verliezers een baan omlaag.', homeKocDescDetail: 'Op de hoogste baan verdedigen de winnaars hun plek.', homeKocAction: 'Kies King of the Court',
       homeAmericanoDesc: 'Speel met wisselende partners.', homeAmericanoDescDetail: 'Vul de uitslagen in voor een individueel klassement.', homeAmericanoAction: 'Kies Americano',
       homeSplitTossDesc: 'Speel in Zilver of Goud. Voeg eventueel Platina toe.', homeSplitTossDescDetail: 'Uitslagen bijhouden kan per groep.', homeSplitTossAction: 'Kies Gesplitste Toss',
@@ -2193,7 +2193,7 @@
       formatTossDesc: 'Alleen een schema, geen uitslagen invullen',
       formatSplitToss: 'Gesplitste toss',
       formatSplitTossDesc: 'Twee of drie niveaus apart ingedeeld — optioneel met uitslagen en klassement per niveau',
-      formatAmericano: 'Americano / Competitieve toss',
+      formatAmericano: 'Americano / Toss met klassement',
       formatAmericanoDesc: 'Met score, klassement en optioneel een winnaars/verliezers-schema',
       formatKoc: 'King of the Court',
       formatKocDesc: 'Eén startindeling, daarna zelf doorschuiven',
@@ -2362,7 +2362,7 @@
       backToModes: '← Formats',
       chosenFormat: 'Selected format',
       homeTossDesc: 'Play socially and meet other players with rotating partners.', homeTossDescDetail: 'Scores are not recorded.', homeTossAction: 'Choose Toss',
-      homeAmericanoName: 'Americano / Competitive Toss', homeSplitTossName: 'Split Toss',
+      homeAmericanoName: 'Americano / Toss with standings', homeSplitTossName: 'Split Toss',
       homeKocDesc: 'Winners move up a court and losers move down.', homeKocDescDetail: 'Winners on the top court defend their place.', homeKocAction: 'Choose King of the Court',
       homeAmericanoDesc: 'Play with rotating partners.', homeAmericanoDescDetail: 'Enter match scores for the individual standings.', homeAmericanoAction: 'Choose Americano',
       homeSplitTossDesc: 'Play in Silver or Gold. Add Platinum if needed.', homeSplitTossDescDetail: 'Each group can track its own scores.', homeSplitTossAction: 'Choose Split Toss',
@@ -2551,7 +2551,7 @@
       formatTossDesc: 'Just a schedule, no results to fill in',
       formatSplitToss: 'Split Toss',
       formatSplitTossDesc: 'Two or three levels scheduled separately — optionally with results and a leaderboard per level',
-      formatAmericano: 'Americano / Competitive Toss',
+      formatAmericano: 'Americano / Toss with standings',
       formatAmericanoDesc: 'With scores, a leaderboard, and an optional winners/losers schedule',
       formatKoc: 'King of the Court',
       formatKocDesc: 'One starting lineup, then move courts based on results',
@@ -2606,7 +2606,7 @@
       courtsReshuffle: 'Matchups and courts are reshuffled randomly every round.',
       sitOutTurnTitle: '{level} is free this round.',
       sitOutTurnBody: 'With {courts} for {levels} levels not every level can play at the same time; they take turns so that everyone gets roughly the same number of games across all the rounds.',
-      levelZeroHint: 'Levels fill from left to right: Silver first, then Gold, then Platinum. Set a level to 0 if you are not using it \u2014 you need at least two. For a single group, pick Toss (no results) or Americano / Competitive Toss (with a leaderboard) instead.',
+      levelZeroHint: 'Levels fill from left to right: Silver first, then Gold, then Platinum. Set a level to 0 if you are not using it \u2014 you need at least two. For a single group, pick Toss (no results) or Americano / Toss with standings (with a leaderboard) instead.',
       levelCountError: 'Enter 0 or 4\u201396 players per level. Use at least two levels and fill them left to right: Platinum needs Gold to be in use.',
       beginnerPlayersHeading: 'Players in Silver',
       ervarenPlayersHeading: 'Players in Gold',
@@ -2659,6 +2659,8 @@
     pollHome.hidden=!hostedSessions;
     pollHome.textContent=state.lang==='en'?'Create a signup poll':'Aanmeldpoll maken';
     pollHome.href='/aanmaken?lang='+state.lang;
+    const mine=document.getElementById('myPollsHome');mine.hidden=!hostedSessions;
+    mine.textContent=state.lang==='en'?'My polls':'Mijn polls';mine.href='/mijn-polls?lang='+state.lang;
     renderRoundRules();
     renderRoundSettings();
     paintRoundClocks(true);

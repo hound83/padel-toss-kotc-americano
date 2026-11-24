@@ -19,7 +19,7 @@ test('illustrated home: keyboard, all formats, EN/mobile, offline assets and exi
     if(!file.startsWith(root+path.sep))return res.writeHead(403).end();
     try{
       let body;
-      if(pathname==='/sw.js')body=legacy?worker.replace('v33-planned-sharing1','v33-event-removal1'):worker;
+      if(pathname==='/sw.js')body=legacy?worker.replace('v33-personal-polls1','v33-planned-sharing1'):worker;
       else if(pathname==='/assets/mode-koc.svg'&&legacy)body=legacyArtwork;
       else body=fs.readFileSync(file);
       res.writeHead(200,{'Content-Type':mime[path.extname(file)]||'application/octet-stream','Cache-Control':'no-store'}).end(body);
@@ -49,7 +49,7 @@ test('illustrated home: keyboard, all formats, EN/mobile, offline assets and exi
   assert.equal(await page.locator('.mode-illustration').count(),4);
   const art=await (await ctx.request.get(origin+'/assets/mode-americano.svg')).text();
   assert.ok(art.includes('26–6'),'illustrated score is a point score, never a clock');
-  assert.equal(await page.locator('[data-i18n="homeAmericanoName"]').innerText(),'Americano / Competitieve Toss');
+  assert.equal(await page.locator('[data-i18n="homeAmericanoName"]').innerText(),'Americano / Toss met klassement');
   assert.match(await page.locator('[data-i18n="homeAmericanoDescDetail"]').innerText(),/individueel klassement/);
   assert.match(await page.locator('[data-i18n="homeSplitTossDesc"]').innerText(),/Voeg eventueel Platina toe/);
   const splitNl=await (await ctx.request.get(origin+'/assets/mode-split.svg')).text();
@@ -80,7 +80,7 @@ test('illustrated home: keyboard, all formats, EN/mobile, offline assets and exi
   assert.equal(await page.locator('#modeHomeTitle').innerText(),'What shall we play?');
   assert.equal(await page.locator('[data-i18n="homeAmericanoAction"]').innerText(),'Choose Americano');
   assert.equal(await page.locator('#splitTossIllustration').getAttribute('src'),'./assets/mode-split-en.svg');
-  assert.equal(await page.locator('[data-i18n="homeAmericanoName"]').innerText(),'Americano / Competitive Toss');
+  assert.equal(await page.locator('[data-i18n="homeAmericanoName"]').innerText(),'Americano / Toss with standings');
   assert.match(await page.locator('[data-i18n="homeAmericanoDescDetail"]').innerText(),/individual standings/);
   assert.match(await page.locator('[data-i18n="homeSplitTossDesc"]').innerText(),/Add Platinum if needed/);
   const splitCard=page.locator('.format-btn[data-format="splitToss"]');
@@ -117,9 +117,9 @@ test('illustrated home: keyboard, all formats, EN/mobile, offline assets and exi
   }
   await page.evaluate(()=>navigator.serviceWorker.ready);
   console.log('Illustrated home: keyboard, modes, languages and responsive layouts passed.');
-  await page.waitForFunction(async()=>!!navigator.serviceWorker.controller&&(await caches.keys()).includes('padel-toss-americano-v33-event-removal1'));
+  await page.waitForFunction(async()=>!!navigator.serviceWorker.controller&&(await caches.keys()).includes('padel-toss-americano-v33-planned-sharing1'));
   const previousArtwork=await page.evaluate(async()=>{
-    const cache=await caches.open('padel-toss-americano-v33-event-removal1');
+    const cache=await caches.open('padel-toss-americano-v33-planned-sharing1');
     return (await cache.match('./assets/mode-koc.svg')).text();
   });
   assert.match(previousArtwork,/<text\b[^>]*>4<\/text>/);
@@ -134,10 +134,10 @@ test('illustrated home: keyboard, all formats, EN/mobile, offline assets and exi
     },{once:true}));
     await reg.update();await activated;
   });
-  await page.waitForFunction(async()=>{const keys=await caches.keys();return keys.includes('padel-toss-americano-v33-planned-sharing1')&&!keys.includes('padel-toss-americano-v33-event-removal1');});
+  await page.waitForFunction(async()=>{const keys=await caches.keys();return keys.includes('padel-toss-americano-v33-personal-polls1')&&!keys.includes('padel-toss-americano-v33-planned-sharing1');});
   assert.equal(await page.evaluate(()=>localStorage.getItem('visual-upgrade-check')),'keep-this-session');
   console.log('Illustrated home: existing-client cache upgrade preserved local storage.');
-  const shell=await page.evaluate(async()=>{const c=await caches.open('padel-toss-americano-v33-planned-sharing1');return (await c.keys()).map(r=>new URL(r.url).pathname);});
+  const shell=await page.evaluate(async()=>{const c=await caches.open('padel-toss-americano-v33-personal-polls1');return (await c.keys()).map(r=>new URL(r.url).pathname);});
   console.log('Updated offline cache paths:',JSON.stringify(shell));
   for(const file of ['ranking.js','session-admin.js','schedule-document.js','visual-theme.css','assets/mode-toss.svg','assets/mode-koc.svg','assets/mode-americano.svg','assets/mode-split.svg','assets/mode-split-en.svg'])assert.ok(shell.includes('/'+file),file+' is ready before client takeover');
   await ctx.setOffline(true);
