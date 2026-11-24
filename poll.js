@@ -132,16 +132,16 @@
     if(!central){
       pw=field(form,say('Kies een beheercode om deze poll later te openen','Choose a code to reopen this poll later'),input('password'));
       pw.autocomplete='new-password';pw.required=true;pw.minLength=8;pw.maxLength=128;
-      const hint=el('small',say('Bewaar je code (minimaal 8 tekens). De planner maakt een unieke poll-ID aan en zet die in je aanmeldlink.',
-        'Keep your code (at least 8 characters). The planner creates a unique poll ID and includes it in your signup link.'));
+      const hint=el('small',say('Met de aanmeldlink en deze code kun je de poll later op elke telefoon of laptop beheren. Kies minimaal 8 tekens.',
+        'With the signup link and this code, you can manage the poll later on any phone or computer. Choose at least 8 characters.'));
       hint.id='eventPasswordHint';pw.setAttribute('aria-describedby',hint.id);form.append(hint);
       const help=el('details',undefined,'poll-code-help');
       const summary=el('summary',say('Hoe open ik mijn poll opnieuw?','How do I reopen my poll?'));
       summary.title=say('Open je laatste poll op dit apparaat of gebruik de aanmeldlink en je beheercode.','Open the last poll on this device, or use the signup link and your organizer code.');
-      help.append(summary,el('p',say('Op dit apparaat kies je straks ‘Laatste poll op dit apparaat openen’. Op een andere telefoon of voor een oudere poll vul je bij ‘Bestaande poll openen’ de aanmeldlink of poll-ID in. Vanuit WhatsApp kun je ook direct ‘Deze avond beheren’ kiezen. Voer je code in als daarom wordt gevraagd.',
-        'On this device, choose “Open the last poll on this device”. On another phone or for an older poll, enter its signup link or poll ID under “Open an existing poll”. From WhatsApp, you can also choose “Manage this event” on the signup page. Enter your code when asked.')),
-        el('p',say('Bij ‘Herhaal volgende week’ krijgt de nieuwe poll een eigen link. Je beheercode blijft geldig. Spelers hebben alleen de aanmeldlink nodig.',
-          'Using “Repeat next week” creates a new poll with its own link. Your code still works. Players only need the signup link.')));
+      help.append(summary,el('p',say('Open de aanmeldlink uit WhatsApp, kies ‘Deze avond beheren’ en vul je beheercode in. Elke aanmeldlink bevat een unieke poll-ID. Heb je die ID apart bewaard? Vul hem in bij ‘Bestaande poll openen’.',
+        'Open the signup link from WhatsApp, choose “Manage this event” and enter your organizer code. Each signup link contains a unique poll ID. If you saved the ID separately, enter it under “Open an existing poll”.')),
+        el('p',say('In dezelfde browser kun je ook ‘Laatste poll op dit apparaat openen’ kiezen. Bij ‘Herhaal volgende week’ krijgt de nieuwe poll een eigen link en blijft je code geldig. Spelers hebben alleen de link nodig.',
+          'In the same browser, you can also choose “Open the last poll on this device”. Using “Repeat next week” creates a new poll with its own link and keeps your code. Players only need the link.')));
       form.append(help);
     }
     const go=el('button',central?say('Aanmelding openen','Open signups'):say('Nieuwe poll aanmaken','Create new poll'),'primary');go.type='submit';actions(form,go);

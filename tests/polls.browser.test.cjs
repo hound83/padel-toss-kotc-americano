@@ -35,7 +35,7 @@ test('signup poll through the real planner, mobile visitor, password and live fo
   assert.equal(await host.getByLabel('Plekken',{exact:true}).inputValue(),'8');
   const code=host.getByLabel('Kies een beheercode om deze poll later te openen',{exact:true});
   await host.locator('.poll-code-help summary').focus();await host.keyboard.press('Enter');
-  await host.getByText(/Op een andere telefoon of voor een oudere poll/).waitFor();
+  await host.getByText(/Elke aanmeldlink bevat een unieke poll-ID/).waitFor();
   await code.fill(password);await host.getByRole('button',{name:'Nieuwe poll aanmaken',exact:true}).click();
   await host.getByRole('button',{name:'Ga indelen'}).waitFor();
   const id=new URL(host.url()).pathname.split('/').pop(),publicUrl=url+'/aanmelden/'+id;
@@ -93,6 +93,14 @@ test('signup poll through the real planner, mobile visitor, password and live fo
     await player.reload();await player.locator('#groups').getByText('Test 6',{exact:true}).waitFor();
     await player.screenshot({path:path.join(process.env.PADEL_SCREENSHOT_DIR,'poll-aanmelden-mobiel.png'),fullPage:true});
   }
+  const phoneOrganizer=await tab(phone);
+  await phoneOrganizer.goto(publicUrl);
+  await phoneOrganizer.getByRole('link',{name:'Deze avond beheren',exact:true}).tap();
+  await phoneOrganizer.getByLabel('Beheercode van deze poll').fill(password);
+  await phoneOrganizer.getByRole('button',{name:'Inloggen'}).tap();
+  await phoneOrganizer.getByRole('button',{name:'Speler toevoegen'}).waitFor();
+  assert.equal(new URL(phoneOrganizer.url()).pathname,'/beheer/'+id);
+  await phoneOrganizer.close();
   await visitor.goto(url+'/aanmaken');
   assert.equal(await visitor.getByRole('link',{name:'Laatste poll op dit apparaat openen'}).count(),0);
   await visitor.getByLabel('Aanmeldlink of poll-ID').fill(id);
