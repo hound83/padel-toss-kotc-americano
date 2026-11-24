@@ -2887,10 +2887,11 @@
     return btn;
   }
 
-  function kocWaitingNames(k){
-    return (k.displayOrder || Object.keys(k.assignment).map(Number))
-      .filter(function(index){ return k.assignment[index] === 0; }).map(kocPlayerName);
+  function kocWaitingPlayers(k){
+    const waiting=Object.keys(k.assignment).map(Number).filter(i=>k.assignment[i]===0);
+    return Array.isArray(k.waitingOrder) && k.waitingOrder.length===waiting.length && waiting.every(i=>k.waitingOrder.includes(i))?k.waitingOrder:waiting;
   }
+  function kocWaitingNames(k){return kocWaitingPlayers(k).map(kocPlayerName);}
 
   function appendKocWaitingCard(root, k, cardClass){
     var names = kocWaitingNames(k);
@@ -2898,7 +2899,7 @@
     var card = liveElement('article', cardClass + ' koc-waiting-card');
     card.appendChild(liveElement('h3', '', t('kocWaitingTitle')));
     var list = liveElement('ul', '');
-    const waiting=(k.displayOrder || Object.keys(k.assignment).map(Number)).filter(i=>k.assignment[i]===0);
+    const waiting=kocWaitingPlayers(k);
     names.forEach(function(name,n){
       const row=nameLabel('li','',name);
       if(cardClass==='koc-court')preparePlayerCard(row,waiting[n],name);
@@ -2931,6 +2932,7 @@
       k.assignment[a]=dest;k.displayOrder=k.displayOrder.filter(i=>i!==a).concat(a);
     }else{
       if(!Object.hasOwn(k.assignment,b) || a===b)return;
+      if(k.assignment[a]===0 || k.assignment[b]===0)k.waitingOrder=kocWaitingPlayers(k).map(i=>i===a?b:i===b?a:i);
       [k.assignment[a],k.assignment[b]]=[k.assignment[b],k.assignment[a]];
       k.displayOrder=k.displayOrder.map(i=>i===a?b:i===b?a:i);
     }
@@ -3371,6 +3373,7 @@
     }
     k.assignment = best;
     delete k.pairedCourts;
+    delete k.waitingOrder;
     k.lastSignature = signature;
     k.displayOrder = shuffle(attendees);
     if (!k.guided && k.roster.some(function(p){return p.level;})){
