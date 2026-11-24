@@ -6,7 +6,7 @@
   <meta name="referrer" content="no-referrer">
   <meta name="robots" content="noindex,follow">
   <meta name="theme-color" content="#193b57">
-  <title>De Padel Planner is verhuisd · Koriander</title>
+  <title>De Padel Planner is verhuisd</title>
   <style>
     *{box-sizing:border-box}
     body{margin:0;min-height:100vh;min-height:100svh;display:grid;place-items:center;padding:1.25rem;background:#f1f5f2;color:#193b57;font:1rem/1.5 system-ui,sans-serif}
@@ -83,7 +83,7 @@
             const data={format:'padel-scheduler',version:2,savedAt:saved.savedAt,state:saved.state};
             const json=JSON.stringify(data,(k,v)=>k==='previewChannel'?undefined:v,2);
             const file=URL.createObjectURL(new Blob([json],{type:'application/json'}));
-            const a=document.createElement('a');a.href=file;a.download='koriander-'+label.toLowerCase().replaceAll(' ','-')+'.json';
+            const a=document.createElement('a');a.href=file;a.download='padel-planner-'+label.toLowerCase().replaceAll(' ','-')+'.json';
             document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(file),2000);
           };
           document.getElementById('downloads').append(button);

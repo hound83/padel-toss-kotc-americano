@@ -6946,7 +6946,7 @@
   ['pdfBtn','kocPdf'].forEach(function(id){
     document.getElementById(id).addEventListener('click',function(){
       var pages=schedulePages();
-      if (pages.length) downloadFile(ScheduleDocument.pdf(pages),'Koriander-'+state.format+'-'+new Date().toISOString().slice(0,10)+'.pdf');
+      if (pages.length) downloadFile(ScheduleDocument.pdf(pages),'Padel-Planner-'+state.format+'-'+new Date().toISOString().slice(0,10)+'.pdf');
     });
   });
 

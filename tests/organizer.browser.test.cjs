@@ -56,6 +56,53 @@ test('one central login reaches existing and new events, live schedules, and the
   await (await footerButton(publicPage)).click();await publicPage.getByLabel('Beheerwachtwoord').waitFor();
   assert.equal(await publicPage.getByText('Mira').count(),0);
   assert.equal((await guest.request.get(url+'/api/polls/hub')).status(),401);
+  const planner=await phone.newPage();
+  planner.setDefaultTimeout(7500);
+  planner.on('dialog',dialog=>dialog.accept());
+  planner.on('pageerror',err=>errors.push(err.message));
+  const players=['Ada','Bea','Cato','Daan','Elin','Fien','Gijs','Hugo'];
+  for(const format of ['toss','koc']){
+    const eventTitle='Poll '+format+' '+randomBytes(4).toString('hex');
+    await planner.goto(url+'/beheer');
+    await planner.getByRole('link',{name:'Nieuwe avond'}).click();
+    await planner.getByLabel('Speelvorm',{exact:true}).selectOption(format);
+    await planner.getByLabel('Naam van de avond').fill(eventTitle);
+    await planner.getByLabel('Banen',{exact:true}).fill('2');
+    await planner.getByLabel('Plekken',{exact:true}).fill('8');
+    await planner.getByRole('button',{name:'Aanmelding openen'}).click();
+    await planner.getByRole('button',{name:'Ga indelen'}).waitFor();
+    const pollId=new URL(planner.url()).searchParams.get('avond');
+    assert.match(pollId,/^[a-f0-9]{14}$/);
+    const signupUrl=url+'/aanmelden/'+pollId;
+    for(const name of ['Nora Reserve',...players,'Ivo Wachtlijst']){
+      const response=await guest.request.post(url+'/api/polls/'+pollId,{
+        headers:{'X-Signup-Key':randomBytes(32).toString('hex')},
+        data:{name,answer:name==='Nora Reserve'?'reserve':'yes'}
+      });
+      assert.equal(response.status(),200);
+    }
+    await planner.goto(url+'/beheer');
+    await planner.getByRole('button',{name:new RegExp(eventTitle)}).click();
+    await planner.locator('[data-place=reserve]').getByRole('button',{name:'Wijzig Nora Reserve',exact:true}).waitFor();
+    await planner.locator('[data-place=wait]').getByRole('button',{name:'Wijzig Ivo Wachtlijst',exact:true}).waitFor();
+    await planner.getByRole('button',{name:'Ga indelen'}).click();
+    await planner.getByText('Bevestigde deelnemers overgenomen.',{exact:true}).waitFor();
+    const roster=planner.locator(format==='koc'?'#kocRoster input[type=text]':'#namesGrid .name-field input');
+    assert.deepEqual(await roster.evaluateAll(fields=>fields.map(field=>field.value).filter(Boolean)),players);
+    await publicPage.goto(signupUrl);
+    await publicPage.getByText('De indeling wordt gemaakt').waitFor();
+    assert.equal(await publicPage.locator('#groups').count(),0);
+    await planner.locator(format==='koc'?'#kocRoll':'#generateBtn').click();
+    await planner.getByRole('button',{name:'Publiceer op de aanmeldlink'}).click();
+    await planner.getByText('Het speelschema staat op de groepslink.').waitFor();
+    await publicPage.goto(signupUrl);
+    await publicPage.getByRole('link',{name:'Bekijk de baanindeling'}).click();
+    await publicPage.locator('#rounds article').first().waitFor();
+    const courts=await publicPage.locator('#rounds').innerText();
+    for(const name of players)assert.ok(courts.includes(name),name);
+    assert.doesNotMatch(courts,/Nora Reserve|Ivo Wachtlijst/);
+  }
+  await planner.close();
   await host.getByRole('button',{name:'Herhaal volgende week'}).click();
   await host.waitForFunction(old=>new URL(location.href).searchParams.get('avond')!==old,id);
   await host.getByRole('button',{name:'Speler toevoegen'}).waitFor();assert.equal(await host.locator('#groups li').count(),0);

@@ -36,7 +36,8 @@
     const mode=settings?.format||'toss';
     $('art').src=P.art(mode,en);$('art').hidden=false;
     const activity=admin?say('Aanmeldingen beheren','Manage signups'):id?say('Aanmelden','Sign up'):say('Aanmeldpoll maken','Create a signup poll');
-    $('phase').textContent=activity+' · '+modeName(mode);
+    $('phase').hidden=hubRoute;
+    $('phase').textContent=hubRoute?'':activity+' · '+modeName(mode);
     $('heading').textContent=settings?.title||(!id?say('Nieuwe tossavond','New padel event'):say('Aanmeldingen','Signups'));
     $('event').textContent=settings?.date?dateText(settings)+' · '+settings.start+'–'+settings.end:'';
     document.title=$('heading').textContent+' · '+activity;
@@ -44,15 +45,15 @@
     const manageLink=$('manageLink');manageLink.hidden=!id || admin;
     if(id){manageLink.href='/beheer/'+id+(en?'?lang=en':'');manageLink.textContent=say('Deze avond beheren','Manage this event');}
     if(hubRoute){
-      $('phase').textContent='Koriander Padel';$('heading').textContent=say('Centraal beheer','Organizer dashboard');
-      $('event').textContent='';document.title=$('heading').textContent+' · Koriander Padel';
+      $('heading').textContent=say('Avonden beheren','Manage events');
+      $('event').textContent='';document.title=$('heading').textContent+' · Padel Planner';
     }
     if(phase==='planning' && !admin)$('phase').textContent=say('Indeling in voorbereiding','Preparing the schedule')+' · '+modeName(mode);
   }
   function dateText(s){return new Intl.DateTimeFormat(en?'en-GB':'nl-NL',{weekday:'long',day:'numeric',month:'long',timeZone:'UTC'}).format(new Date(s.date+'T12:00:00Z'));}
   function places(){return {in:say('Deelnemers','Playing'),wait:say('Wachtlijst · Ja','Waiting · Yes'),reserve:say('Reserve','Standby'),review:say('Alleen na akkoord','Needs approval'),out:say('Afgemeld','Unavailable')};}
   function friendly(err){
-    const labels={'hub-unconfigured':say('Het centrale beheerwachtwoord is nog niet ingesteld.','The central organizer password has not been configured.'),storage:say('Sta lokale opslag toe om je eigen reactie te kunnen beheren, of vraag de organisator je aan te melden.','Enable browser storage to manage your own response, or ask the organizer to sign you up.'),duplicate:say('Die naam staat al op de lijst. Gebruik ook een achternaam of initiaal.','That name is taken. Add an initial or last name.'),
+    const labels={'hub-unconfigured':say('Het algemene beheerwachtwoord is nog niet ingesteld.','The site organizer password has not been set.'),storage:say('Sta lokale opslag toe om je eigen reactie te kunnen beheren, of vraag de organisator je aan te melden.','Enable browser storage to manage your own response, or ask the organizer to sign you up.'),duplicate:say('Die naam staat al op de lijst. Gebruik ook een achternaam of initiaal.','That name is taken. Add an initial or last name.'),
       login:say('Inloggen vereist. Controleer het beheerwachtwoord.','Sign in with the organizer password.'),
       settings:say('Controleer datum, tijden, banen en aantal plekken.','Check the date, times, courts and places.'),
       field:say('Controleer de ingevulde velden.','Check the fields.'),locked:say('De aanmelding is gesloten.','Signups have closed.'),

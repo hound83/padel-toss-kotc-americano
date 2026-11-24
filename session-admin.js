@@ -31,7 +31,7 @@
       download.onclick=()=>{
         const body=JSON.stringify({format:'padel-scheduler',version:2,state:local.state},null,2);
         const file=URL.createObjectURL(new Blob([body],{type:'application/json'}));
-        const a=document.createElement('a');a.href=file;a.download='koriander-lokale-wijzigingen.json';a.click();
+        const a=document.createElement('a');a.href=file;a.download='padel-planner-lokale-wijzigingen.json';a.click();
         setTimeout(()=>URL.revokeObjectURL(file),2000);
         try{localStorage.removeItem(conflictKey());}catch{}
         download.hidden=true;announce('');
@@ -106,7 +106,7 @@
       $('entryPlayer').disabled=busy || closed;
       $('ownerGroup').hidden=!fields;$('ownerCaption').textContent=say('Beheer op een ander apparaat','Manage on another device');
       $('ownerHint').textContent=say('Stuur deze privélink naar jezelf. Hiermee opent de volledige planner.','Send this private link to yourself. It opens the full planner.');
-      if(centralSession)$('ownerHint').textContent=say('Deze link opent de planner na inloggen met het centrale beheerwachtwoord.','This link opens the planner after signing in with the central organizer password.');
+      if(centralSession)$('ownerHint').textContent=say('Log in met het algemene beheerwachtwoord om de planner te openen.','Sign in with the site organizer password to open the planner.');
       $('ownerUrl').value=centralSession?location.origin+'/beheer/sessie/'+centralSession:secret?location.origin+'/b/'+secret:'';
       $('ownerCopy').textContent=say('Beheerlink kopiëren','Copy organizer link');
       $('shareEnd').hidden=!fields || closed;$('shareEnd').disabled=busy;
