@@ -63,9 +63,16 @@ test('one central login reaches existing and new events, live schedules, and the
   const players=['Ada','Bea','Cato','Daan','Elin','Fien','Gijs','Hugo'];
   for(const format of ['toss','koc']){
     const eventTitle='Poll '+format+' '+randomBytes(4).toString('hex');
-    const created=await phone.request.post(url+'/api/polls',{data:{settings:{...settings,title:eventTitle,format},central:true}});
-    assert.equal(created.status(),201);
-    const pollId=(await created.json()).id;
+    await planner.goto(url+'/beheer');
+    await planner.getByRole('link',{name:'Nieuwe avond'}).click();
+    await planner.getByLabel('Speelvorm',{exact:true}).selectOption(format);
+    await planner.getByLabel('Naam van de avond').fill(eventTitle);
+    await planner.getByLabel('Banen',{exact:true}).fill('2');
+    await planner.getByLabel('Plekken',{exact:true}).fill('8');
+    await planner.getByRole('button',{name:'Aanmelding openen'}).click();
+    await planner.getByRole('button',{name:'Ga indelen'}).waitFor();
+    const pollId=new URL(planner.url()).searchParams.get('avond');
+    assert.match(pollId,/^[a-f0-9]{14}$/);
     const signupUrl=url+'/aanmelden/'+pollId;
     for(const name of ['Nora Reserve',...players,'Ivo Wachtlijst']){
       const response=await guest.request.post(url+'/api/polls/'+pollId,{
