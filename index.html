@@ -751,6 +751,39 @@
   }
   .name-field input:focus{ border-color:var(--teal-600); }
   .name-field input.dup-name-input{ border-color:var(--coral); background:#FDF1F0; }
+  .names-grid:has(.player-card){gap:24px 8px}
+  .name-field.player-card{display:grid;align-content:start;min-width:0}
+  .name-field.player-card input{padding-left:61px}
+  .name-field.player-card .idx{left:35px;top:23px;pointer-events:none}
+  .plan-grip{display:grid;place-items:center;flex:none;width:32px;min-height:44px;border:0;border-radius:6px;background:transparent;color:var(--ink-soft);cursor:grab;touch-action:none;user-select:none}
+  .plan-grip::before{content:'';width:12px;height:18px;background:radial-gradient(circle,currentColor 1.5px,transparent 1.7px) 0 0/6px 6px}
+  .name-field .plan-grip{position:absolute;inset:0 auto auto 1px}
+  .plan-grip:hover,.plan-grip[aria-pressed=true]{color:var(--teal-900);background:#e5efd9}
+  .player-card.dragging{opacity:.55}.player-card.over,.empty-slot.over,.player-card.picked{outline:2px solid var(--teal-600);outline-offset:2px}
+  .player-drag-preview{position:fixed;pointer-events:none;z-index:99;background:var(--teal-900);color:white;padding:7px 14px;border-radius:8px;box-shadow:0 3px 12px #152e4038;max-width:70vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .duo-link{display:inline-grid;place-items:center;border:0;background:transparent;min-height:30px;min-width:30px;padding:0;z-index:2;color:#536c77;cursor:pointer}
+  .duo-link::before,.duo-link::after{content:'';grid-area:1/1;width:12px;height:7px;border:2px solid currentColor;border-radius:6px;box-sizing:border-box}
+  .duo-link::before{transform:translateX(-6px) rotate(-30deg)}.duo-link::after{transform:translateX(6px) rotate(-30deg)}
+  .duo-link[aria-pressed=true]{color:#294d19;background:#dff0af;border-radius:12px}
+  .duo-link[aria-pressed=true]::before{transform:translateX(-4px) rotate(-30deg)}.duo-link[aria-pressed=true]::after{transform:translateX(4px) rotate(-30deg)}
+  .duo-link:disabled{opacity:.3;cursor:default}
+  .name-field:has(>.duo-link:not(.wrap-link)){padding-right:28px}
+  .name-field>.duo-link{position:absolute;right:0;top:8px}
+  .koc-court .player-card>.player-label{min-width:0;flex:1}
+  .name-field>.duo-link.wrap-link{right:6px;top:auto;bottom:-26px}
+  .partner-note{width:fit-content;border:0;background:#e8f1e0;color:var(--teal-900);border-radius:5px;margin:3px 0 0 4px;padding:2px 6px;font-size:var(--fs-2xs);cursor:pointer}
+  .card-help{color:var(--ink-soft);font-size:var(--fs-sm);margin:6px 0 14px}
+  .koc-court li.player-card,.koc-court li.empty-slot{position:relative;display:flex;align-items:center;gap:6px;min-height:44px;background:white;border:1px solid var(--line);border-radius:8px;padding:0 9px 0 0;margin:5px 0;cursor:grab;user-select:none}
+  .koc-court li.player-card.next-team{margin-top:13px}
+  .koc-court .court-link{position:absolute;right:5px;bottom:-13px}
+  .koc-court .empty-slot{border-style:dashed!important;color:var(--ink-soft)}
+  .empty-slot .plan-grip::before{content:'+';background:none;width:auto;height:auto}
+  .round-scored .plan-grip,.round-scored .duo-link,.round-scored .card-help{display:none}
+  .round-scored li.player-card{cursor:default;padding:5px 9px}
+  .koc-player .plan-grip{width:24px;min-height:36px}
+  .koc-player .plan-grip:disabled{display:none}
+  @media(max-width:520px){.name-field>.duo-link.wrap-link{right:calc(50% - 15px)}}
+  @media print{.plan-grip,.duo-link,.partner-note,.card-help{display:none!important}}
 
   /* The name-list action never changes the normal, horizontal player layout. */
   .bulk-entry{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 14px;}
@@ -1894,6 +1927,7 @@
 <div id="printPages" hidden></div>
 <script src="./name-hint.js"></script>
 <script src="./schedule-document.js"></script>
+<script src="./poll-player-cards.js"></script>
 <script src="./round-planner.js"></script>
 <script src="./ranking.js"></script>
 <script src="./poll-common.js"></script>
@@ -2803,10 +2837,68 @@
     return duplicates;
   }
 
-  function kocWaitingNames(k){
-    return Object.keys(k.assignment).map(Number)
-      .filter(function(index){ return k.assignment[index] === 0; }).map(kocPlayerName);
+  function kocCardRow(css,name){
+    const row=liveElement('li',css);
+    row.append(nameLabel('span','',name));
+    return row;
   }
+  function preparePlayerCard(row,id,name,empty=false){
+    row.classList.add(empty?'empty-slot':'player-card');
+    row.dataset.slot=id;
+    row.dataset.playerName=name;
+    const grip=liveElement('button','plan-grip player-grip');
+    grip.type='button';
+    grip.setAttribute('aria-pressed','false');
+    grip.setAttribute('aria-label',editText('Verplaats '+name,'Move '+name));
+    grip.title=editText('Sleep of kies twee plekken','Drag or select two places');
+    row.prepend(grip);
+  }
+
+  function enablePlayerCards(root,change){
+    let picked=null;
+    function select(row){
+      picked?.classList.remove('picked');
+      picked?.querySelector('.plan-grip')?.setAttribute('aria-pressed','false');
+      picked=row;
+      picked?.classList.add('picked');
+      picked?.querySelector('.plan-grip')?.setAttribute('aria-pressed','true');
+    }
+    root.onclick=event=>{
+      const grip=event.target.closest('.plan-grip');
+      if(!grip)return;
+      const to=grip.closest('[data-slot]');
+      if(!picked){if(to.classList.contains('player-card'))select(to);return;}
+      const from=picked;select(null);
+      if(from!==to){
+        const focusId=change(from.dataset.slot,to.dataset.slot);
+        if(focusId!=null)root.querySelector('[data-slot="'+focusId+'"] .plan-grip')?.focus({preventScroll:true});
+      }
+    };
+    root.onkeydown=e=>{if(e.key==='Escape')select(null);};
+    window.TossCardDrag(root,{
+      identify:row=>row.querySelector('.plan-grip:disabled')?null:({id:row.dataset.slot,name:row.dataset.playerName}),
+      locate(element,y,entry){
+        const group=element?.closest('[data-slot]');
+        return group && root.contains(group) && group.dataset.slot!==entry.id?{group}:null;
+      },
+      move:(entry,drop)=>{select(null);change(entry.id,drop.group.dataset.slot);}
+    });
+  }
+
+  function duoLink(first,second,linked,activate,disabled=false){
+    const btn=liveElement('button','duo-link');
+    btn.type='button';btn.disabled=disabled;
+    const label=(linked?editText('Ontkoppel ','Unlink '):editText('Koppel ','Pair '))+first+editText(' en ',' and ')+second;
+    btn.title=label;btn.setAttribute('aria-label',label);btn.setAttribute('aria-pressed',String(linked));
+    btn.onclick=activate;
+    return btn;
+  }
+
+  function kocWaitingPlayers(k){
+    const waiting=Object.keys(k.assignment).map(Number).filter(i=>k.assignment[i]===0);
+    return Array.isArray(k.waitingOrder) && k.waitingOrder.length===waiting.length && waiting.every(i=>k.waitingOrder.includes(i))?k.waitingOrder:waiting;
+  }
+  function kocWaitingNames(k){return kocWaitingPlayers(k).map(kocPlayerName);}
 
   function appendKocWaitingCard(root, k, cardClass){
     var names = kocWaitingNames(k);
@@ -2814,15 +2906,62 @@
     var card = liveElement('article', cardClass + ' koc-waiting-card');
     card.appendChild(liveElement('h3', '', t('kocWaitingTitle')));
     var list = liveElement('ul', '');
-    names.forEach(function(name){ list.appendChild(nameLabel('li','',name)); });
+    const waiting=kocWaitingPlayers(k);
+    names.forEach(function(name,n){
+      const row=cardClass==='koc-court'?kocCardRow('',name):nameLabel('li','',name);
+      if(cardClass==='koc-court')preparePlayerCard(row,waiting[n],name);
+      list.appendChild(row);
+    });
     card.appendChild(list);
     card.appendChild(liveElement('p', 'koc-waiting-note', t('kocWaitingRule')));
     root.appendChild(card);
   }
 
+  function kocHasTeams(k,court){
+    return Array.isArray(k.pairedCourts)?k.pairedCourts.includes(court):k.roster.some(p=>p.level);
+  }
+  function kocStartupPairs(k){
+    if(!Array.isArray(k.pairedCourts))k.pairedCourts=Array.from({length:k.courts},(_,i)=>i+1).filter(c=>kocHasTeams(k,c));
+    return k.pairedCourts;
+  }
+  function saveKocCards(){
+    const k=state.koc;
+    k.lastSignature=kocSignature(k.assignment,k.courts);
+    renderKocResult();writeAutosave();
+  }
+  function moveKocCard(from,to){
+    const k=state.koc,a=Number(from),b=Number(to);
+    if(!Object.hasOwn(k.assignment,a))return;
+    if(to.startsWith('vacant-')){
+      const dest=Number(to.split('-')[1]),src=k.assignment[a];
+      if(!src || dest===src || !dest || Object.values(k.assignment).filter(c=>c===dest).length>=4)return;
+      k.pairedCourts=kocStartupPairs(k).filter(c=>c!==src && c!==dest);
+      k.assignment[a]=dest;k.displayOrder=k.displayOrder.filter(i=>i!==a).concat(a);
+    }else{
+      if(!Object.hasOwn(k.assignment,b) || a===b)return;
+      if(k.assignment[a]===0 || k.assignment[b]===0)k.waitingOrder=kocWaitingPlayers(k).map(i=>i===a?b:i===b?a:i);
+      [k.assignment[a],k.assignment[b]]=[k.assignment[b],k.assignment[a]];
+      k.displayOrder=k.displayOrder.map(i=>i===a?b:i===b?a:i);
+    }
+    saveKocCards();return from;
+  }
+  function chooseKocPair(k,court,here,index,linked){
+    const pairs=kocStartupPairs(k);
+    if(linked)k.pairedCourts=pairs.filter(c=>c!==court);
+    else{
+      if(!pairs.includes(court))pairs.push(court);
+      const duo=here.slice(index,index+2),other=here.filter(i=>!duo.includes(i));
+      const order=index===2?other.concat(duo):duo.concat(other);
+      let n=0;
+      k.displayOrder=k.displayOrder.map(i=>k.assignment[i]===court?order[n++]:i);
+    }
+    saveKocCards();
+  }
+
   function renderKocResult(){
     var k = ensureKocRoster(), root = document.getElementById('kocResult');
     root.innerHTML = '';
+    document.querySelectorAll('#kocRoster .plan-grip').forEach(grip=>{grip.disabled=!!k.assignment;});
     var round = currentKocRound();
     ['kocPrint','kocPdf'].forEach(function(id){document.getElementById(id).disabled = !k.assignment || !!kocDuplicateIndices().length;});
     document.getElementById('kocEditDetails').hidden = !k.assignment;
@@ -2836,6 +2975,7 @@
         k.displayOrder.some(function(i, j){ return indices.indexOf(i) === -1 || k.displayOrder.indexOf(i) !== j; })){
       k.displayOrder = shuffle(indices);
     }
+    root.append(liveElement('p','card-help',editText('Sleep een speler naar een andere plek, of tik op twee handgrepen. Met het schakeltje tussen twee spelers kies je de startduo’s op een volle baan.','Drag a player to another place or select two handles. Use the link between players to choose the opening pairs on a full court.')));
     var courtGrid = liveElement('div', 'koc-courts');
     root.appendChild(courtGrid);
     for (var b = k.courts; b >= 1; b--){
@@ -2845,22 +2985,34 @@
       title.textContent = courtName(b) + (b === k.courts ? ' 👑' : '');
       court.appendChild(title);
       var list = document.createElement('ul');
-      var here = k.displayOrder.filter(function(i){ return k.assignment[i] === b; });
+      const courtNumber=b, here = k.displayOrder.filter(function(i){ return k.assignment[i] === courtNumber; });
       here.forEach(function(i,index){
-        var split = index === 2 && here.length === 4 && k.roster.some(function(p){return p.level;});
-        var li = nameLabel('li',split ? 'next-team' : '',kocPlayerName(i));
+        const paired=here.length===4 && kocHasTeams(k,courtNumber);
+        var split = index === 2 && paired;
+        var li = kocCardRow(split ? 'next-team' : '',kocPlayerName(i));
+        preparePlayerCard(li,i,kocPlayerName(i));
+        if(here.length===4 && index<3){
+          const linked=paired && index!==1;
+          const btn=duoLink(kocPlayerName(i),kocPlayerName(here[index+1]),linked,()=>{
+            chooseKocPair(k,courtNumber,here,index,linked);
+            root.querySelector('[data-slot="'+i+'"] .plan-grip')?.focus({preventScroll:true});
+          });
+          btn.classList.add('court-link');li.append(btn);
+        }
         list.appendChild(li);
       });
       for (var empty = here.length; empty < 4; empty++){
         var placeholder = document.createElement('li');
         placeholder.className = 'empty';
-        placeholder.textContent = '—';
+        preparePlayerCard(placeholder,'vacant-'+b+'-'+empty,editText('lege plek op ','empty place on ')+courtName(b),true);
+        placeholder.append(document.createTextNode('–'));
         list.appendChild(placeholder);
       }
       court.appendChild(list);
       courtGrid.appendChild(court);
     }
     appendKocWaitingCard(root, k, 'koc-court');
+    enablePlayerCards(root,moveKocCard);
   }
 
   const kocEditDialog = document.getElementById('kocEditDialog');
@@ -3029,6 +3181,11 @@
       });
       row.appendChild(checkbox);
       row.appendChild(input);
+      preparePlayerCard(row,i,kocPlayerName(i));
+      input.addEventListener('input',()=>{
+        row.dataset.playerName=kocPlayerName(i);
+        row.querySelector('.plan-grip').setAttribute('aria-label',editText('Verplaats ','Move ')+kocPlayerName(i));
+      });
       if (i >= k.courts * 4){
         waitingFields.appendChild(row);
       } else if (multiCourt && kocLowestCourtSlot(k, i)){
@@ -3061,6 +3218,15 @@
         row.appendChild(marker);
         lowestFields.appendChild(row);
       } else roster.insertBefore(row, lowestFields);
+    });
+    enablePlayerCards(roster,(from,to)=>{
+      if(k.assignment)return;
+      const a=Number(from),b=Number(to),first=k.roster[a],second=k.roster[b];
+      if(!first || !second)return;
+      const firstName=kocPlayerName(a),secondName=kocPlayerName(b);
+      k.roster[a]={...second,name:secondName,incoming:first.incoming};
+      k.roster[b]={...first,name:firstName,incoming:second.incoming};
+      clearBulkUndo();renderKoc();writeAutosave();return to;
     });
     if (state.format === 'koc') renderRoundSettings();
     var hasDuplicates = renderKocCount();
@@ -3213,6 +3379,8 @@
       if (signature !== k.lastSignature) break;
     }
     k.assignment = best;
+    delete k.pairedCourts;
+    delete k.waitingOrder;
     k.lastSignature = signature;
     k.displayOrder = shuffle(attendees);
     if (!k.guided && k.roster.some(function(p){return p.level;})){
@@ -3247,7 +3415,8 @@
     for (var c = k.courts; c >= 1; c--){
       var names = (k.displayOrder || Object.keys(k.assignment).map(Number))
         .filter(function(i){return k.assignment[i] === c;}).map(kocPlayerName);
-      lines.push(courtName(c) + (c === k.courts ? ' 👑' : '') + ': ' + (names.join(', ') || '—'));
+      const teams=names.length===4 && kocHasTeams(k,c)?[names.slice(0,2),names.slice(2)].map(team=>team.join(' & ')).join(' vs '):names.join(', ');
+      lines.push(courtName(c) + (c === k.courts ? ' 👑' : '') + ': ' + (teams || '-'));
     }
     var round = currentKocRound();
     if (round){
@@ -4436,6 +4605,100 @@
   function preferenceName(value,index,group){
     return String(value || '').trim() || tf(group >= 0 ? LEVELS[group].placeholderKey : 'namePlaceholder',{n:index+1});
   }
+  function nameCardMove(from,to){
+    const [group,a]=from.split(':').map(Number),[other,b]=to.split(':').map(Number);
+    const players=preferenceRoster(group),choices=tossStartChoices(group);
+    if(group===other){
+      if(a===b)return;
+      const order=players.map((_,i)=>i);
+      order.splice(b,0,order.splice(a,1)[0]);
+      const oldNames=players.slice(),newIndex=[];
+      order.forEach((old,i)=>{
+        newIndex[old]=i;
+        players[i]=old===i?oldNames[old]:oldNames[old]||preferenceName('',old,group);
+      });
+      choices.players=choices.players.map(i=>newIndex[i]);
+      choices.lastRest=choices.lastRest.map(i=>newIndex[i]);
+      choices.pairs=choices.pairs.map(pair=>pair.map(i=>newIndex[i]));
+      choices.levels=order.map(i=>choices.levels[i]);
+    }else{
+      const others=preferenceRoster(other),otherChoices=tossStartChoices(other);
+      if(choices.pairs.some(p=>p.includes(a)) || otherChoices.pairs.some(p=>p.includes(b))){
+        document.getElementById('rosterCardHelp').textContent=editText('Een duo speelt in dezelfde groep. Ontkoppel het duo eerst om deze speler van groep te wisselen.','A pair plays in the same group. Unlink the pair before moving this player to another group.');
+        return from;
+      }
+      [players[a],others[b]]=[preferenceName(others[b],b,other),preferenceName(players[a],a,group)];
+      [choices.levels[a],otherChoices.levels[b]]=[otherChoices.levels[b],choices.levels[a]];
+      for(const key of ['players','lastRest']){
+        const takeA=choices[key].includes(a),takeB=otherChoices[key].includes(b);
+        choices[key]=choices[key].filter(i=>i!==a);otherChoices[key]=otherChoices[key].filter(i=>i!==b);
+        if(takeA)otherChoices[key].push(b);
+        if(takeB)choices[key].push(a);
+      }
+    }
+    if(editSession)editSession.rosterMoved=true;
+    clearBulkUndo();buildNameInputs();updateScheduleEditActions();writeAutosave();return to;
+  }
+
+  function showNameCardHelp(){
+    const anchor=state.format==='splitToss'?namesSplitBlock:namesSingleBlock;
+    let help=document.getElementById('rosterCardHelp');
+    if(!help){
+      help=liveElement('p','card-help');help.id='rosterCardHelp';help.setAttribute('aria-live','polite');
+    }
+    anchor.prepend(help);
+    help.textContent=editText('Sleep met de handgreep of tik op twee plekken. Tik op het schakeltje tussen twee namen om als duo te starten.','Drag a handle or select two places. Use the link between two names to start them as a pair.');
+    enablePlayerCards(anchor,nameCardMove);
+  }
+
+  function decorateNameGrid(grid,group){
+    [...grid.querySelectorAll('.name-field')].forEach((field,i)=>{
+      preparePlayerCard(field,group+':'+i,preferenceName(preferenceRoster(group)[i],i,group));
+    });
+    if(!grid.cardSizeObserver){
+      grid.cardSizeObserver=new ResizeObserver(()=>layoutDuoLinks(grid));
+      grid.cardSizeObserver.observe(grid);
+    }
+  }
+  function layoutDuoLinks(grid){
+    const fields=[...grid.querySelectorAll('.name-field')],tops=fields.map(field=>field.offsetTop);
+    fields.forEach((field,i)=>field.querySelector('.duo-link')?.classList.toggle('wrap-link',tops[i]!==tops[i+1]));
+  }
+  function refreshNameLinks(){
+    const groups=state.format==='splitToss'?activeLevelIndexes():[-1];
+    for(const group of groups){
+      const grid=group<0?namesGrid:levelNamesGrids[group],roster=preferenceRoster(group);
+      const choices=tossStartChoices(group),partners=new Map();
+      choices.pairs.forEach(([a,b])=>{partners.set(a,b);partners.set(b,a);});
+      const name=i=>preferenceName(roster[i],i,group);
+      const fields=Array.from(grid.querySelectorAll('.name-field'));
+      function toggle(a,b){
+        const now=tossStartChoices(group);
+        const existing=now.pairs.find(p=>p.includes(a) && p.includes(b));
+        if(existing)now.pairs=now.pairs.filter(p=>p!==existing);
+        else if(!now.pairs.some(p=>p.includes(a) || p.includes(b)))now.pairs.push([a,b]);
+        renderTossStartOptions();writeAutosave();
+        (fields[a]?.querySelector('.duo-link:enabled') || fields[a]?.querySelector('.plan-grip'))?.focus({preventScroll:true});
+      }
+      fields.forEach((field,i)=>{
+        const grip=field.querySelector('.plan-grip');
+        if(!grip)return;
+        field.dataset.playerName=name(i);grip.setAttribute('aria-label',editText('Verplaats ','Move ')+name(i));
+        field.querySelector('.duo-link')?.remove();field.querySelector('.partner-note')?.remove();
+        const mate=partners.get(i);
+        if(i+1<fields.length){
+          const linked=mate===i+1;
+          field.append(duoLink(name(i),name(i+1),linked,()=>toggle(i,i+1),!linked && (mate!==undefined || partners.has(i+1))));
+        }
+        if(mate!==undefined && Math.abs(mate-i)>1){
+          const badge=liveElement('button','partner-note',editText('Duo met ','Paired with ')+name(mate));
+          badge.type='button';badge.title=editText('Duo ontkoppelen','Unlink pair');badge.onclick=()=>toggle(i,mate);field.append(badge);
+        }
+      });
+      layoutDuoLinks(grid);
+    }
+  }
+
   function tossStartChoices(group){
     if (group === undefined) group = selectedPreferenceGroup();
     if (!Array.isArray(state.groupChoices)) state.groupChoices = [];
@@ -4593,6 +4856,7 @@
       });
       pairList.appendChild(remove);
     });
+    refreshNameLinks();
     validateTossStart();
   }
 
@@ -4634,6 +4898,7 @@
     document.getElementById('tossWaitWarning').hidden = true;
     namesSingleBlock.style.display = isSplit ? 'none' : '';
     namesSplitBlock.style.display = isSplit ? '' : 'none';
+    showNameCardHelp();
 
     if (isSplit){
       var used = activeLevelIndexes();
@@ -4641,7 +4906,7 @@
         var group = document.getElementById('namesGroup' + lv.cap);
         var inUse = state.levelCounts[i] > 0;
         group.style.display = inUse ? '' : 'none';
-        if (inUse) buildOneLevelNamesGrid(i);
+        if (inUse){buildOneLevelNamesGrid(i);decorateNameGrid(levelNamesGrids[i],i);}
         levelResultsToggles[i].checked = state.levelResults[i];
       });
 
@@ -4667,6 +4932,7 @@
     var restingText = resting > 0 ? tf('restingSuffix', { n: resting }) : '';
     panel2Sub.textContent = tf('p2SubTemplate', { n: n, courts: state.courts + ' ' + (state.courts > 1 ? t('courtUnitPlural') : t('courtUnitSingular')), active: active + ' ' + courtWord, resting: restingText });
     buildOneNamesGrid(namesGrid, n, 'names');
+    decorateNameGrid(namesGrid,-1);
     renderTossStartOptions();
 
     if (state.format === 'americano'){
@@ -4752,7 +5018,7 @@
   }
   function editKind(){
     if (!editSession) return '';
-    if (scheduleStructure() !== editSession.structure) return 'draw';
+    if (editSession.rosterMoved || scheduleStructure() !== editSession.structure) return 'draw';
     return scheduleDetails() !== editSession.details ? 'details' : '';
   }
   function updateScheduleEditActions(){
@@ -6912,7 +7178,7 @@
         var rows=[],order=k.displayOrder || Object.keys(k.assignment).map(Number);
         for (var c=k.courts;c>=1;c--){
           var names=order.filter(function(i){return k.assignment[i]===c;}).map(kocPlayerName);
-          rows.push({label:courtName(c),value:names.length===4 && k.roster.some(function(p){return p.level;}) ? pairLine(names.slice(0,2),names.slice(2)) : names.join(', ')});
+          rows.push({label:courtName(c),value:names.length===4 && kocHasTeams(k,c) ? pairLine(names.slice(0,2),names.slice(2)) : names.join(', ')});
         }
         var waiting=kocWaitingNames(k);
         if (waiting.length) rows.push({label:t('printRest'),value:waiting.join(', ')});
@@ -7551,7 +7817,7 @@
           var players=(schedule.displayOrder||Object.keys(schedule.assignment).map(Number))
             .filter(function(i){return schedule.assignment[i]===court;});
           players.forEach(function(i,index){
-            var split = index === 2 && players.length === 4 && schedule.roster.some(function(p){return p.level;});
+            var split = index === 2 && players.length === 4 && kocHasTeams(schedule,court);
             ul.appendChild(nameLabel('li',split ? 'next-team' : '',kocPlayerName(i)));
           });
           for(var x=players.length;x<4;x++) ul.appendChild(liveElement('li','empty','—'));
@@ -8000,9 +8266,40 @@
       var button = document.getElementById(id);
       button.disabled = !round || !PadelRounds.roundComplete(round);
     });
+    const cards=document.getElementById('kocRoundCards');
+    const editable=editableKocStart(round);
+    cards.classList.toggle('round-scored',!editable);
+    cards.querySelectorAll('.plan-grip,.duo-link').forEach(btn=>{btn.disabled=!editable;});
   }
 
+  function editableKocStart(round){
+    return round?.number===1 && round.matches.every(match=>match.score.every(score=>score===null));
+  }
+  function changeGuidedStart(round,apply){
+    if(currentKocRound()!==round || !editableKocStart(round))return;
+    apply();
+    const k=state.koc;
+    for(const match of round.matches)for(const i of match.teams.flat())k.assignment[i]=match.court;
+    for(const i of round.waiting)k.assignment[i]=0;
+    k.displayOrder=round.matches.flatMap(m=>m.teams.flat()).concat(round.waiting);
+    saveKocCards();
+  }
+  function moveGuidedCard(round,from,to){
+    const a=Number(from),b=Number(to);
+    changeGuidedStart(round,()=>{
+      const swap=i=>i===a?b:i===b?a:i;
+      for(const m of round.matches){
+        if(m.teams.flat().some(i=>i===a || i===b)){
+          m.teams=m.teams.map(team=>team.map(swap));delete m.entryTicket;
+        }
+      }
+      round.waiting=round.waiting.map(swap);
+    });
+    return from;
+  }
   function renderKocRoundCards(root,round,live){
+    const opening=!live && round.number===1;
+    if(opening)root.append(liveElement('p','card-help',editText('Vóór de eerste uitslag kun je spelers wisselen met de handgrepen. Met het schakeltje kies je andere startduo’s.','Before the first score, swap players using the handles or change the opening pairs using the links.')));
     var grid = liveElement('div','koc-courts');
     root.appendChild(grid);
     round.matches.slice().reverse().forEach(function(match){
@@ -8015,7 +8312,23 @@
         var box = liveElement('div','koc-round-team');
         var names = team.map(kocPlayerName);
         var list = liveElement('ul','');
-        names.forEach(function(name){list.appendChild(nameLabel('li','',name));});
+        names.forEach(function(name,j){
+          const row=opening?kocCardRow('',name):nameLabel('li','',name);
+          if(opening){
+            const players=match.teams.flat(),index=side*2+j;
+            preparePlayerCard(row,players[index],name);
+            if(index<3){
+              const linked=index!==1;
+              const btn=duoLink(name,kocPlayerName(players[index+1]),linked,()=>changeGuidedStart(round,()=>{
+                const [a,b,c,d]=players;
+                match.teams=linked?[[a,c],[b,d]]:[[b,c],[a,d]];
+                delete match.entryTicket;
+              }));
+              btn.classList.add('court-link');row.append(btn);
+            }
+          }
+          list.append(row);
+        });
         var score = liveElement('input','koc-round-score');
         score.type = 'number';
         score.min = '0';
@@ -8045,10 +8358,15 @@
       var waiting = liveElement('article',(live ? 'live-koc-card' : 'koc-court') + ' koc-waiting-card');
       waiting.appendChild(liveElement('h3','',t('kocRoundWaiting')));
       var names = liveElement('ul','');
-      round.waiting.forEach(function(player){names.appendChild(nameLabel('li','',kocPlayerName(player)));});
+      round.waiting.forEach(function(player){
+        const name=kocPlayerName(player),row=opening?kocCardRow('',name):nameLabel('li','',name);
+        if(opening)preparePlayerCard(row,player,name);
+        names.appendChild(row);
+      });
       waiting.append(names,liveElement('p','koc-waiting-note',t('kocWaitingRule')));
       root.appendChild(waiting);
     }
+    if(opening)enablePlayerCards(root,(from,to)=>moveGuidedCard(round,from,to));
   }
 
   function renderGuidedKoc(round){
@@ -8137,7 +8455,7 @@
         const rows=[],order=k.displayOrder||Object.keys(k.assignment).map(Number);
         for(let c=k.courts;c>=1;c--){
           const names=order.filter(i=>k.assignment[i]===c).map(kocPlayerName);
-          rows.push({label:courtName(c),teams:names.length===4 && k.roster.some(p=>p.level)?[names.slice(0,2),names.slice(2)]:[names]});
+          rows.push({label:courtName(c),teams:names.length===4 && kocHasTeams(k,c)?[names.slice(0,2),names.slice(2)]:[names]});
         }
         const waiting=kocWaitingNames(k);if(waiting.length)rows.push(rest(waiting));
         rounds.push({n:1,rows});

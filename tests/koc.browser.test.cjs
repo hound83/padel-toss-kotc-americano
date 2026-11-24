@@ -53,6 +53,15 @@ test('real browser: KOC setup, entrants, absence, language, reload and mobile la
   assert.ok(cards[1].includes('Speler 2'));
   for (let i=13;i<=16;i++) assert.ok(cards[3].includes('Speler '+i));
   assert.ok(cards.every(court=>!court.includes('Indelen op baan 1')), 'incoming markers are private setup-only labels');
+  const draw=page.locator('#kocResult'),firstCourt=draw.locator('.koc-court').first(),lastCourt=draw.locator('.koc-court').last();
+  const top=cards[0][0],bottom=cards[3][1];
+  await firstCourt.locator('.plan-grip').first().dragTo(lastCourt.locator('li').nth(1));
+  cards=await courtNames();
+  assert.equal(cards[0][0],bottom);assert.equal(cards[3][1],top);
+  const afterMove=cards[0].slice();
+  await firstCourt.locator('.duo-link').nth(1).click();
+  assert.equal(await firstCourt.locator('[aria-pressed=true].duo-link').count(),2);
+  assert.deepEqual((await courtNames())[0].slice(0,2),afterMove.slice(1,3));
 
   await context.grantPermissions(['clipboard-read','clipboard-write'],{origin});
   await page.locator('.action-bar:visible summary').click();
@@ -60,6 +69,7 @@ test('real browser: KOC setup, entrants, absence, language, reload and mobile la
   const copied = await page.evaluate(() => navigator.clipboard.readText());
   assert.match(copied,/King of the Court/);
   assert.match(copied,/Baan 4/);
+  assert.ok(copied.includes(afterMove.slice(1,3).join(' & ')));
   assert.ok(!copied.includes('Indelen op baan 1'),'copying for WhatsApp never reveals incoming markers');
 
   const downloadEvent = page.waitForEvent('download');
@@ -69,6 +79,7 @@ test('real browser: KOC setup, entrants, absence, language, reload and mobile la
   const savedPath = await download.path();
   const saved = JSON.parse(fs.readFileSync(savedPath,'utf8'));
   assert.equal(saved.state.koc.incomingEnabled,true);
+  assert.deepEqual(saved.state.koc.pairedCourts,[4]);
   assert.equal(saved.state.koc.roster.slice(12,16).filter(p=>p.incoming).length,4);
 
   // The fifth player is absent; of four entrants one must now start on court 2.

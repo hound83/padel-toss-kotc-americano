@@ -38,7 +38,7 @@ test('Old links retain the event, query and fragment, and a local-only draw can 
   });
   await ctx.route(cloud+'/**',route=>{
     const url=new URL(route.request().url()),file=url.pathname==='/'?'index.html':url.pathname.slice(1);
-    if(!['index.html','poll-common.js','organizer-hub.js','round-planner.js','ranking.js','session-admin.js','name-hint.js','schedule-document.js','visual-theme.css','manifest.webmanifest','icon.svg','icon-192.png','icon-512.png'].includes(file) && !file.startsWith('assets/')){
+    if(!['index.html','poll-common.js','poll-player-cards.js','organizer-hub.js','round-planner.js','ranking.js','session-admin.js','name-hint.js','schedule-document.js','visual-theme.css','manifest.webmanifest','icon.svg','icon-192.png','icon-512.png'].includes(file) && !file.startsWith('assets/')){
       return route.fulfill({status:404,body:''});
     }
     const mime={'.html':'text/html','.js':'text/javascript','.css':'text/css','.svg':'image/svg+xml'};

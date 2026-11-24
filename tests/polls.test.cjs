@@ -119,7 +119,7 @@ test('only a KOC Yes needs a two-decimal rating; a high rating stays a Yes and i
   const yes=rating=>f.send(f.root,{name,answer:'yes',rating},key);
   assert.equal((await yes('8,00')).data.mine.rating,'8.00');
   const original=(await f.read()).entries[0];
-  for(const [rating,stored] of [['8.01','8.01'],['10,43','10.43'],['6,23','6.23']]){
+  for(const [rating,stored] of [['0,01','0.01'],['6,00','6.00'],['8,00','8.00'],['8.01','8.01'],['9,00','9.00'],['10,43','10.43'],['6,23','6.23']]){
     const page=(await yes(rating)).data;
     assert.equal(page.mine.rating,stored);assert.equal(page.mine.place,'in');
     assert.deepEqual(page.groups.in,[{name}]);
