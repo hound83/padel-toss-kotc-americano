@@ -56,7 +56,9 @@ test('Toss times and court numbers appear in schedule, print and presentation an
   }
   for(const width of [320,820,390]){
     await page.setViewportSize({width,height:900});
-    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+    const overflow=await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth?[]:
+      [...document.querySelectorAll('body *')].filter(el=>el.getBoundingClientRect().right>innerWidth+1).slice(0,8).map(el=>[el.tagName,el.className,Math.round(el.getBoundingClientRect().right)]));
+    assert.deepEqual(overflow,[],'content fits at '+width+'px');
   }
   if(process.env.PADEL_SCREENSHOT_DIR)await page.locator('#tossSessionSettings').screenshot({path:path.join(process.env.PADEL_SCREENSHOT_DIR,'toss-times-settings-mobile.png')});
   await page.locator('#generateBtn').click();

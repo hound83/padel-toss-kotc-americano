@@ -751,7 +751,7 @@
   }
   .name-field input:focus{ border-color:var(--teal-600); }
   .name-field input.dup-name-input{ border-color:var(--coral); background:#FDF1F0; }
-  .names-grid:has(.player-card){gap:24px 26px}
+  .names-grid:has(.player-card){gap:24px 8px}
   .name-field.player-card{display:grid;align-content:start;min-width:0}
   .name-field.player-card input{padding-left:61px}
   .name-field.player-card .idx{left:35px;top:23px;pointer-events:none}
@@ -767,7 +767,9 @@
   .duo-link[aria-pressed=true]{color:#294d19;background:#dff0af;border-radius:12px}
   .duo-link[aria-pressed=true]::before{transform:translateX(-4px) rotate(-30deg)}.duo-link[aria-pressed=true]::after{transform:translateX(4px) rotate(-30deg)}
   .duo-link:disabled{opacity:.3;cursor:default}
-  .name-field>.duo-link{position:absolute;right:-28px;top:8px}
+  .name-field:has(>.duo-link:not(.wrap-link)){padding-right:28px}
+  .name-field>.duo-link{position:absolute;right:0;top:8px}
+  .koc-court .player-card>.player-label{min-width:0;flex:1}
   .name-field>.duo-link.wrap-link{right:6px;top:auto;bottom:-26px}
   .partner-note{width:fit-content;border:0;background:#e8f1e0;color:var(--teal-900);border-radius:5px;margin:3px 0 0 4px;padding:2px 6px;font-size:var(--fs-2xs);cursor:pointer}
   .card-help{color:var(--ink-soft);font-size:var(--fs-sm);margin:6px 0 14px}
@@ -2835,6 +2837,11 @@
     return duplicates;
   }
 
+  function kocCardRow(css,name){
+    const row=liveElement('li',css);
+    row.append(nameLabel('span','',name));
+    return row;
+  }
   function preparePlayerCard(row,id,name,empty=false){
     row.classList.add(empty?'empty-slot':'player-card');
     row.dataset.slot=id;
@@ -2901,7 +2908,7 @@
     var list = liveElement('ul', '');
     const waiting=kocWaitingPlayers(k);
     names.forEach(function(name,n){
-      const row=nameLabel('li','',name);
+      const row=cardClass==='koc-court'?kocCardRow('',name):nameLabel('li','',name);
       if(cardClass==='koc-court')preparePlayerCard(row,waiting[n],name);
       list.appendChild(row);
     });
@@ -2982,7 +2989,7 @@
       here.forEach(function(i,index){
         const paired=here.length===4 && kocHasTeams(k,courtNumber);
         var split = index === 2 && paired;
-        var li = nameLabel('li',split ? 'next-team' : '',kocPlayerName(i));
+        var li = kocCardRow(split ? 'next-team' : '',kocPlayerName(i));
         preparePlayerCard(li,i,kocPlayerName(i));
         if(here.length===4 && index<3){
           const linked=paired && index!==1;
@@ -8306,7 +8313,7 @@
         var names = team.map(kocPlayerName);
         var list = liveElement('ul','');
         names.forEach(function(name,j){
-          const row=nameLabel('li','',name);
+          const row=opening?kocCardRow('',name):nameLabel('li','',name);
           if(opening){
             const players=match.teams.flat(),index=side*2+j;
             preparePlayerCard(row,players[index],name);
@@ -8352,7 +8359,7 @@
       waiting.appendChild(liveElement('h3','',t('kocRoundWaiting')));
       var names = liveElement('ul','');
       round.waiting.forEach(function(player){
-        const name=kocPlayerName(player),row=nameLabel('li','',name);
+        const name=kocPlayerName(player),row=opening?kocCardRow('',name):nameLabel('li','',name);
         if(opening)preparePlayerCard(row,player,name);
         names.appendChild(row);
       });
