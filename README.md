@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="./icon.svg" alt="Koriander Padel Toss" width="88" />
+  <img src="./icon.svg" alt="Padel Planner" width="88" />
 </p>
 
-<h1 align="center">🎾 Koriander Padel Planner</h1>
+<h1 align="center">🎾 Padel Planner</h1>
 
 <p align="center">
   <strong>Van spelerslijst naar speelindeling, zonder gedoe.</strong><br />
@@ -134,7 +134,7 @@ Er is geen account nodig. Ingevoerde spelersnamen en je actuele sessie worden lo
 
 ## 🛠️ Over dit project
 
-De Koriander Padel Toss is een statische webapp, gebouwd met **HTML, CSS en JavaScript** en gehost op **Cloudflare Workers**. De planner maakt lokale speelindelingen in de browser. Gedeelde sessies en aanmeldingen gebruiken Cloudflare D1.
+Padel Planner is een statische webapp, gebouwd met **HTML, CSS en JavaScript** en gehost op **Cloudflare Workers**. De planner maakt lokale speelindelingen in de browser. Gedeelde sessies en aanmeldingen gebruiken Cloudflare D1.
 
 | Bestand | Functie |
 | :--- | :--- |
@@ -163,13 +163,13 @@ node --test tests/koc.test.cjs
 
 Het [oude adres op GitHub Pages](https://hound83.github.io/padel-toss-kotc-americano/) toont een verhuismelding en stuurt door naar Cloudflare. Een oude kijklink opent hetzelfde schema. Bij een lokaal bewaarde indeling op de oude startpagina kun je eerst een JSON-bestand downloaden en dat op Cloudflare openen met **Opgeslagen schema laden**.
 
-GitHub Pages bouwt alleen de verhuismelding uit `pages/` en `_layouts/verhuisd.html`, volgens `_config.yml`. De volledige planner, offlinebestanden en versiegeschiedenis staan nog in deze repository. Voor een latere overstap naar statische hosting kan de planner uit de bronbestanden worden gepubliceerd. Voor aanmeldingen, centraal beheer en gedeelde score-invoer is dan ook een sessiedienst nodig.
+GitHub Pages bouwt alleen de verhuismelding uit `pages/` en `_layouts/verhuisd.html`, volgens `_config.yml`. De volledige planner, offlinebestanden en versiegeschiedenis staan nog in deze repository. Voor een latere overstap naar statische hosting kan de planner uit de bronbestanden worden gepubliceerd. Voor aanmeldingen, het beheren van avonden en gedeelde score-invoer is dan ook een sessiedienst nodig.
 
-## Centraal beheer
+## Avonden beheren
 
-Open **Beheer** onderaan de site of ga naar [Centraal beheer](https://padel.hound83.workers.dev/beheer). Na één keer inloggen zie je de aanmeldavonden van vandaag, komende en recente avonden, en losse online speelschema’s. Klap een avond open om spelers te verplaatsen, af te melden of toe te voegen. Vanuit dezelfde kaart kun je de groepslink kopiëren, indelen en een gepubliceerd schema openen. **Nieuwe avond** gebruikt dezelfde beheerdersinlog.
+Open **Beheer** onderaan de site of ga naar [Avonden beheren](https://padel.hound83.workers.dev/beheer). Na één keer inloggen zie je de aanmeldavonden van vandaag, komende en recente avonden, en losse online speelschema’s. Klap een avond open om spelers te verplaatsen, af te melden of toe te voegen. Met **Ga indelen** sluit je de aanmelding en opent de gekozen speelvorm met de spelers onder **Deelnemers**. Wachtlijst en reserves vallen buiten de indeling. Via **Publiceer op de aanmeldlink** verschijnt het speelschema op dezelfde groepslink. **Nieuwe avond** gebruikt dezelfde beheerdersinlog.
 
-Het centrale wachtwoord geeft elke houder dezelfde toegang tot alle actieve avonden en online speelschema’s. Voor een medeorganisator van één reeks kun je op de startpagina **Aanmeldpoll maken** kiezen en een eigen wachtwoord instellen. Deel de link **Deze avond beheren** en het bijbehorende wachtwoord rechtstreeks met die organisator. **Herhaal volgende week** behoudt dit wachtwoord binnen de reeks. Bij een avond die vanuit **Centraal beheer → Nieuwe avond** is aangemaakt kun je momenteel geen apart wachtwoord voor een medeorganisator instellen.
+Het algemene beheerwachtwoord geeft elke houder dezelfde toegang tot alle actieve avonden en online speelschema’s. Voor een medeorganisator van één reeks kun je op de startpagina **Aanmeldpoll maken** kiezen en een eigen wachtwoord instellen. Deel de link **Deze avond beheren** en het bijbehorende wachtwoord rechtstreeks met die organisator. **Herhaal volgende week** behoudt dit wachtwoord binnen de reeks. Bij een avond die vanuit **Avonden beheren → Nieuwe avond** is aangemaakt kun je momenteel geen apart wachtwoord voor een medeorganisator instellen.
 
 Het vaste wachtwoord staat in de Cloudflare Worker `padel` als runtime-Secret `PADEL_ADMIN_PASSWORD`. Stel het in via **Settings → Variables and Secrets**. Een wijziging maakt bestaande centrale inlogs ongeldig. Elke inlog vervalt na twaalf uur. Voor een eigen Node-host kan dezelfde omgevingsvariabele worden ingesteld.
 
@@ -185,7 +185,7 @@ Open **Deze avond beheren** met het wachtwoord van de reeks. Voeg een speler toe
 
 ## Gedeelde score-invoer
 
-Open de [Koriander-sessiesite](https://padel.hound83.workers.dev/), maak een indeling en kies **Schema delen** en **Sessie online zetten**. Kopieer **Beheerlink** naar je eigen telefoon. Zodra de sessie online staat kan de laptop dicht. Op de telefoon staan dezelfde banen, rondes, scorevelden, timer en deelknoppen. Met de beheerlink kan iedereen de sessie beheren, dus deel deze alleen met een medeorganisator die dit ook mag.
+Open [Padel Planner](https://padel.hound83.workers.dev/), maak een indeling en kies **Schema delen** en **Sessie online zetten**. Kopieer **Beheerlink** naar je eigen telefoon. Zodra de sessie online staat kan de laptop dicht. Op de telefoon staan dezelfde banen, rondes, scorevelden, timer en deelknoppen. Met de beheerlink kan iedereen de sessie beheren, dus deel deze alleen met een medeorganisator die dit ook mag.
 
 De kijklink en invullinks hebben de vorm `/s/7KDM-P4WX`. Hoofdletters en het streepje zijn optioneel. Bij Americano, scoregroepen van de Gesplitste Toss en de KOC-rondeplanner kan de organisator kiezen voor één invullink voor de hele groep of een link per speler. Met de groepslink kiest iedere speler zelf een naam. De eerste uitslag telt. De organisator kan deze aanpassen in de planner. Bij een overstap naar een andere invoeroptie vervallen de eerdere invullinks. De kijklink blijft beschikbaar. Gewone Toss en KOC-startindeling hebben alleen een kijklink.
 

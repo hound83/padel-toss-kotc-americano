@@ -56,6 +56,46 @@ test('one central login reaches existing and new events, live schedules, and the
   await (await footerButton(publicPage)).click();await publicPage.getByLabel('Beheerwachtwoord').waitFor();
   assert.equal(await publicPage.getByText('Mira').count(),0);
   assert.equal((await guest.request.get(url+'/api/polls/hub')).status(),401);
+  const planner=await phone.newPage();
+  planner.setDefaultTimeout(7500);
+  planner.on('dialog',dialog=>dialog.accept());
+  planner.on('pageerror',err=>errors.push(err.message));
+  const players=['Ada','Bea','Cato','Daan','Elin','Fien','Gijs','Hugo'];
+  for(const format of ['toss','koc']){
+    const eventTitle='Poll '+format+' '+randomBytes(4).toString('hex');
+    const created=await phone.request.post(url+'/api/polls',{data:{settings:{...settings,title:eventTitle,format},central:true}});
+    assert.equal(created.status(),201);
+    const pollId=(await created.json()).id;
+    const signupUrl=url+'/aanmelden/'+pollId;
+    for(const name of ['Reserve',...players,'Wachtende']){
+      const response=await guest.request.post(url+'/api/polls/'+pollId,{
+        headers:{'X-Signup-Key':randomBytes(32).toString('hex')},
+        data:{name,answer:name==='Reserve'?'reserve':'yes'}
+      });
+      assert.equal(response.status(),200);
+    }
+    await planner.goto(url+'/beheer');
+    await planner.getByRole('button',{name:new RegExp(eventTitle)}).click();
+    await planner.locator('[data-place=reserve] li').getByText('Reserve',{exact:true}).waitFor();
+    await planner.locator('[data-place=wait]').getByText('Wachtende',{exact:true}).waitFor();
+    await planner.getByRole('button',{name:'Ga indelen'}).click();
+    await planner.getByText('Bevestigde deelnemers overgenomen.',{exact:true}).waitFor();
+    const roster=planner.locator(format==='koc'?'#kocRoster input[type=text]':'#namesGrid .name-field input');
+    assert.deepEqual(await roster.evaluateAll(fields=>fields.map(field=>field.value).filter(Boolean)),players);
+    await publicPage.goto(signupUrl);
+    await publicPage.getByText('De indeling wordt gemaakt').waitFor();
+    assert.equal(await publicPage.locator('#groups').count(),0);
+    await planner.locator(format==='koc'?'#kocRoll':'#generateBtn').click();
+    await planner.getByRole('button',{name:'Publiceer op de aanmeldlink'}).click();
+    await planner.getByText('Het speelschema staat op de groepslink.').waitFor();
+    await publicPage.goto(signupUrl);
+    await publicPage.getByRole('link',{name:'Bekijk de baanindeling'}).click();
+    await publicPage.locator('#rounds article').first().waitFor();
+    const courts=await publicPage.locator('#rounds').innerText();
+    for(const name of players)assert.ok(courts.includes(name),name);
+    assert.doesNotMatch(courts,/Reserve|Wachtende/);
+  }
+  await planner.close();
   await host.getByRole('button',{name:'Herhaal volgende week'}).click();
   await host.waitForFunction(old=>new URL(location.href).searchParams.get('avond')!==old,id);
   await host.getByRole('button',{name:'Speler toevoegen'}).waitFor();assert.equal(await host.locator('#groups li').count(),0);
