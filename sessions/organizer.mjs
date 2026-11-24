@@ -50,6 +50,7 @@ async function listEvents(db, now, after, sessions) {
     SELECT p.id, p.revision, json_extract(p.document,'$.settings') AS settings,
       json_extract(p.document,'$.phase') AS phase,
       json_extract(p.document,'$.createdAt') AS createdAt, json_extract(p.document,'$.createdBy') AS createdBy,
+      json_extract(p.document,'$.creatorRemoved') AS creatorRemoved,
       o.display_name AS seriesOrganizer,
       COUNT(CASE WHEN json_extract(e.value,'$.place')='in' THEN 1 END) AS playing,
       COUNT(CASE WHEN json_extract(e.value,'$.place')='wait' THEN 1 END) AS waiting,

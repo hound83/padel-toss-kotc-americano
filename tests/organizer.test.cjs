@@ -338,7 +338,8 @@ test('only site organizers can delete a registered organizer, revoke access and 
   assert.equal((await send(path+'/admin',undefined,{Authorization:'Bearer '+token})).status,401);
   assert.equal((await send(path+'/login',{password:credentials.password})).status,401);
   assert.equal((await send(path)).status,200);
-  assert.equal((await send(path+'/admin',undefined,site)).data.createdBy,null);
+  const kept=(await send(path+'/admin',undefined,site)).data;
+  assert.equal(kept.createdBy,null);assert.equal(kept.creatorRemoved,true);
   assert.equal((await send('polls/'+other.data.id+'/admin',undefined,site)).data.createdBy,'Stef');
   const recreated=await send('polls',{settings,...credentials});assert.equal(recreated.status,201);
   const newLogin={Cookie:recreated.headers.get('Set-Cookie').split(';')[0]};

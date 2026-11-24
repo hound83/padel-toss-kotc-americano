@@ -115,6 +115,7 @@ export async function pollApi(request,db,now,{json,requestJson,counter},adminPas
     if(siteAdmin){
       view.createdAt=doc.createdAt??null;
       view.createdBy=doc.createdBy??null;
+      view.creatorRemoved=Boolean(doc.creatorRemoved);
       view.seriesOrganizer=membership?.display_name??null;
       // A central login opens the planner with its cookie. Never hand a long-lived
       // owner link to that browser as a side effect of viewing a signup list.

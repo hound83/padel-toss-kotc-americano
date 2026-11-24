@@ -25,7 +25,8 @@ window.TossOrganizerHub=function({P,say,modeName,dateText,el,button,link,card,fi
   }
   function creationInfo(item){
     const line=el('small',undefined,'creation-info');
-    line.append(item.createdBy?say('Aangemaakt door ','Created by ')+item.createdBy:say('Maker niet vastgelegd','Creator not recorded'));
+    const unknown=item.creatorRemoved?say('Organisator verwijderd','Organizer deleted'):say('Maker niet vastgelegd','Creator not recorded');
+    line.append(item.createdBy?say('Aangemaakt door ','Created by ')+item.createdBy:unknown);
     if(!item.createdBy && item.seriesOrganizer)line.append(say(' · Reeks van ',' · Series organizer ')+item.seriesOrganizer);
     if(Number.isFinite(item.createdAt)){
       const date=new Date(item.createdAt),locale=document.documentElement.lang==='en'?'en-GB':'nl-NL';

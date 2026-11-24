@@ -53,7 +53,7 @@ export async function removeAccount(db,id,expiryCheck){
     sql(`UPDATE signup_polls SET document=CASE WHEN json_extract(document,'$.creatorAccount') IN (SELECT id FROM target)
       OR (json_extract(document,'$.creatorAccount') IS NULL AND json_extract(document,'$.createdBy')=
         (SELECT display_name FROM poll_organizers JOIN target ON name_key=target.organizer))
-      THEN json_remove(document,'$.createdBy','$.creatorAccount') ELSE document END, revision=revision+1
+      THEN json_set(json_remove(document,'$.createdBy','$.creatorAccount'),'$.creatorRemoved',1) ELSE document END, revision=revision+1
       WHERE series IN (SELECT series FROM owned_series) OR json_extract(document,'$.creatorAccount') IN (SELECT id FROM target)`),
     sql(`DELETE FROM signup_logins WHERE series IN (SELECT series FROM owned_series)`),
     sql(`UPDATE signup_series SET salt=lower(hex(randomblob(16))),verifier=lower(hex(randomblob(32)))
