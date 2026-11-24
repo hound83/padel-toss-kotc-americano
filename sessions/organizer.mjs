@@ -1,3 +1,4 @@
+import {listAccounts,removeAccount} from './poll-accounts.mjs';
 import {invalid} from './poll-roster.mjs';
 
 const cookieName = '__Host-padel-admin';
@@ -115,6 +116,12 @@ export async function organizerApi(request, db, now, password, {json,requestJson
     return response;
   }
   if (!await centralLogin(request,db,now,password)) invalid('login',401);
+  if (action === '/organizers' && request.method === 'GET') return json(await listAccounts(db,now,url.searchParams.get('after')||''));
+  if (action === '/organizers/remove' && request.method === 'POST') {
+    const body=await requestJson(request);
+    await removeAccount(db,body?.id);
+    return json({ok:true});
+  }
   if (action === '/remove' && request.method === 'POST') {
     const {kind,id,revision} = await requestJson(request) || {};
     if (!Number.isSafeInteger(revision) || revision<1 || typeof id!=='string') invalid('field');

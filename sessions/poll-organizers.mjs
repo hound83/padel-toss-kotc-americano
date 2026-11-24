@@ -1,3 +1,4 @@
+import {registerUse} from './poll-accounts.mjs';
 import {creatorName,invalid} from './poll-roster.mjs';
 import {acceptablePassword,hash,random,verifier} from './poll-auth.mjs';
 
@@ -11,18 +12,23 @@ async function currentToken(request){
 }
 export async function currentOrganizer(request,db,now){
   const token=await currentToken(request);
-  return token?db.prepare(`SELECT o.name_key,o.display_name FROM poll_organizer_logins l
-    JOIN poll_organizers o ON o.name_key=l.organizer WHERE l.token=? AND l.expires>?`).bind(token,now).first():null;
+  if(!token)return null;
+  const owner=await db.prepare(`SELECT o.name_key,o.display_name,o.salt,a.id AS accountId,a.last_used AS lastUsed
+    FROM poll_organizer_logins l JOIN poll_organizers o ON o.name_key=l.organizer
+    LEFT JOIN poll_organizer_accounts a ON a.organizer=o.name_key WHERE l.token=? AND l.expires>?`).bind(token,now).first();
+  if(owner && (!owner.accountId || now-owner.lastUsed>=3600000))return registerUse(db,owner,now);
+  return owner;
 }
 function setCookie(response,token,age){
   response.headers.set('Set-Cookie',cookieName+'='+token+'; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age='+age);
   return response;
 }
-export async function organizerSession(request,db,now,key){
+export async function organizerSession(request,db,now,owner){
   const token=random(32),previous=await currentToken(request);
   const statements=[];
   if(previous)statements.push(db.prepare('DELETE FROM poll_organizer_logins WHERE token=?').bind(previous));
-  statements.push(db.prepare('INSERT INTO poll_organizer_logins VALUES(?,?,?)').bind(await hash(token),key,now+lifetime*1000));
+  statements.push(db.prepare(`INSERT INTO poll_organizer_logins(token,organizer,expires)
+    VALUES(?,(SELECT organizer FROM poll_organizer_accounts WHERE id=?),?)`).bind(await hash(token),owner.accountId,now+lifetime*1000));
   return {statements,respond:response=>setCookie(response,token,lifetime)};
 }
 
@@ -32,7 +38,9 @@ export async function organizerCredentials(request,db,now,body,counter,allowNew)
   if(body.useSession===true){
     const session=await currentOrganizer(request,db,now);
     if(session?.name_key!==key)invalid('organizer-login',401);
-    return db.prepare('SELECT * FROM poll_organizers WHERE name_key=?').bind(key).first();
+    const owner=await db.prepare('SELECT * FROM poll_organizers WHERE name_key=? AND salt=?').bind(key,session.salt).first();
+    if(!owner)invalid('organizer-login',401);
+    return registerUse(db,owner,now);
   }
   await counter(db,request,'poll-organizer-password',now,12,true);
   const password=acceptablePassword(body.password,6,'organizer-password-length');
@@ -42,12 +50,12 @@ export async function organizerCredentials(request,db,now,body,counter,allowNew)
     const salt=random(16),digest=await verifier(password,salt);
     const inserted=await db.prepare(`INSERT INTO poll_organizers(name_key,display_name,salt,verifier) VALUES(?,?,?,?)
       ON CONFLICT(name_key) DO NOTHING`).bind(key,label,salt,digest).run();
-    if(inserted.meta.changes)return {name_key:key,display_name:label,salt,verifier:digest};
+    if(inserted.meta.changes)return registerUse(db,{name_key:key,display_name:label,salt,verifier:digest},now);
     owner=await select();
   }
   const digest=await verifier(password,owner?.salt||dummySalt);
   if(!owner || digest!==owner.verifier)invalid(owner && allowNew?'organizer-name-used':'organizer-login',401);
-  return owner;
+  return registerUse(db,owner,now);
 }
 
 export async function myPollsApi(request,db,now,{json,requestJson,counter}){
@@ -56,7 +64,7 @@ export async function myPollsApi(request,db,now,{json,requestJson,counter}){
     const body=await requestJson(request);
     if(!body || body.useSession!==undefined)invalid('field');
     const owner=await organizerCredentials(request,db,now,body,counter,false);
-    const session=await organizerSession(request,db,now,owner.name_key);
+    const session=await organizerSession(request,db,now,owner);
     await db.batch(session.statements);
     return session.respond(json({name:owner.display_name}));
   }
