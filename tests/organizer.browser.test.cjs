@@ -67,6 +67,7 @@ test('one central login reaches existing and new events, live schedules, and the
     await planner.getByRole('link',{name:'Nieuwe avond'}).click();
     await planner.getByLabel('Speelvorm',{exact:true}).selectOption(format);
     await planner.getByLabel('Naam van de avond').fill(eventTitle);
+    await planner.getByLabel('Jouw naam',{exact:true}).fill('Nina V.');
     await planner.getByLabel('Banen',{exact:true}).fill('2');
     await planner.getByLabel('Plekken',{exact:true}).fill('8');
     await planner.getByRole('button',{name:'Aanmelding openen'}).click();
@@ -74,7 +75,7 @@ test('one central login reaches existing and new events, live schedules, and the
     const pollId=new URL(planner.url()).searchParams.get('avond');
     assert.match(pollId,/^[a-f0-9]{14}$/);
     const signupUrl=url+'/aanmelden/'+pollId;
-    for(const name of ['Nora Reserve',...players,'Ivo Wachtlijst']){
+    for(const name of [...(format==='koc'?['Nora Reserve']:[]),...players,'Ivo Wachtlijst']){
       const response=await guest.request.post(url+'/api/polls/'+pollId,{
         headers:{'X-Signup-Key':randomBytes(32).toString('hex')},
         data:{name,answer:name==='Nora Reserve'?'reserve':'yes'}
@@ -82,9 +83,14 @@ test('one central login reaches existing and new events, live schedules, and the
       assert.equal(response.status(),200);
     }
     await planner.goto(url+'/beheer');
-    await planner.getByRole('button',{name:new RegExp(eventTitle)}).click();
-    await planner.locator('[data-place=reserve]').getByRole('button',{name:'Wijzig Nora Reserve',exact:true}).waitFor();
-    await planner.locator('[data-place=wait]').getByRole('button',{name:'Wijzig Ivo Wachtlijst',exact:true}).waitFor();
+    const eventCard=planner.getByRole('button',{name:new RegExp(eventTitle)});
+    await eventCard.getByText('Aangemaakt door Nina V.',{exact:false}).waitFor();
+    const cardTime=await eventCard.locator('time').getAttribute('datetime');
+    assert.ok(Number.isFinite(Date.parse(cardTime)));
+    await eventCard.click();
+    if(format==='koc')await planner.locator('[data-place=reserve]').getByRole('button',{name:'Nora Reserve aanpassen',exact:true}).waitFor();
+    else assert.equal(await planner.locator('[data-place=reserve]').count(),0);
+    await planner.locator('[data-place=wait]').getByRole('button',{name:'Ivo Wachtlijst aanpassen',exact:true}).waitFor();
     await planner.getByRole('button',{name:'Ga indelen'}).click();
     await planner.getByText('Bevestigde deelnemers overgenomen.',{exact:true}).waitFor();
     const roster=planner.locator(format==='koc'?'#kocRoster input[type=text]':'#namesGrid .name-field input');
@@ -118,6 +124,8 @@ test('one central login reaches existing and new events, live schedules, and the
       await remove.tap();
       const confirmation=planner.getByRole('dialog',{name:'Avond verwijderen?'});
       await confirmation.getByText(eventTitle,{exact:false}).waitFor();
+      assert.match(await confirmation.innerText(),/Aangemaakt door Nina V\./);
+      assert.equal(await confirmation.locator('time').getAttribute('datetime'),cardTime);
       assert.match(await confirmation.innerText(),/aanmeldlink vervalt/);
       assert.match(await confirmation.innerText(),/gepubliceerde speelschema/);
       assert.equal(await planner.evaluate(()=>document.activeElement.textContent),'Annuleren');
@@ -138,10 +146,12 @@ test('one central login reaches existing and new events, live schedules, and the
   }
   await planner.close();
   await host.getByRole('button',{name:'Herhaal volgende week'}).click();
+  await host.getByRole('dialog').getByLabel('Jouw naam').fill('Nina V.');
+  await host.getByRole('dialog').getByRole('button',{name:'Opslaan'}).click();
   await host.waitForFunction(old=>new URL(location.href).searchParams.get('avond')!==old,id);
   await host.getByRole('button',{name:'Speler toevoegen'}).waitFor();assert.equal(await host.locator('#groups li').count(),0);
   await host.getByRole('link',{name:'Nieuwe avond'}).click();
-  assert.equal(await host.getByLabel('Jouw naam',{exact:true}).count(),0);
+  await host.getByLabel('Jouw naam',{exact:true}).fill('Nina V.');
   const title2='Donderdag '+randomBytes(4).toString('hex');
   await host.getByLabel('Naam van de avond').fill(title2);await host.getByRole('button',{name:'Aanmelding openen'}).click();
   await host.getByRole('button',{name:'Speler toevoegen'}).waitFor();
@@ -151,7 +161,7 @@ test('one central login reaches existing and new events, live schedules, and the
   const names=['A','B','C','D','E','F','G','H'];
   const plan={state:{format:'toss',activeRoster:names,activeRosterLevels:[],scores:{},laterAdditions:{},pools:[{id:'main',players:names,rounds:[]}]},
     view:{title:'Los '+id,en:false,rounds:[{n:1,rows:[]}],boards:[],playerIds:Object.fromEntries(names.map((n,i)=>[n,'p'+i]))}};
-  const shared=await guest.request.post(url+'/api/sessions',{data:{...plan,playDate:date}});assert.equal(shared.status(),201);
+  const shared=await guest.request.post(url+'/api/sessions',{data:{...plan,playDate:date,creatorName:'Sam V.'}});assert.equal(shared.status(),201);
   const viewerCode=(await shared.json()).links[0].code;
   await host.reload();const standalone=host.locator('.hub-session').filter({hasText:'Los '+id});
   await standalone.getByRole('link',{name:'Open live view'}).waitFor();
@@ -166,6 +176,8 @@ test('one central login reaches existing and new events, live schedules, and the
   await removeSchedule.tap();
   const confirmation=host.getByRole('dialog',{name:'Delete schedule?'});
   await confirmation.getByText('Los '+id,{exact:false}).waitFor();
+  await confirmation.getByText('Created by Sam V.',{exact:false}).waitFor();
+  assert.equal(await confirmation.locator('time').getAttribute('datetime'),await standalone.locator('time').getAttribute('datetime'));
   await confirmation.getByRole('button',{name:'Cancel'}).tap();
   assert.equal((await guest.request.get(url+'/api/s/'+viewerCode)).status(),200);
   await removeSchedule.tap();

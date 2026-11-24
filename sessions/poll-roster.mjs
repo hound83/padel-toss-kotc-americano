@@ -17,7 +17,20 @@ export function settings(input){
     input.end<=input.start)invalid('settings');
   return {title:clean(input.title,80),format:input.format,date:input.date,start:input.start,end:input.end,courts:input.courts,capacity:input.capacity};
 }
+export function creatorName(value){
+  if(typeof value!=='string' || value.length>160 || /[\p{Cc}\p{Cf}]/u.test(value))invalid('organizer-name');
+  const label=value.normalize('NFKC').trim().replace(/\s+/gu,' ');
+  if(!label || label.length>80)invalid('organizer-name');
+  return label;
+}
 export function emptyPoll(config){return {settings:settings(config),phase:'open',entries:[],viewCode:null};}
+// A legacy standby in another format needs an organizer decision before taking a place.
+export function prepareRoster(doc){
+  if(doc.settings.format!=='koc'){
+    for(const entry of doc.entries)if(entry.place==='reserve')entry.place='review';
+  }
+  return doc;
+}
 function uniqueName(doc,value,entry){
   const name=clean(value,50);
   if(doc.entries.some(e=>e!==entry && nameKey(e.name)===nameKey(name)))invalid('duplicate',409);
@@ -36,7 +49,7 @@ function admitted(doc){return doc.entries.filter(e=>e.place==='in');}
 function seat(doc,allowReserve=false,exclude){
   while(admitted(doc).length<doc.settings.capacity){
     const first=doc.entries.find(e=>e.place==='wait' && e!==exclude) ||
-      (allowReserve && doc.entries.find(e=>e.place==='reserve' && e!==exclude));
+      (allowReserve && doc.settings.format==='koc' && doc.entries.find(e=>e.place==='reserve' && e!==exclude));
     if(!first)break;
     insert(doc,first,'in');
   }
@@ -45,9 +58,31 @@ function limitSeats(doc){
   const surplus=admitted(doc).slice(doc.settings.capacity);
   for(const entry of surplus.reverse())insert(doc,entry,'wait',0);
 }
+const correctionWindow=10*60000;
+function previousPriority(doc,entry,now){
+  // Keep the original deadline when someone toggles more than once.
+  if(entry.correction && now<entry.correction.until)return entry.correction;
+  if(!['yes','reserve'].includes(entry.answer) || !['in','wait','reserve'].includes(entry.place))return null;
+  const group=doc.entries.filter(row=>row.place===entry.place),i=group.indexOf(entry);
+  return {answer:entry.answer,place:entry.place,at:entry.at,until:now+correctionWindow,
+    before:group[i+1]?.id,after:group[i-1]?.id};
+}
+function previousPosition(doc,entry,place,priority){
+  const group=doc.entries.filter(row=>row!==entry && row.place===place);
+  if(place===priority.place){
+    const before=group.findIndex(row=>row.id===priority.before);
+    if(before!==-1)return before;
+    const after=group.findIndex(row=>row.id===priority.after);
+    if(after!==-1)return after+1;
+  }
+  const returningParticipant=priority.place==='in' && place==='wait';
+  const later=group.findIndex(row=>row.at>priority.at || (returningParticipant && row.at===priority.at));
+  return later===-1?group.length:later;
+}
 export function respond(doc,person,body,now,held){
   if(doc.phase!=='open')invalid('locked',409);
   if(!answers.includes(body.answer))invalid('answer');
+  if(body.answer==='reserve' && doc.settings.format!=='koc')invalid('reserve-format');
   let entry=doc.entries.find(e=>e.person===person);
   if(!entry && body.answer==='cancel')invalid('missing',404);
   const name=body.answer==='cancel' && entry ? entry.name : uniqueName(doc,body.name,entry);
@@ -58,14 +93,19 @@ export function respond(doc,person,body,now,held){
   const old=entry.place,previous=entry.answer;
   entry.name=name;
   if(previous===body.answer)return;
-  entry.answer=body.answer;entry.at=now;
-  const place=['no','cancel'].includes(entry.answer)?'out':entry.held?'review':entry.answer==='yes'?'wait':'reserve';
-  insert(doc,entry,place);
+  const priority=previousPriority(doc,entry,now);
+  const restoring=priority && !entry.held && priority.answer===body.answer;
+  if(priority)entry.correction=priority;else delete entry.correction;
+  entry.answer=body.answer;entry.at=restoring?priority.at:now;
+  let place=['no','cancel'].includes(entry.answer)?'out':entry.held?'review':entry.answer==='yes'?'wait':'reserve';
+  if(restoring && priority.place==='in' && admitted(doc).filter(e=>e!==entry).length<doc.settings.capacity)place='in';
+  insert(doc,entry,place,restoring?previousPosition(doc,entry,place,priority):undefined);
   seat(doc,old==='in',entry.answer==='reserve'?entry:undefined);
 }
 export function adminEntry(doc,body,now){
   let entry=body.id && doc.entries.find(row=>row.id===body.id);
   if(body.id && !entry)invalid('missing',404);
+  if(body.place==='reserve' && doc.settings.format!=='koc')invalid('reserve-format');
   if(!places.includes(body.place) || !Number.isInteger(body.position) || body.position<1 || body.position>401)invalid('place');
   const name=uniqueName(doc,body.name,entry);
   if(!entry){
@@ -73,6 +113,7 @@ export function adminEntry(doc,body,now){
     entry={id:crypto.randomUUID(),person:null,first:now,at:now,answer:body.place==='reserve'?'reserve':body.place==='out'?'cancel':'yes'};
   }
   const old=entry.place;
+  delete entry.correction;
   if(body.level!==undefined){
     if(body.level!==null && ![0,1,2].includes(body.level))invalid('level');
     entry.level=body.level;
@@ -88,21 +129,27 @@ export function changeSettings(doc,next){
   const previous=doc.settings;
   const updated=settings(next);
   if(doc.phase==='published' && updated.format!==previous.format)invalid('published-format',409);
-  doc.settings=updated;limitSeats(doc);
+  doc.settings=updated;prepareRoster(doc);limitSeats(doc);
   if(updated.capacity>previous.capacity)seat(doc);
 }
-export function publicPoll(doc,id,person){
+export function publicPoll(doc,id,person,now){
   const result={id,settings:doc.settings,phase:doc.phase};
   if(doc.phase==='published')result.viewCode=doc.viewCode;
   if(doc.phase!=='open')return result;
-  result.groups={in:[],wait:[],reserve:[],out:[]};
+  const koc=doc.settings.format==='koc';
+  result.groups=koc?{in:[],wait:[],reserve:[],out:[]}:{in:[],wait:[],out:[]};
   for(const entry of doc.entries){
-    if(entry.answer==='cancel' && entry.place==='out')continue;
+    if((entry.answer==='cancel' && entry.place==='out') || (!koc && entry.place==='review'))continue;
     const place=entry.place==='review'?'reserve':entry.place;
     const label={name:entry.name};
     result.groups[place].push(label);
   }
   const own=person && doc.entries.find(e=>e.person===person);
-  if(own)result.mine={name:own.name,answer:own.answer,place:own.place==='review'?'reserve':own.place};
+  if(own)result.mine={name:own.name,answer:!koc && own.answer==='reserve'?null:own.answer,
+    place:own.place==='review'?(koc?'reserve':'pending'):own.place};
+  if(own?.pin)result.mine.hasPin=true;
+  const correction=own?.correction;
+  if(correction && now<correction.until && own.answer!==correction.answer && (koc || correction.answer!=='reserve'))
+    result.mine.correction={answer:correction.answer,until:correction.until};
   return result;
 }

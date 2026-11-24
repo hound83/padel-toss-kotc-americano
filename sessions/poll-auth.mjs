@@ -5,8 +5,8 @@ export const random=n=>hex(crypto.getRandomValues(new Uint8Array(n)));
 const encode=s=>new TextEncoder().encode(s);
 export const hash=async s=>hex(new Uint8Array(await crypto.subtle.digest('SHA-256',encode(s))));
 
-export function acceptablePassword(value){
-  if(typeof value!=='string' || value.length<8 || value.length>128)invalid('password-length');
+export function acceptablePassword(value,minimum=8,error='password-length'){
+  if(typeof value!=='string' || value.length<minimum || value.length>128)invalid(error);
   return value;
 }
 export async function verifier(password,salt){

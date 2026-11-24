@@ -23,6 +23,17 @@ window.TossOrganizerHub=function({P,say,modeName,dateText,el,button,link,card,fi
     if(updateUrl)eventInUrl(selected);
     await select(selected);
   }
+  function creationInfo(item){
+    const line=el('small',undefined,'creation-info');
+    line.append(item.createdBy?say('Aangemaakt door ','Created by ')+item.createdBy:say('Maker niet vastgelegd','Creator not recorded'));
+    if(!item.createdBy && item.seriesOrganizer)line.append(say(' · Reeks van ',' · Series organizer ')+item.seriesOrganizer);
+    if(Number.isFinite(item.createdAt)){
+      const date=new Date(item.createdAt),locale=document.documentElement.lang==='en'?'en-GB':'nl-NL';
+      const time=el('time',new Intl.DateTimeFormat(locale,{dateStyle:'medium',timeStyle:'short',timeZone:'Europe/Amsterdam'}).format(date));
+      time.dateTime=date.toISOString();line.append(say(' · Aangemaakt op ',' · Created on '),time);
+    }else line.append(say(' · Aanmaaktijd niet vastgelegd',' · Creation time not recorded'));
+    return line;
+  }
   function recordCard(parent,item){
     const {settings}=item, row=el('article',undefined,'hub-row');
     const toggle=button('',()=>{if(canSwitch())pick(selected===item.id?null:item.id);});
@@ -30,10 +41,11 @@ window.TossOrganizerHub=function({P,say,modeName,dateText,el,button,link,card,fi
     const img=el('img');img.src=P.art(settings.format,document.documentElement.lang==='en');img.alt='';img.width=84;img.height=58;
     const label=el('span',undefined,'hub-label');
     label.append(el('small',modeName(settings.format)+' · '+phaseLabel(item.phase)),
-      el('strong',settings.title),el('span',dateText(settings)+' · '+settings.start+'–'+settings.end));
+      el('strong',settings.title),el('span',dateText(settings)+' · '+settings.start+'–'+settings.end),creationInfo(item));
     const totals=el('span',undefined,'hub-counts');
-    totals.append(el('strong',item.playing+' / '+settings.capacity),
-      el('small',item.waiting+say(' wachtend',' waiting')+' · '+item.standby+say(item.standby===1?' reserve':' reserves',' standby')));
+    const waiting=item.waiting+say(' wachtend',' waiting');
+    const standby=settings.format==='koc'?' · '+item.standby+say(item.standby===1?' reserve':' reserves',' standby'):'';
+    totals.append(el('strong',item.playing+' / '+settings.capacity),el('small',waiting+standby));
     toggle.append(img,label,totals);row.append(toggle);parent.append(row);cards.set(item.id,{row,toggle});
   }
   function removeButton(kind,item){
@@ -43,7 +55,7 @@ window.TossOrganizerHub=function({P,say,modeName,dateText,el,button,link,card,fi
     const when=event?dateText(item.settings)+' · '+item.settings.start+'–'+item.settings.end:dateText(item);
     const trigger=button(label,()=>{
       modal(label+'?',root=>{
-        root.append(el('strong',name+' · '+when));
+        root.append(el('strong',name+' · '+when),creationInfo(item));
         const detail=event?
           say('De aanmeldingen verdwijnen en de aanmeldlink vervalt.','The signups will be deleted and the signup link will stop working.'):
           say('Het online speelschema en de uitslagen verdwijnen. De kijklink en scorelinks vervallen.','The online schedule and results will be deleted. Viewing and score links will stop working.');
@@ -74,7 +86,7 @@ window.TossOrganizerHub=function({P,say,modeName,dateText,el,button,link,card,fi
     const row=el('article',undefined,'hub-session');
     const art=el('img');art.src=P.art(session.format,document.documentElement.lang==='en');art.alt='';
     const body=el('div');body.append(el('h3',session.title||modeName(session.format)),el('small',dateText(session)+' · '+
-      (session.closed?say('Eindstand','Final results'):say('Gedeeld speelschema','Shared schedule'))));
+      (session.closed?say('Eindstand','Final results'):say('Gedeeld speelschema','Shared schedule'))),creationInfo(session));
     actions(body,link(say('Open planner','Open planner'),'/beheer/sessie/'+session.id),link(say('Open liveweergave','Open live view'),'/s/'+session.viewCode),removeButton('session',session));
     row.append(art,body);section.append(row);
   }

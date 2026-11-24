@@ -48,3 +48,8 @@ CREATE TABLE IF NOT EXISTS poll_organizer_logins (
   token TEXT PRIMARY KEY, organizer TEXT NOT NULL REFERENCES poll_organizers(name_key), expires INTEGER NOT NULL
 );
 CREATE INDEX IF NOT EXISTS poll_organizer_login_expiry ON poll_organizer_logins(expires);
+
+CREATE TABLE IF NOT EXISTS signup_recovered_devices (
+  poll TEXT NOT NULL REFERENCES signup_polls(id) ON DELETE CASCADE,
+  device TEXT NOT NULL, person TEXT NOT NULL, PRIMARY KEY(poll,device)
+);

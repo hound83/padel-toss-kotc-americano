@@ -47,7 +47,7 @@ test('an organizer can close the laptop, players score, and the organizer contin
   assert.equal(await dateField.evaluate(input=>input.validity.valueMissing),true);
   assert.equal(await organizer.locator('#shareUrl').isVisible(),false);
   assert.equal(creations.length,0);
-  await dateField.fill(playDate);await organizer.getByRole('button',{name:'Inplannen en delen'}).click();
+  await dateField.fill(playDate);await organizer.getByLabel('Jouw naam',{exact:true}).fill('Mara');await organizer.getByRole('button',{name:'Inplannen en delen'}).click();
   await organizer.locator('#ownerUrl:visible').waitFor();
   const organizerPoll=req=>req.method()==='GET' && new URL(req.url()).pathname==='/api/manage';
   await organizer.waitForResponse(res=>organizerPoll(res.request()) && res.status()===304);
@@ -178,7 +178,7 @@ test('an organizer can close the laptop, players score, and the organizer contin
     }
     await planner.getByRole('button',{name:'Schema delen'}).filter({visible:true}).click();
     assert.equal(await planner.getByLabel('Speeldatum').inputValue(),'');
-    await planner.getByLabel('Speeldatum').fill(playDate);
+    await planner.getByLabel('Speeldatum').fill(playDate);await planner.getByLabel('Jouw naam',{exact:true}).fill('Sam');
     await planner.getByRole('button',{name:'Inplannen en delen'}).click();await planner.locator('#ownerUrl:visible').waitFor();
     assert.equal(await planner.locator('#entryGroup').isVisible(),entry,mode);
     const handoff=await planner.locator('#ownerUrl').inputValue();

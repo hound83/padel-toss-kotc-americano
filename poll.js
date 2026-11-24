@@ -45,6 +45,8 @@
     document.title=$('heading').textContent+' · '+activity;
     $('listJump').hidden=true;
     const manageLink=$('manageLink');manageLink.hidden=!id || admin;
+    const mineNav=$('myPollsNav');mineNav.hidden=!(id && admin && !hubRoute);
+    mineNav.href='/mijn-polls'+(en?'?lang=en':'');mineNav.textContent=say('Mijn polls','My polls');
     if(id){manageLink.href='/beheer/'+id+(en?'?lang=en':'');manageLink.textContent=say('Deze avond beheren','Manage this event');}
     if(hubRoute){
       $('heading').textContent=say('Avonden beheren','Manage events');
@@ -57,10 +59,18 @@
     if(phase==='planning' && !admin)$('phase').textContent=say('Indeling in voorbereiding','Preparing the schedule')+' · '+modeName(mode);
   }
   function dateText(s,year=false){return new Intl.DateTimeFormat(en?'en-GB':'nl-NL',{weekday:'long',day:'numeric',month:'long',...(year?{year:'numeric'}:{}),timeZone:'UTC'}).format(new Date(s.date+'T12:00:00Z'));}
-  function places(){return {in:say('Deelnemers','Playing'),wait:say('Wachtlijst · Ja','Waiting · Yes'),reserve:say('Reserve','Standby'),review:say('Alleen na akkoord','Needs approval'),out:say('Afgemeld','Unavailable')};}
+  function places(format=current?.settings.format){return {in:say('Deelnemers','Playing'),wait:say('Wachtlijst · Ja','Waiting · Yes'),...(format==='koc'?{reserve:say('Reserve','Standby')}:{}),review:say('Alleen na akkoord','Needs approval'),out:say('Afgemeld','Unavailable')};}
   function friendly(err){
     const labels={'hub-unconfigured':say('Het algemene beheerwachtwoord is nog niet ingesteld.','The site organizer password has not been set.'),storage:say('Sta lokale opslag toe om je eigen reactie te kunnen beheren, of vraag de organisator je aan te melden.','Enable browser storage to manage your own response, or ask the organizer to sign you up.'),duplicate:say('Die naam staat al op de lijst. Gebruik ook een achternaam of initiaal.','That name is taken. Add an initial or last name.'),
+      'reserve-format':say('Alleen bij King of the Court kun je reserve kiezen.','Standby is available for King of the Court only.'),
+      'pin-login':say('Controleer je naam en de pincode voor deze avond.','Check your name and the PIN for this event.'),
+      'pin-format':say('Vul precies vier cijfers in.','Enter exactly four digits.'),
+      'pin-limit':say('Te veel pogingen. Probeer het later opnieuw of vraag de organisator om hulp.','Too many attempts. Try again later or ask the organizer for help.'),
+      'pin-device':say('Dit apparaat hoort al bij een andere inschrijving voor deze avond.','This device already has another signup for this event.'),
+      'pin-set':say('Deze inschrijving heeft al een pincode.','This signup already has a PIN.'),
       'organizer-login':say('Controleer je naam en wachtwoord.','Check your name and password.'),
+      'organizer-name-used':say('Deze naam is al in gebruik. Is dit jouw naam in de planner? Vul je bestaande wachtwoord in. Kies anders een naam met je initiaal of achternaam.',
+        'This name is already in use. Is it your name in the planner? Enter your existing password. Otherwise add an initial or surname to your name.'),
       'organizer-name':say('Vul je eigen naam in (maximaal 80 tekens).','Enter your own name (up to 80 characters).'),
       'organizer-linked':say('Deze poll hoort al bij een organisator.','This poll already belongs to an organizer.'),
       login:hubRoute?say('Controleer het algemene beheerwachtwoord.','Check the site organizer password.'):say('Controleer de beheercode van deze poll.','Check the organizer code for this poll.'),
@@ -69,13 +79,14 @@
       changed:say('De lijst is intussen gewijzigd. De nieuwste lijst is opgehaald. Controleer je keuze.','The list changed. Check your choice against the updated list.'),
       limit:say('Te veel pogingen. Probeer het over een kwartier opnieuw.','Too many attempts. Try again in 15 minutes.'),
       missing:say('Deze avond is niet meer beschikbaar. Controleer de link of neem contact op met de organisator.','This event is unavailable. Check the link or contact the organizer.'),
+      'organizer-password-length':say('Kies een wachtwoord van 6 tot 128 tekens.','Choose a password with 6 to 128 characters.'),
       'password-length':say('Kies een beheercode van 8 tot 128 tekens.','Choose an organizer code with 8 to 128 characters.'),
       'published-format':say('Heropen de aanmelding om de speelvorm te wijzigen.','Reopen signups before changing the format.')};
     return labels[err.message]||say('Opslaan of ophalen lukt niet. Controleer je verbinding en probeer opnieuw.','Could not save or refresh. Check your connection and try again.');
   }
-  function modal(title,build,save,{format=current?.settings.format,remove=false}={}){
+  function modal(title,build,save,{format=current?.settings.format,remove=false,submitLabel}={}){
     $('dialogArt').src=P.art(format,en);$('dialogTitle').textContent=title;$('fields').replaceChildren();$('dialogError').textContent='';
-    $('submitEdit').textContent=remove?say('Ja, verwijderen','Yes, delete'):say('Opslaan','Save');
+    $('submitEdit').textContent=submitLabel||(remove?say('Ja, verwijderen','Yes, delete'):say('Opslaan','Save'));
     $('submitEdit').className=remove?'confirm-remove':'primary';
     $('dismiss').textContent=remove?say('Annuleren','Cancel'):say('Sluiten','Close');
     const read=build($('fields'));dialogAction=()=>save(read());$('dialog').showModal();
@@ -91,7 +102,7 @@
       if(focusAfter instanceof HTMLElement)focusAfter.focus({preventScroll:true});
     }
     catch(error){
-      if(error.message==='changed' || error.status===401){
+      if(error.message==='changed' || (error.status===401 && !['organizer-name-used','pin-login'].includes(error.message))){
         $('dialog').close();$('message').textContent=friendly(error);
       }else $('dialogError').textContent=friendly(error);
     }
@@ -129,6 +140,13 @@
     }
     return read;
   }
+  function creatorField(root){
+    const name=field(root,say('Jouw naam','Your name'),input('text'));
+    name.autocomplete='name';name.required=true;name.maxLength=80;
+    const hint=el('small',say('Zo zien beheerders wie deze avond heeft aangemaakt.','This tells organizers who created this event.'));
+    hint.id=name.getAttribute('aria-labelledby')+'-hint';name.setAttribute('aria-describedby',hint.id);name.parentElement.append(hint);
+    return name;
+  }
   function create(){
     const fmt=P.modes[new URLSearchParams(location.search).get('format')]?new URLSearchParams(location.search).get('format'):'toss';
     const today=new Date();const date=[today.getFullYear(),String(today.getMonth()+1).padStart(2,'0'),String(today.getDate()).padStart(2,'0')].join('-');
@@ -136,17 +154,23 @@
     header(initial);const section=card(say('Avond instellen','Event settings')),form=el('form');section.append(form);
     const read=configFields(form,initial,header);
     const central=new URLSearchParams(location.search).get('beheer')==='1';
-    const owner=el('div');let readOwner;
+    const owner=el('div'),ownerError=el('p',undefined,'error');let readOwner;
+    ownerError.setAttribute('role','alert');
+    owner.addEventListener('input',()=>{ownerError.textContent='';});
     function ownerFields(){
       owner.replaceChildren(el('h3',say('Jij als organisator','You as organizer')));
       readOwner=mine.credentials(owner,{setup:true,known:organizerName});
+      ownerError.textContent='';owner.append(ownerError);
     }
-    if(!central){ownerFields();form.append(owner);}
+    if(central){
+      const name=creatorField(form);
+      readOwner=()=>({central:true,creatorName:name.value.trim()});
+    }else{ownerFields();form.append(owner);}
     const go=el('button',central?say('Aanmelding openen','Open signups'):say('Nieuwe poll aanmaken','Create new poll'),'primary');go.type='submit';actions(form,go);
     form.onsubmit=async e=>{
       e.preventDefault();if(pending)return;pending=true;go.disabled=true;
       try{
-        const result=await P.api('',central?{settings:read(),central:true}:{settings:read(),...readOwner()});
+        const result=await P.api('',{settings:read(),...readOwner()});
         if(central)location.assign('/beheer?avond='+result.id);
         else{rememberAdmin(result);location.assign('/beheer/'+result.id+(en?'?lang=en':''));}
       }catch(error){
@@ -154,9 +178,10 @@
         if(!central && error.status===401 && organizerName){
           organizerName=null;ownerFields();$('message').textContent=say('Log opnieuw in met je naam en wachtwoord.','Sign in again with your name and password.');return;
         }
+        if(error.message==='organizer-name-used'){
+          $('message').textContent='';ownerError.textContent=friendly(error);ownerError.scrollIntoView({block:'nearest'});return;
+        }
         $('message').textContent=friendly(error);
-        if(error.message==='organizer-login')$('message').textContent+=' '+say('Maakt iemand met dezelfde voornaam al polls? Voeg dan je initiaal of achternaam toe.',
-          'Does another organizer use the same first name? Add an initial or surname.');
       }finally{pending=false;go.disabled=false;}
     };
     if(!central)actions(section,link(say('Mijn polls openen','Open my polls'),'/mijn-polls'+(en?'?lang=en':'')));
@@ -211,42 +236,115 @@
   function who(){
     try{return P.personalKey(false);}catch{return null;}
   }
+  function pinField(parent,title,creating){
+    const pin=field(parent,title,input('password'));
+    pin.inputMode='numeric';pin.pattern='[0-9]{4}';pin.maxLength=4;pin.minLength=4;pin.required=true;
+    pin.autocomplete=creating?'new-password':'off';
+    return pin;
+  }
+  function recoverResponse(){
+    modal(say('Mijn inschrijving openen','Open my signup'),root=>{
+      root.append(el('p',say('Gebruik de naam en de vier cijfers die je voor deze avond hebt gekozen.','Use the name and four digits you chose for this event.')));
+      const name=field(root,say('Naam op de aanmeldlijst','Name on the signup list'),input('text',editor.name.value));
+      name.required=true;name.maxLength=50;name.autocomplete='given-name';
+      const pin=pinField(root,say('Pincode voor deze avond','PIN for this event'),false);
+      return ()=>({name:name.value.trim(),pin:pin.value});
+    },async body=>{
+      await P.api(base+'/recover',body,{person:P.personalKey(true)});
+      resetEditor();await load(true);$('message').textContent=say('Je inschrijving is geopend.','Your signup is open.');
+    },{submitLabel:say('Inschrijving openen','Open signup')});
+  }
+  function signupHelp(){
+    const help=el('details',undefined,'signup-help');
+    help.append(el('summary',say('Wie kan mijn inschrijving aanpassen?','Who can edit my signup?')),
+      el('p',say('Zolang de aanmelding open is, kun je je eigen reactie aanpassen. Open de aanmeldlink in dezelfde browser, of gebruik op een ander apparaat je naam en de pincode voor deze avond.',
+        'While signups are open, you can edit your own response. Open the link in the same browser, or use your name and event PIN on another device.')),
+      el('p',say('Pincode vergeten of hulp nodig? Vraag de maker van de poll. Die kan via Mijn polls met de eigen naam en het wachtwoord jouw inschrijving aanpassen. Een beheerder met het algemene beheerwachtwoord kan alle geplande avonden beheren.',
+        'Forgot your PIN or need help? Ask the person who created the poll. They can open My polls with their name and password and edit your signup. A site organizer with the site password can manage all planned events.')));
+    return help;
+  }
+  function responseForm(mine){
+    const section=card(say('Jouw reactie','Your response')),form=el('form');
+    const name=field(form,say('Jouw naam','Your name'),input('text',mine?.name||P.preference('toss-poll-name')||''));
+    name.id='myName';name.autocomplete='given-name';name.maxLength=50;name.required=true;
+    const controls=el('div',undefined,'actions'),own=el('p',undefined,'own-state');own.id='ownStatus';
+    controls.setAttribute('role','group');controls.setAttribute('aria-label',say('Kies je reactie','Choose your response'));
+    const koc=current.settings.format==='koc';
+    const choices=[['yes','Ja, ik doe mee','Yes, I’m playing'],...(koc?[['reserve','Alleen reserve','Standby only']]:[]),['no','Ik kan niet','Unavailable']];
+    for(const [key,nl,english] of choices){
+      const choice=button(say(nl,english),()=>{editor.selected=key;responses(current);});
+      choice.dataset.answer=key;controls.append(choice);
+    }
+    const pinOption=el('div',undefined,'signup-pin'),check=el('label',undefined,'check'),wantPin=input('checkbox');
+    check.append(wantPin,el('span',say('Ook op een ander apparaat kunnen wijzigen','Enable editing on another device')));pinOption.append(check);
+    const pinBox=el('div');pinOption.append(pinBox);
+    const pin=pinField(pinBox,say('Kies een pincode van vier cijfers','Choose a four-digit PIN'),true);
+    const hint=el('small',say('Onthoud deze code voor deze avond.','Remember this code for this event.'));
+    hint.id='signupPinHint';pin.setAttribute('aria-describedby',hint.id);pinBox.append(hint);
+    const notice=el('p',undefined,'signup-warning');notice.setAttribute('aria-live','polite');
+    const save=button(say('Reactie bevestigen','Confirm response'),vote,true);
+    const open=button(say('Mijn inschrijving openen','Open my signup'),recoverResponse);open.className='text-action';
+    name.addEventListener('input',()=>responses(current));
+    wantPin.onchange=()=>{if(!wantPin.checked)pin.value='';responses(current);if(wantPin.checked)pin.focus();};
+    form.onsubmit=event=>event.preventDefault();
+    form.append(controls,own,pinOption,notice);actions(form,save);
+    form.append(el('p',koc?say('Vol? Dan komt ‘Ja’ op de wachtlijst, vóór ‘Alleen reserve’.','Full? A ‘Yes’ joins the waitlist ahead of standby volunteers.'):
+      say('Is de avond vol? Met ‘Ja’ kom je op de wachtlijst.','Event full? Choose Yes to join the waitlist.'),'hint'));
+    section.append(form,open,signupHelp());content.prepend(section);
+    return {section,form,name,controls,own,pinOption,wantPin,pinBox,pin,notice,save,open,selected:null,lastName:mine?.name};
+  }
   function responses(data){
     const mine=data.mine;
-    if(!editor){
-      const section=card(say('Jouw reactie','Your response')),form=el('form');
-      const name=field(form,say('Jouw naam','Your name'),input('text',mine?.name||P.preference('toss-poll-name')||''));
-      name.id='myName';name.autocomplete='given-name';name.maxLength=50;name.required=true;
-      const controls=el('div',undefined,'actions'),own=el('p',undefined,'own-state');own.id='ownStatus';
-      for(const [key,nl,english] of [['yes','Ja, ik doe mee','Yes, I’m playing'],['reserve','Alleen reserve','Standby only'],['no','Ik kan niet','Unavailable']]){
-        const b=button(say(nl,english),()=>vote(key));b.dataset.answer=key;controls.append(b);
-      }
-      const cancel=button(say('Mijn aanmelding intrekken','Withdraw my signup'),()=>{if(confirm(say('Je eigen aanmelding intrekken?','Withdraw your own signup?')))vote('cancel');});
-      form.onsubmit=e=>{e.preventDefault();vote('yes');};form.append(controls,own,cancel);
-      form.append(el('p',say('Vol? Dan komt ‘Ja’ op de wachtlijst, vóór ‘Alleen reserve’.','Full? A ‘Yes’ joins the waitlist ahead of standby volunteers.'),'hint'));section.append(form);
-      editor={section,form,name,controls,own,cancel};content.prepend(section);
-    }
-    for(const b of editor.controls.children)b.setAttribute('aria-pressed',String(mine?.answer===b.dataset.answer));
-    editor.cancel.hidden=!mine || mine.answer==='cancel';
-    editor.own.textContent=mine?(mine.answer==='cancel' && mine.place==='out'?say('Je aanmelding is ingetrokken.','You withdrew your signup.'):say('Je staat bij ','You are listed under ')+places()[mine.place]+'.'):'';
+    if(!editor)editor=responseForm(mine);
+    const {name,controls,own,pinOption,wantPin,pinBox,pin,notice,save,open}=editor;
+    if(mine && name.value===editor.lastName)name.value=mine.name;
+    editor.lastName=mine?.name;
+    const selected=editor.selected||mine?.answer;
+    for(const choice of controls.children)choice.setAttribute('aria-pressed',String(selected===choice.dataset.answer));
+    own.textContent=mine?.place==='pending'?say('Je reactie wacht op bevestiging door de organisator.','Your response is waiting for organizer confirmation.'):mine?(mine.answer==='cancel' && mine.place==='out'?say('Je aanmelding is ingetrokken.','You withdrew your signup.'):say('Je staat bij ','You are listed under ')+places()[mine.place]+'.'):'';
+    pinOption.hidden=Boolean(mine?.hasPin);pinBox.hidden=pin.disabled=pinOption.hidden || !wantPin.checked;
+    open.hidden=Boolean(mine);
+    const changing=selected!==mine?.answer;
+    const givesUp=changing && ((mine?.place==='in' && ['reserve','no'].includes(selected)) || (mine?.place==='wait' && ['reserve','no'].includes(selected)) || (mine?.place==='reserve' && selected==='no'));
+    const correction=mine?.correction;
+    if(correction && correction.until>Date.now()){
+      const time=new Intl.DateTimeFormat(en?'en-GB':'nl-NL',{hour:'2-digit',minute:'2-digit',second:'2-digit',timeZone:'Europe/Amsterdam'}).format(correction.until);
+      const answer=correction.answer==='yes'?say('Ja','Yes'):say('Alleen reserve','Standby only');
+      notice.textContent=say('Bevestig ‘'+answer+'’ vóór '+time+' om je eerdere aanmeldtijd terug te krijgen. Iemand die al is doorgeschoven houdt de plek.',
+        'Confirm “'+answer+'” before '+time+' to recover your previous signup time. Anyone already promoted keeps their place.');
+    }else notice.textContent=givesUp?say('Na bevestigen komt je plek vrij. Binnen 10 minuten kun je terug met je eerdere aanmeldtijd. Iemand die al is doorgeschoven houdt de plek.',
+      'Confirming frees your place. You have 10 minutes to return with your previous signup time. Anyone already promoted keeps their place.'):'';
+    notice.hidden=!notice.textContent;
+    save.disabled=pending || !selected || !(changing || (mine && name.value.trim()!==mine.name) || !pin.disabled);
   }
-  async function vote(answer){
-    if(pending || !editor.form.reportValidity())return;
-    pending=true;sequence++;editor.controls.inert=true;
+  async function vote(){
+    if(pending || editor.save.disabled || !editor.form.reportValidity())return;
+    const {name,pin}=editor,answer=editor.selected||current.mine?.answer;
+    const onlyPin=!pin.disabled && current.mine?.answer===answer && current.mine.name===name.value.trim();
+    const body=onlyPin?{action:'set-pin'}:{name:name.value.trim(),answer};
+    if(!pin.disabled)body.pin=pin.value;
+    pending=true;sequence++;editor.form.inert=true;
     try{
-      const data=await P.api(base,{name:editor.name.value.trim(),answer},{person:P.personalKey(true)});
-      P.preference('toss-poll-name',editor.name.value.trim());publicPage(data);$('message').textContent=say('Je reactie is opgeslagen.','Your response has been saved.');
-    }catch(error){$('message').textContent=friendly(error);if(error.message==='locked')await load(true);}
-    finally{pending=false;if(editor)editor.controls.inert=false;}
+      const data=await P.api(base,body,{person:P.personalKey(true)});
+      P.preference('toss-poll-name',data.mine.name);
+      editor.selected=null;editor.wantPin.checked=false;editor.pin.value='';editor.name.value=data.mine.name;
+      publicPage(data);$('message').textContent=say('Je reactie is opgeslagen.','Your response has been saved.');
+    }catch(error){$('message').textContent=friendly(error);if(['locked','changed'].includes(error.message))await load(true);}
+    finally{pending=false;if(editor){editor.form.inert=false;responses(current);}}
   }
+  let expandedOutFor=null;
   function groups(data,manage){
     const old=$('groups'),list=el('div',undefined,'list'),queues=el('div',undefined,'queues');list.id='groups';
-    const labels=places();
-    const keys=manage?Object.keys(labels):['in','wait','reserve','out'];
+    const labels=places(data.settings.format);
+    const keys=Object.keys(labels).filter(key=>manage || key!=='review');
     for(const key of keys){
       const rows=manage?data.entries.filter(e=>e.place===key):data.groups[key];
-      const box=el('section',undefined,'group');box.dataset.place=key;
-      const title=el('h3',labels[key]);title.append(el('span',key==='in'?rows.length+' / '+data.settings.capacity:String(rows.length),'count'));box.append(title);
+      const collapsed=key==='out',box=el(collapsed?'details':'section',undefined,'group');box.dataset.place=key;
+      const title=el('h3',labels[key]);title.append(el('span',key==='in'?rows.length+' / '+data.settings.capacity:String(rows.length),'count'));
+      if(collapsed){
+        const summary=el('summary');summary.append(title);box.append(summary);box.open=expandedOutFor===data.id;
+        box.ontoggle=()=>{if(box.isConnected)expandedOutFor=box.open?data.id:null;};
+      }else box.append(title);
       if(!rows.length)box.append(el('p',say('Nog niemand','No one yet'),'empty'));
       const ul=el('ol',undefined,'rows');box.append(ul);
       rows.forEach((entry,index)=>{
@@ -255,7 +353,7 @@
         if(manage){
           person.append(el('small',new Intl.DateTimeFormat(en?'en-GB':'nl-NL',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit',timeZone:'Europe/Amsterdam'}).format(entry.at)+(entry.standing?say(' · groepsoordeel bewaard',' · group note saved'):'')));
           row.dataset.id=entry.id;row.draggable=true;row.ondragstart=e=>{dragId=entry.id;e.dataTransfer.setData('text/plain',entry.id);};row.ondragend=()=>{dragId=null;};
-          const edit=button(say('Wijzig','Edit'),()=>entryModal(entry));edit.setAttribute('aria-label',say('Wijzig ','Edit ')+entry.name);row.append(edit);
+          const edit=button(say('Aanpassen','Edit'),()=>entryModal(entry));edit.setAttribute('aria-label',say(entry.name+' aanpassen','Edit '+entry.name));row.append(edit);
         }
         ul.append(row);
       });
@@ -272,7 +370,7 @@
     if(old)old.replaceWith(list);else content.append(list);
   }
   function publicPage(data){
-    if(!current || current.phase!==data.phase)resetEditor();
+    if(!current || current.phase!==data.phase || current.settings.format!==data.settings.format)resetEditor();
     current=data;header(data.settings,data.phase);
     if(data.phase==='open'){
       const jump=$('listJump');jump.hidden=false;
@@ -298,33 +396,50 @@
     }catch(error){if(error.status===409 || error.status===401)await load(true);throw error;}
     finally{pending=false;}
   }
-  function entryModal(entry){
-    modal(entry?say('Speler wijzigen','Edit player'):say('Speler toevoegen','Add a player'),root=>{
-      const name=field(root,say('Naam','Name'),input('text',entry?.name||''));name.required=true;name.maxLength=50;
-      const place=field(root,say('Verplaats naar','Move to'),select(Object.entries(places()),entry?.place||'in'));
-      const pos=field(root,say('Plek','Position'),el('select'));
-      function positions(initial=false){
-        const others=current.entries.filter(e=>e.place===place.value && e.id!==entry?.id);
-        const max=place.value==='in'?Math.min(current.settings.capacity,others.length+1):others.length+1;
-        pos.replaceChildren(...Array.from({length:max},(_,i)=>new Option(String(i+1),String(i+1))));
-        const original=current.entries.filter(e=>e.place===entry?.place).findIndex(e=>e.id===entry?.id);
-        pos.value=String(initial && entry?Math.min(max,original+1):max);
+  function entryFields(root,entry,poll){
+    const name=field(root,say('Naam','Name'),input('text',entry?.name||''));name.required=true;name.maxLength=50;
+    const place=field(root,say('Verplaats naar','Move to'),select(Object.entries(places()),entry?.place||'in'));
+    const pos=field(root,say('Plek','Position'),el('select'));
+    function positions(initial=false){
+      const others=poll.entries.filter(e=>e.place===place.value && e.id!==entry?.id);
+      const max=place.value==='in'?Math.min(poll.settings.capacity,others.length+1):others.length+1;
+      pos.replaceChildren(...Array.from({length:max},(_,i)=>new Option(String(i+1),String(i+1))));
+      const original=poll.entries.filter(e=>e.place===entry?.place).findIndex(e=>e.id===entry?.id);
+      pos.value=String(initial && entry?Math.min(max,original+1):max);
+    }
+    positions(true);place.onchange=()=>positions();
+    let level;
+    if(poll.settings.format==='splitToss'){
+      level=field(root,say('Speelgroep','Playing group'),select([['',say('Gelijk verdelen','Balance groups')],['0',say('Zilver','Silver')],['1',say('Goud','Gold')],['2',say('Platina','Platinum')]],entry?.level?.toString()||''));
+    }
+    const check=el('label',undefined,'check'),standing=input('checkbox');standing.checked=Boolean(entry?.standing);check.append(standing,el('span',say('Ook volgende edities van deze speelvorm alleen na mijn akkoord','Future editions of this format also require my approval')));root.append(check);
+    standing.onchange=()=>{if(standing.checked){place.value='review';positions();}};
+    if(entry && !(entry.answer==='cancel' && entry.place==='out')){
+      actions(root,button(say('Aanmelding intrekken','Withdraw this signup'),async()=>{
+        if(!confirm(say('Aanmelding van ','Withdraw signup for ')+entry.name+'?'))return;
+        try{await perform({action:'withdraw',id:entry.id,revision:poll.revision});$('dialog').close();}
+        catch(error){$('dialogError').textContent=friendly(error);}
+      }));
+    }
+    return ()=>({action:'entry',revision:poll.revision,id:entry?.id,name:name.value.trim(),place:place.value,position:Number(pos.value),level:level?.value?Number(level.value):null,standing:standing.checked});
+  }
+  function entryModal(entry=null,chooseExisting=false){
+    const poll=current,editing=Boolean(entry)||chooseExisting;
+    modal(editing?say('Speler aanpassen','Edit player'):say('Speler toevoegen','Add a player'),root=>{
+      if(!editing)return entryFields(root,null,poll);
+      const players=[...poll.entries].sort((a,b)=>a.name.localeCompare(b.name,en?'en':'nl',{sensitivity:'base'}));
+      const options=[['',say('Selecteer een speler','Select a player')],...players.map(p=>[p.id,p.name])];
+      const picker=field(root,say('Kies een speler','Choose a player'),select(options,entry?.id||''));
+      picker.required=true;
+      const details=el('div');root.append(details);
+      let read;
+      function choose(){
+        details.replaceChildren();$('dialogError').textContent='';
+        const selected=poll.entries.find(p=>p.id===picker.value);
+        read=selected?entryFields(details,selected,poll):null;
       }
-      positions(true);place.onchange=()=>positions();
-      let level;
-      if(current.settings.format==='splitToss'){
-        level=field(root,say('Speelgroep','Playing group'),select([['',say('Gelijk verdelen','Balance groups')],['0',say('Zilver','Silver')],['1',say('Goud','Gold')],['2',say('Platina','Platinum')]],entry?.level?.toString()||''));
-      }
-      const check=el('label',undefined,'check'),standing=input('checkbox');standing.checked=Boolean(entry?.standing);check.append(standing,el('span',say('Ook volgende edities van deze speelvorm alleen na mijn akkoord','Future editions of this format also require my approval')));root.append(check);
-      standing.onchange=()=>{if(standing.checked){place.value='review';positions();}};
-      if(entry && !(entry.answer==='cancel' && entry.place==='out')){
-        actions(root,button(say('Aanmelding intrekken','Withdraw this signup'),async()=>{
-          if(!confirm(say('Aanmelding van ','Withdraw signup for ')+entry.name+'?'))return;
-          try{await perform({action:'withdraw',id:entry.id});$('dialog').close();}
-          catch(error){$('dialogError').textContent=friendly(error);}
-        }));
-      }
-      return ()=>({action:'entry',id:entry?.id,name:name.value.trim(),place:place.value,position:Number(pos.value),level:level?.value?Number(level.value):null,standing:standing.checked});
+      picker.onchange=choose;choose();
+      return ()=>{if(!read)throw Error('field');return read();};
     },perform);
   }
   async function copyPublic(){
@@ -357,11 +472,17 @@
     const url=input('text',location.origin+'/aanmelden/'+id);url.id='publicUrl';url.readOnly=true;url.hidden=true;section.append(url);
     const identifier=el('p',say('Poll-ID · ','Poll ID · '),'hint');identifier.append(el('code',id));section.append(identifier);
     const tools=card(say('Aanmeldlijst beheren','Manage signup list'));
-    actions(tools,button(say('Speler toevoegen','Add a player'),()=>entryModal()),button(say('Avond wijzigen','Edit event'),()=>modal(say('Avond wijzigen','Edit event'),r=>configFields(r,current.settings),s=>perform({action:'settings',settings:s}))),
-      button(say('Herhaal volgende week','Repeat next week'),safe(()=>perform({action:'repeat'}))));
+    const editPlayers=data.entries.length?[button(say('Aanpassen','Edit player'),()=>entryModal(null,true))]:[];
+    actions(tools,button(say('Speler toevoegen','Add a player'),()=>entryModal()),...editPlayers,button(say('Avond wijzigen','Edit event'),()=>modal(say('Avond wijzigen','Edit event'),r=>configFields(r,current.settings),s=>perform({action:'settings',settings:s}))),
+      button(say('Herhaal volgende week','Repeat next week'),safe(()=>{
+        if(data.next || !data.askRepeatName)return perform({action:'repeat'});
+        modal(say('Herhaal volgende week','Repeat next week'),root=>{
+          const name=creatorField(root);
+          return ()=>({action:'repeat',revision:data.revision,creatorName:name.value.trim()});
+        },perform);
+      })));
     if(!hubRoute){
-      actions(tools,link(say('Mijn polls','My polls'),'/mijn-polls'+(en?'?lang=en':'')));
-      if(!data.hasOrganizer && P.token(id))actions(tools,button(say('Toevoegen aan Mijn polls','Add to my polls'),safe(async()=>{
+      if(!data.hasOrganizer && P.token(id))actions(section,button(say('Toevoegen aan Mijn polls','Add to my polls'),safe(async()=>{
         let known=null;
         try{known=(await P.api('/mine/status')).name;}catch(error){if(error.status!==401)throw error;}
         modal(say('Toevoegen aan Mijn polls','Add to my polls'),root=>{

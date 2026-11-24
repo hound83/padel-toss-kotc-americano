@@ -20,7 +20,15 @@ const {chromium}=require('playwright');
     assert.equal(await page.locator('nav .brand').innerText(),'Padel Planner');
     await page.getByLabel('Jouw naam',{exact:true}).waitFor();
     assert.equal(await page.getByLabel('Naam van de avond',{exact:true}).inputValue(),'Toss');
-    await page.getByLabel('Wachtwoord',{exact:true}).waitFor();
+    const helpText=async label=>page.locator('#'+await page.getByLabel(label,{exact:true}).getAttribute('aria-describedby')).innerText();
+    assert.match(await helpText('Jouw naam'),/Werner V\./);
+    assert.equal(await page.getByLabel('Wachtwoord',{exact:true}).getAttribute('minlength'),'6');
+    assert.match(await helpText('Wachtwoord'),/Alleen je naam moet uniek zijn/);
+    await page.locator('#language').tap();
+    await page.getByLabel('Your name',{exact:true}).waitFor();
+    assert.match(await helpText('Your name'),/If Werner is taken/);
+    assert.match(await helpText('Password'),/Only your name needs to be unique/);
+    await page.locator('#language').tap();
     await page.getByRole('link',{name:'Mijn polls openen'}).tap();
     await page.getByRole('heading',{name:'Mijn polls',exact:true}).waitFor();
     await page.getByLabel('Jouw naam',{exact:true}).waitFor();
@@ -37,6 +45,21 @@ const {chromium}=require('playwright');
     }
     const missing=await page.request.get(new URL('/api/polls/00000000000000',base).href);
     assert.equal(missing.status(),404);assert.deepEqual(await missing.json(),{error:'missing'});
+    // Exercise the new public controls against live assets without creating a production registration.
+    const writes=[],sample='00000000000000';
+    await page.route('**/api/polls/'+sample,route=>{
+      if(route.request().method()!=='GET')writes.push(route.request().method());
+      return route.fulfill({json:{id:sample,settings:{title:'Voorbeeldavond',format:'toss',date:'2026-11-24',start:'21:00',end:'23:00',capacity:8},phase:'open',groups:{in:[],wait:[],reserve:[],out:[]}}});
+    });
+    await page.goto(new URL('/aanmelden/'+sample,base).href);
+    await page.getByRole('button',{name:'Mijn inschrijving openen'}).waitFor();
+    assert.equal(await page.getByRole('button',{name:'Reactie bevestigen'}).isDisabled(),true);
+    await page.getByLabel('Jouw naam',{exact:true}).fill('Voorbeeld');
+    await page.getByRole('button',{name:'Ja, ik doe mee'}).tap();
+    assert.equal(await page.getByRole('button',{name:'Reactie bevestigen'}).isEnabled(),true);
+    await page.getByText('Wie kan mijn inschrijving aanpassen?',{exact:true}).tap();
+    await page.getByText(/Pincode vergeten of hulp nodig/).waitFor();
+    assert.deepEqual(writes,[]);
     const signupBox=await manage.boundingBox();
     assert.ok(signupBox && signupBox.height>=44);
     await manage.tap();
@@ -54,6 +77,7 @@ const {chromium}=require('playwright');
     await page.locator('#continueTo2').tap();await page.locator('#generateBtn').tap();
     await page.getByRole('button',{name:'Schema delen'}).filter({visible:true}).tap();
     assert.equal(await page.getByLabel('Speeldatum',{exact:true}).inputValue(),'');
+    await page.getByLabel('Jouw naam',{exact:true}).waitFor();
     await page.getByRole('button',{name:'Inplannen en delen'}).waitFor();
     console.log('Cloudflare production serves Toss 3.3, the four mode illustrations and the protected organizer dashboard.');
   }finally{await browser.close();}

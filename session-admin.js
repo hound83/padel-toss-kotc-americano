@@ -83,6 +83,8 @@
       drawPollButtons();if(!dialog.open)return;
       const doc=app.snapshot(),poll=app.poll?.(),needsDate=!meta?.playDate && !poll,fields=!!meta && !needsDate,closed=!!meta?.closed;
       $('shareDateGroup').hidden=!app.hosted || !needsDate || (!doc && !meta);
+      $('shareCreatorGroup').hidden=!!meta;
+      $('shareCreatorLabel').textContent=say('Jouw naam','Your name');
       $('shareDateLabel').textContent=say('Speeldatum','Playing date');
       $('shareDate').max=new Date(Date.now()+370*86400000).toISOString().slice(0,10);
       const canEnter=!!doc?.view.rounds.some(rd=>rd.rows.some(row=>row.slot));
@@ -214,7 +216,7 @@
         }
       }
       if(!secret){
-        const signature=JSON.stringify(doc),result=await request('/api/sessions',{...doc,playDate:admin?.settings.date||$('shareDate').value});
+        const signature=JSON.stringify(doc),result=await request('/api/sessions',{...doc,playDate:admin?.settings.date||$('shareDate').value,...(!poll?{creatorName:$('shareCreator').value.trim()}:{})});
         secret=result.secret;setMeta(result);base=signature;history.replaceState(null,'','/b/'+secret);
         app.save();announce('');
       }
@@ -235,7 +237,10 @@
       }
     }
     $('sharePublish').onclick=()=>{
-      if(!$('shareDateGroup').hidden && !$('shareDate').reportValidity())return;
+      if(!$('shareDateGroup').hidden){
+        if(!$('shareDate').reportValidity())return;
+        if(!$('shareCreatorGroup').hidden && !$('shareCreator').reportValidity())return;
+      }
       action(publish);
     };
     $('entryMode').onchange=async()=>{

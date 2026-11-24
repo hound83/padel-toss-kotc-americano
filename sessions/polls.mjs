@@ -1,7 +1,8 @@
+import {makeSignupPin,recoverSignup,signupPerson} from './poll-signup-pin.mjs';
 import {centralLogin} from './organizer.mjs';
 import {acceptablePassword,hash,random,verifier} from './poll-auth.mjs';
 import {currentOrganizer,organizerCredentials,organizerSession} from './poll-organizers.mjs';
-import {emptyPoll, changeSettings, adminEntry, nameKey, publicPoll, respond, invalid} from './poll-roster.mjs';
+import {creatorName, emptyPoll, changeSettings, adminEntry, nameKey, prepareRoster, publicPoll, respond, invalid} from './poll-roster.mjs';
 
 const day=86400000;
 const stmt=(db,sql,...args)=>db.prepare(sql).bind(...args);
@@ -27,7 +28,7 @@ function rowInsert(db,id,series,doc,now){
 }
 function adminView(row,doc){
   return {id:row.id,revision:row.revision,settings:doc.settings,phase:doc.phase,viewCode:doc.viewCode,next:doc.next||null,plannerKey:doc.plannerKey||null,
-    entries:doc.entries.map(({person,...visible})=>visible)};
+    entries:doc.entries.map(({person,pin,correction,...visible})=>visible)};
 }
 function checkDate(config,now){
   if(Date.parse(config.date)>now+370*day)invalid('date');
@@ -45,6 +46,8 @@ export async function pollApi(request,db,now,{json,requestJson,counter},adminPas
       if(viaHub)invalid('field');
       owner=await organizerCredentials(request,db,now,body,counter,true);
     }
+    doc.createdAt=now;
+    doc.createdBy=owner?.display_name || (viaHub && body.creatorName!==undefined ? creatorName(body.creatorName) : null);
     const salt=owner?.salt||random(16);
     const password=owner?.verifier||await verifier(viaHub?random(32):acceptablePassword(body.password),salt);
     const writes=[stmt(db,'INSERT INTO signup_series VALUES(?,?,?)',series,salt,password),rowInsert(db,id,series,doc,now)];
@@ -54,12 +57,18 @@ export async function pollApi(request,db,now,{json,requestJson,counter},adminPas
     if(owner){const response=json({id},201);return session?session.respond(response):response;}
     return json(viaHub?{id}:{id,token:await issueLogin(db,series,now)},201);
   }
-  const route=path.match(/^\/api\/polls\/([a-f0-9]{14})(?:\/(login|admin|logout|organizer))?$/);
+  const route=path.match(/^\/api\/polls\/([a-f0-9]{14})(?:\/(login|admin|logout|organizer|recover))?$/);
   if(!route)invalid('missing',404);
   const [,id,kind]=route;
   const read=()=>first(db,'SELECT * FROM signup_polls WHERE id=? AND expires>?',id,now);
   let row=await read();
   if(!row)invalid('missing',404);
+  if(kind==='recover'){
+    if(request.method!=='POST')invalid('method',405);
+    const device=await personKey(request,row.series),body=await requestJson(request);
+    await recoverSignup({request,db,row,device,body,now,counter});
+    return json({ok:true});
+  }
   if(kind==='login'){
     if(request.method!=='POST')invalid('method',405);
     await counter(db,request,'poll-password-'+row.series,now,10,true);
@@ -71,7 +80,8 @@ export async function pollApi(request,db,now,{json,requestJson,counter},adminPas
     return json({token:await issueLogin(db,row.series,now)});
   }
   const membership=(kind==='admin' || kind==='organizer') &&
-    await first(db,'SELECT organizer FROM poll_organizer_series WHERE series=?',row.series);
+    await first(db,`SELECT m.organizer,o.display_name FROM poll_organizer_series m JOIN poll_organizers o ON o.name_key=m.organizer
+      WHERE m.series=?`,row.series);
   if(kind==='organizer'){
     if(request.method!=='POST')invalid('method',405);
     // Linking a legacy series needs both its existing poll login and the organizer's credentials.
@@ -96,7 +106,11 @@ export async function pollApi(request,db,now,{json,requestJson,counter},adminPas
   async function organizerView(version,doc){
     const view=adminView(version,doc);
     view.hasOrganizer=Boolean(membership);
+    view.askRepeatName=!ownPoll;
     if(siteAdmin){
+      view.createdAt=doc.createdAt??null;
+      view.createdBy=doc.createdBy??null;
+      view.seriesOrganizer=membership?.display_name??null;
       // A central login opens the planner with its cookie. Never hand a long-lived
       // owner link to that browser as a side effect of viewing a signup list.
       delete view.plannerKey;
@@ -110,10 +124,11 @@ export async function pollApi(request,db,now,{json,requestJson,counter},adminPas
     await stmt(db,'DELETE FROM signup_logins WHERE token=?',await hash(request.headers.get('Authorization').slice(7))).run();
     return json({ok:true});
   }
-  const person=kind?null:await personKey(request,row.series);
+  const device=kind?null:await personKey(request,row.series);
+  let person=await signupPerson(db,id,device);
   if(request.method==='GET'){
-    const doc=JSON.parse(row.document);
-    return json(kind?await organizerView(row,doc):publicPoll(doc,id,person));
+    const doc=prepareRoster(JSON.parse(row.document));
+    return json(kind?await organizerView(row,doc):publicPoll(doc,id,person,now));
   }
   if(request.method!=='POST')invalid('method',405);
   const body=await requestJson(request);
@@ -125,16 +140,36 @@ export async function pollApi(request,db,now,{json,requestJson,counter},adminPas
   const standing=!kind && typeof body.name==='string' && await first(db,
     'SELECT 1 AS found FROM signup_holds WHERE series=? AND format=? AND (person=? OR name=?)',
     row.series,JSON.parse(row.document).settings.format,person,nameKey(body.name));
+  let pendingPin;
   for(let attempt=0;attempt<20;attempt++){
     if(!row)invalid('missing',404);
-    const doc=JSON.parse(row.document),extra=[];
+    const doc=prepareRoster(JSON.parse(row.document)),extra=[];
     let writeGuard='',guardValues=[];
     if(!kind){
       // Receipt order is assigned by the server, including equal-millisecond submissions.
       const accepted=Math.max(now,doc.lastAccepted||0);
-      respond(doc,person,body,accepted,standing);
-      if(JSON.stringify(doc)===row.document)return json(publicPoll(doc,id,person));
-      doc.lastAccepted=accepted;
+      if(doc.phase!=='open')invalid('locked',409);
+      if(body.action==='set-pin'){
+        if(!doc.entries.some(e=>e.person===person))invalid('identity',403);
+        if(body.pin===undefined)invalid('pin-format');
+      }else{
+        respond(doc,person,body,accepted,standing);
+      }
+      if(body.pin!==undefined){
+        const own=doc.entries.find(e=>e.person===person);
+        if(own.pin){
+          // A retried first response may contain the same PIN after the initial write succeeded.
+          if(typeof body.pin!=='string' || !/^[0-9]{4}$/.test(body.pin) || await verifier(body.pin,own.pin.salt)!==own.pin.verifier)invalid('pin-set',409);
+        }else{
+          pendingPin??=await makeSignupPin(body.pin);
+          own.pin=pendingPin;
+        }
+      }
+      if(JSON.stringify(doc)===row.document)return json(publicPoll(doc,id,person,now));
+      if(body.action!=='set-pin')doc.lastAccepted=accepted;
+      // Registration on a fresh device must not race with recovery of someone else's response.
+      writeGuard=' AND NOT EXISTS(SELECT 1 FROM signup_recovered_devices WHERE poll=? AND device=? AND person<>?)';
+      guardValues=[id,device,person];
     }else{
       if(body.revision!==row.revision)invalid('changed',409);
       if(body.action==='entry'){
@@ -182,8 +217,11 @@ export async function pollApi(request,db,now,{json,requestJson,counter},adminPas
           guardValues=[existing.id,now,next.date];
         }else{
           doc.next=random(7);
+          const nextPoll=emptyPoll(next);
+          nextPoll.createdAt=now;
+          nextPoll.createdBy=ownPoll?membership.display_name:body.creatorName===undefined?null:creatorName(body.creatorName);
           extra.push(stmt(db,'INSERT INTO signup_polls(id,series,revision,expires,document) SELECT ?,?,1,?,? WHERE EXISTS(SELECT 1 FROM signup_polls WHERE id=? AND revision=?)',
-            doc.next,row.series,ttl(next,now),JSON.stringify(emptyPoll(next)),id,row.revision));
+            doc.next,row.series,ttl(next,now),JSON.stringify(nextPoll),id,row.revision));
         }
       }else invalid('action');
     }
@@ -201,11 +239,13 @@ export async function pollApi(request,db,now,{json,requestJson,counter},adminPas
     const last=(await db.batch([...extra,updated])).at(-1);
     if(last.meta.changes){
       if(kind && body.action==='repeat')return json({id:doc.next});
-      return json(kind?await organizerView({...row,revision:row.revision+1},doc):publicPoll(doc,id,person));
+      return json(kind?await organizerView({...row,revision:row.revision+1},doc):publicPoll(doc,id,person,now));
     }
     if(kind)invalid('changed',409);
     await new Promise(resolve=>setTimeout(resolve,2+Math.random()*Math.min(50,4*(attempt+1))));
     row=await read();
+    const activePerson=await signupPerson(db,id,device);
+    if(activePerson!==person)invalid('changed',409);
   }
   invalid('retry',409);
 }

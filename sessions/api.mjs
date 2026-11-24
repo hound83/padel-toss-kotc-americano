@@ -2,7 +2,7 @@ import {centralLogin,organizerApi} from './organizer.mjs';
 import {pollApi,pollCleanup} from './polls.mjs';
 import {myPollsApi} from './poll-organizers.mjs';
 import createRanking from '../ranking.js';
-import {validPlayDate} from './poll-roster.mjs';
+import {creatorName,validPlayDate} from './poll-roster.mjs';
 
 const WEEK = 7 * 86400000;
 const alphabet = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
@@ -101,14 +101,14 @@ async function requestJson(request){
   }
   try{return JSON.parse(parts.join('')+decoder.decode());}catch{fail(400,'json');}
 }
-async function counter(db, request, name, now, max, increment){
-  const span=15*60000,end=(Math.floor(now/span)+1)*span;
-  const ip=request.headers.get('CF-Connecting-IP') || 'local';
+async function counter(db, request, name, now, max, increment, {span=15*60000,shared=false,error='limit'}={}){
+  const end=(Math.floor(now/span)+1)*span;
+  const ip=shared?'all':request.headers.get('CF-Connecting-IP') || 'local';
   const bucket=await digest([name,end,ip].join('/'));
   if(increment){
     const row=await one(db,'INSERT INTO limits VALUES(?,1,?) ON CONFLICT(bucket) DO UPDATE SET hits=hits+1 RETURNING hits',bucket,end);
-    if(row.hits>max)fail(429,'limit');
-  }else if((await one(db,'SELECT hits FROM limits WHERE bucket=?',bucket))?.hits>=max)fail(429,'limit');
+    if(row.hits>max)fail(429,error);
+  }else if((await one(db,'SELECT hits FROM limits WHERE bucket=?',bucket))?.hits>=max)fail(429,error);
 }
 async function resolvePlan(db,state,date,now){
   if(state.signupPoll?.id){
@@ -140,6 +140,8 @@ async function create(db, request, now){
   await counter(db,request,'create',now,20,true);
   const body=await requestJson(request),doc=validDocument(body);
   doc.planning=await resolvePlan(db,doc.state,body.playDate,now);
+  doc.createdAt=now;
+  doc.createdBy=body.creatorName===undefined?null:creatorName(body.creatorName);
   const expires=Math.max(now,Date.parse(doc.planning.date))+WEEK;
   const secret=toHex(random(24)),owner=await digest(secret);
   const id=crypto.randomUUID(), epoch=crypto.randomUUID();
@@ -185,9 +187,9 @@ async function manage(db,request,now,sessionId){
   if(body.action==='link')return modeLink(db,row,body.player);
   let mode=row.mode,epoch=row.epoch,closed=row.closed,doc=row.document,expires=Math.max(row.expires,now+WEEK);
   if(body.action==='save'){
-    const next=validDocument(body.document),planning=JSON.parse(row.document).planning;
-    if(planning)next.planning=planning;
-    doc=JSON.stringify(next);
+    const saved=JSON.parse(row.document);
+    Object.assign(saved,validDocument(body.document));
+    doc=JSON.stringify(saved);
   }else if(body.action==='schedule'){
     const saved=JSON.parse(row.document);
     if(saved.planning)fail(409,'changed');
