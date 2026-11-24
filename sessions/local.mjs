@@ -8,7 +8,7 @@ import {serve,publicFiles} from './routes.mjs';
 
 const root=new URL('../',import.meta.url);
 const mime={'.html':'text/html; charset=utf-8','.css':'text/css','.js':'text/javascript','.webmanifest':'application/manifest+json','.svg':'image/svg+xml','.png':'image/png'};
-export async function localSessionApp(database=':memory:'){
+export async function localSessionApp(database=':memory:',adminPassword=process.env.PADEL_ADMIN_PASSWORD){
   const sql=new DatabaseSync(database);
   sql.exec('PRAGMA foreign_keys=ON; PRAGMA journal_mode=WAL;');
   sql.exec(await readFile(new URL('schema.sql',import.meta.url),'utf8'));
@@ -28,7 +28,7 @@ export async function localSessionApp(database=':memory:'){
     const bytes=await readFile(new URL(file,root));
     return new Response(request.method==='HEAD'?null:bytes,{headers:{'Content-Type':mime[extname(file)]}});
   }};
-  return {fetch:req=>serve(req,{DB,ASSETS}),DB,sql,close:()=>sql.close()};
+  return {fetch:req=>serve(req,{DB,ASSETS,PADEL_ADMIN_PASSWORD:adminPassword}),DB,sql,close:()=>sql.close()};
 }
 if(process.argv[1] && pathToFileURL(process.argv[1]).href===import.meta.url){
   const app=await localSessionApp(process.env.SESSION_DB || 'sessions.sqlite');

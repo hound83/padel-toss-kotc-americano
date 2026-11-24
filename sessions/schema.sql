@@ -14,6 +14,11 @@ CREATE TABLE IF NOT EXISTS limits (
 );
 CREATE INDEX IF NOT EXISTS limit_expiry ON limits(expires);
 
+CREATE TABLE IF NOT EXISTS organizer_logins (
+  token TEXT PRIMARY KEY, expires INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS organizer_login_expiry ON organizer_logins(expires);
+
 CREATE TABLE IF NOT EXISTS signup_series (
   id TEXT PRIMARY KEY, salt TEXT NOT NULL, verifier TEXT NOT NULL
 );

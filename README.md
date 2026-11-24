@@ -167,6 +167,12 @@ Kies na het indelen **Schema delen → Kijklink maken**. Iedereen met de volledi
 
 De organisator houdt het bewerken op het eigen apparaat. Zolang de planner open is, verstuurt hij wijzigingen versleuteld en ondertekend via ntfy.sh. De dienst bewaart updates tijdelijk. Met **Schema delen → Kijksessie beëindigen** verstuurt de organisator de eindstand. Kijkers zien dat de sessie is gesloten. Hun browser bewaart de ontvangen eindstand voor een volgend bezoek. Wie de link pas opent nadat de dienst de updates heeft verwijderd, ziet de oorspronkelijke indeling. Een kijklink verleent geen schrijfrechten.
 
+## Centraal beheer
+
+Open **Beheer** onderaan de site of ga naar [Centraal beheer](https://padel.hound83.workers.dev/beheer). Na één keer inloggen zie je de aanmeldavonden van vandaag, komende en recente avonden, en losse online speelschema’s. Klap een avond open om spelers te verplaatsen, af te melden of toe te voegen. Vanuit dezelfde kaart kun je de groepslink kopiëren, indelen en een gepubliceerd schema openen. **Nieuwe avond** gebruikt dezelfde beheerdersinlog.
+
+Het vaste wachtwoord staat in de Cloudflare Worker `padel` als runtime-Secret `PADEL_ADMIN_PASSWORD`. Stel het in via **Settings → Variables and Secrets**. Een wijziging maakt bestaande centrale inlogs ongeldig. Elke inlog vervalt na twaalf uur. Voor een eigen Node-host kan dezelfde omgevingsvariabele worden ingesteld.
+
 ## Versie 3.2 met aanmeldpoll
 
 Op de [sessiesite](https://padel.hound83.workers.dev/) opent **Aanmeldpoll maken** een avond met een speelvorm, datum, tijden, banen en capaciteit. Kies een eigen beheerwachtwoord (minimaal acht tekens) en deel de **groepslink** via WhatsApp. Iedereen met die link ziet tijdens de open aanmelding de lijst. Spelers hebben geen account nodig. Ze kunnen op dezelfde browser hun eigen reactie wijzigen of intrekken. Bij een ander apparaat of gewiste browsergegevens kan de organisator helpen.

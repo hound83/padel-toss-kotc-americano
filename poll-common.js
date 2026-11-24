@@ -32,5 +32,11 @@ window.TossPoll=(()=>{
     return data;
   }
   function rosterSignature(data){return JSON.stringify([data.settings,data.entries.filter(e=>e.place==='in').map(e=>[e.name,e.level??null])]);}
-  return {modes,art,token,remember,personalKey,api,rosterSignature,preference};
+  function organizerLinks(en=false){
+    const base=document.querySelector('meta[name="koriander-sessions"]')?'/beheer':'https://padel.hound83.workers.dev/beheer';
+    document.querySelectorAll('[data-organizer-link]').forEach(a=>{
+      a.href=base+(en?'?lang=en':'');a.textContent=en?'Organizer':'Beheer';
+    });
+  }
+  return {modes,art,token,remember,personalKey,api,rosterSignature,preference,organizerLinks};
 })();

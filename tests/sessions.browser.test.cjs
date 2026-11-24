@@ -5,7 +5,8 @@ const {chromium}=require('playwright');
 
 test('an organizer can close the laptop, players score, and the organizer continues in the full planner on a phone',async t=>{
   const {localSessionApp}=await import('../sessions/local.mjs');
-  const app=await localSessionApp();t.after(()=>app.close());
+  const centralPassword=process.env.PADEL_TEST_ORGANIZER_PASSWORD || require('node:crypto').randomBytes(18).toString('hex');
+  const app=await localSessionApp(':memory:',centralPassword);t.after(()=>app.close());
   let origin=process.env.PADEL_SESSION_SITE_URL || 'https://club.test';
   const intercept=process.env.PADEL_SESSION_ROUTE_FIXTURE==='1';
   if(!intercept && !process.env.PADEL_SESSION_SITE_URL){
@@ -34,7 +35,7 @@ test('an organizer can close the laptop, players score, and the organizer contin
     return {page,ctx};
   }
   const laptop=await device(),organizer=laptop.page;
-  await organizer.goto(origin);assert.equal(await organizer.locator('#appVersion').innerText(),'v3.2.0');
+  await organizer.goto(origin);assert.equal(await organizer.locator('#appVersion').innerText(),'v3.3.0');
   await organizer.locator('.format-btn[data-format=americano]').click();
   await organizer.locator('#continueTo2').click();await organizer.locator('#generateBtn').click();
   await organizer.getByRole('button',{name:'Schema delen'}).last().click();
@@ -52,6 +53,16 @@ test('an organizer can close the laptop, players score, and the organizer contin
   const ownerLink=await organizer.locator('#ownerUrl').inputValue();
   assert.match(new URL(entryLink).pathname,/^\/s\/[0-9A-Z]{4}-[0-9A-Z]{4}$/);
   assert.equal(new URL(entryLink).hash,'');assert.notEqual(viewLink,entryLink);
+  const central=await device(true);
+  await central.page.goto(origin+'/beheer');
+  await central.page.getByLabel('Beheerwachtwoord').fill(centralPassword);
+  await central.page.getByRole('button',{name:'Inloggen'}).click();
+  const liveCode=new URL(viewLink).pathname.split('/').pop().replace('-','');
+  const liveCard=central.page.locator('.hub-session').filter({has:central.page.locator('a[href="/s/'+liveCode+'"]')});
+  await liveCard.getByRole('link',{name:'Open planner'}).click();
+  await central.page.locator('#panel3:visible .match-card input').first().waitFor();
+  assert.match(new URL(central.page.url()).pathname,/^\/beheer\/sessie\//);
+  await central.ctx.close();
   await laptop.ctx.close();
 
   const watcher=await device(true),visitor=await device(true),player=visitor.page;

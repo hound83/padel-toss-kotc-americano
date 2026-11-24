@@ -350,6 +350,8 @@
   .resume-modal .modal-actions{flex-wrap:wrap;}
   .present-exit{display:none;position:fixed;right:18px;bottom:18px;z-index:90;border:0;border-radius:10px;background:var(--ball);color:var(--teal-900);padding:12px 16px;font-weight:800;cursor:pointer;}
   body.presentation-mode .present-exit{display:block;}
+  .live-organizer-link{position:fixed;bottom:15px;left:20px;z-index:85;border-radius:6px;padding:8px 12px;color:var(--ink-soft);background:var(--mist);font-size:.85rem}
+  @media print{.live-organizer-link{display:none}}
   body.presentation-mode .masthead,body.presentation-mode .steps,body.presentation-mode .schedule-actions,body.presentation-mode .app-footer,body.presentation-mode .koc-setup,body.presentation-mode .koc-roster-tools,body.presentation-mode .koc-actions,body.presentation-mode .playcount-wrap{display:none!important;}
   body.presentation-mode .wrap{max-width:1600px;padding:28px;}
   body.presentation-mode .rounds-col{font-size:1.15em;}
@@ -1767,6 +1769,7 @@
     <div class="share-footer"><button id="shareEnd" class="btn btn-ghost" type="button" data-i18n="endShare" hidden></button><button id="shareClose" class="btn btn-ghost" type="button" data-i18n="closeShare"></button></div>
   </dialog>
   <footer class="app-footer">
+    <a data-organizer-link href="https://padel.hound83.workers.dev/beheer">Beheer</a>
     <span id="appVersion">v2.8.0</span>
     <a id="versionLink" href="?preview=3">Probeer de 3.0-preview</a>
     <a hidden id="entryVersionLink" href="?preview=3.1" data-i18n="entryVersion">Probeer 3.1 met score-invoer</a>
@@ -1823,6 +1826,7 @@
       <aside id="liveStandings" class="live-standings" tabindex="0"></aside>
     </div>
   </div>
+  <a data-organizer-link class="live-organizer-link" href="https://padel.hound83.workers.dev/beheer">Beheer</a>
 </section>
 
 <button id="presentExit" class="present-exit" type="button" data-i18n="presentExit">Sluit presentatiemodus</button>
@@ -2654,6 +2658,7 @@
     document.documentElement.lang = state.lang;
     const versionLink=document.getElementById('versionLink');
     versionLink.href=previewV3?(hostedSessions?'/?preview=2.8':'./'):'?preview=3';versionLink.textContent=t(previewV3?'stableLink':'previewLink');
+    TossPoll.organizerLinks(state.lang==='en');
     const pollHome=document.getElementById('pollHome');
     pollHome.hidden=!hostedSessions || !entryPreview;
     pollHome.textContent=state.lang==='en'?'Create a signup poll':'Aanmeldpoll maken';
@@ -8242,7 +8247,7 @@
 
   // init
   if(entryPreview){
-    document.getElementById('appVersion').textContent=hostedSessions?'v3.2.0':'v3.1.0-preview';
+    document.getElementById('appVersion').textContent=hostedSessions?'v3.3.0':'v3.1.0-preview';
     PadelSessions.setup({
       hosted:hostedSessions, language:()=>state.lang, poll:()=>state.signupPoll, hasDraw:()=>state.format==='koc'?!!state.koc?.assignment:state.step===3 && !!state.pools.length,
       snapshot:()=>{if(editSession || ![3,4].includes(state.step))return null;const view=viewSnapshot();return view ? {state,view} : null;},
@@ -8257,7 +8262,7 @@
   goToStep(0);
   try {
     var existing = JSON.parse(localStorage.getItem(AUTOSAVE_KEY));
-    if (!signupId && !location.pathname.includes('/b/') && existing && existing.format === 'padel-toss-autosave' && existing.version === 2 &&
+    if (!signupId && !location.pathname.includes('/b/') && !location.pathname.startsWith('/beheer/sessie/') && existing && existing.format === 'padel-toss-autosave' && existing.version === 2 &&
         validateSaveData({format:SAVE_FORMAT,version:SAVE_VERSION,state:existing.state}) === null){
       resumeOverlay.classList.add('visible');
     }
@@ -8275,6 +8280,7 @@
     try{
       const data=await TossPoll.api('/'+id+'/admin',undefined,{token:TossPoll.token(id)});
       if(data.phase==='open'){location.replace(manage);return;}
+      if(data.plannerId){location.replace('/beheer/sessie/'+data.plannerId);return;}
       if(data.plannerKey){location.replace('/b/'+data.plannerKey);return;}
       const config=data.settings,players=data.entries.filter(e=>e.place==='in');
       const names=players.map(e=>e.name);

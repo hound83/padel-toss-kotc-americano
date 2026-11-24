@@ -1,17 +1,17 @@
 import {api} from './api.mjs';
 
 export const publicFiles = [
-  'index.html','kijken.html','aanmelden.html','poll.js','poll-common.js','poll.css','round-planner.js','ranking.js','session-admin.js','name-hint.js',
+  'index.html','kijken.html','aanmelden.html','poll.js','poll-common.js','organizer-hub.js','poll.css','round-planner.js','ranking.js','session-admin.js','name-hint.js',
   'schedule-document.js','share-v3.js','sw.js','manifest.webmanifest','visual-theme.css',
   'icon.svg','icon-192.png','icon-512.png','assets/mode-toss.svg','assets/mode-koc.svg',
   'assets/mode-americano.svg','assets/mode-split.svg','assets/mode-split-en.svg'
 ];
 export async function serve(request,env){
   const url=new URL(request.url),path=url.pathname;
-  if(path.startsWith('/api/'))return api(request,env.DB);
+  if(path.startsWith('/api/'))return api(request,env.DB,Date.now(),env.PADEL_ADMIN_PASSWORD);
   if(!['GET','HEAD'].includes(request.method))return new Response(null,{status:405});
-  const guest=path.startsWith('/s/'),owner=path.startsWith('/b/');
-  const poll=/^\/(?:aanmaken\/?|(?:aanmelden|beheer)\/[0-9a-f]{14}\/?)$/.test(path);
+  const guest=path.startsWith('/s/'),owner=path.startsWith('/b/') || /^\/beheer\/sessie\/[a-f0-9-]{36}\/?$/.test(path);
+  const poll=/^\/(?:aanmaken\/?|beheer\/?|(?:aanmelden|beheer)\/[0-9a-f]{14}\/?)$/.test(path);
   const file=poll?'aanmelden.html':guest?'kijken.html':owner || path==='/'?'index.html':path.slice(1);
   if(!publicFiles.includes(file))return new Response(null,{status:404});
   const resource=new URL('/'+file,url);

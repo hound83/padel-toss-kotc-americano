@@ -6,7 +6,8 @@
     const say=(nl,en)=>app.language()==='en'?en:nl;
     const dialog=$('shareDialog'),info=$('shareInfo');
     const guestUrl=code=>code ? location.origin+'/s/'+code.slice(0,4)+'-'+code.slice(4) : '';
-    let secret=location.pathname.match(/^\/b\/([0-9a-f]{48})\/?$/)?.[1];
+    let centralSession=location.pathname.match(/^\/beheer\/sessie\/([a-f0-9-]{36})\/?$/)?.[1];
+    let secret=centralSession || location.pathname.match(/^\/b\/([0-9a-f]{48})\/?$/)?.[1];
     let meta=null,base='',busy=false,timer,queued=false,sequence=0,applying=false,missing=false,modePending=null;
     const journal=()=> 'padel-v31-pending-'+secret?.slice(0,12);
     const notice=document.createElement('aside'),message=document.createElement('span');
@@ -40,7 +41,10 @@
     }
     async function request(url,body,conditional=false){
       const headers={};
-      if(secret && url==='/api/manage')headers.Authorization='Bearer '+secret;
+      if(url==='/api/manage'){
+        if(centralSession)url+='/'+centralSession;
+        else if(secret)headers.Authorization='Bearer '+secret;
+      }
       if(body)headers['Content-Type']='application/json';
       if(conditional && meta)headers['If-None-Match']=String(meta.revision);
       const response=await fetch(url,{headers,method:body?'POST':'GET',body:body?JSON.stringify(body):undefined,cache:'no-store',referrerPolicy:'no-referrer'});
@@ -65,6 +69,7 @@
       finally{applying=false;}
     }
     function unavailable(error){
+      if(error.status===401 && centralSession){location.replace('/beheer');return;}
       if(error.status===404 && secret){
         const local=pending();if(local?.expires>Date.now())conflict(local.document);
         else try{localStorage.removeItem(conflictKey());}catch{}
@@ -101,7 +106,8 @@
       $('entryPlayer').disabled=busy || closed;
       $('ownerGroup').hidden=!fields;$('ownerCaption').textContent=say('Beheer op een ander apparaat','Manage on another device');
       $('ownerHint').textContent=say('Stuur deze privélink naar jezelf. Hiermee opent de volledige planner.','Send this private link to yourself. It opens the full planner.');
-      $('ownerUrl').value=secret?location.origin+'/b/'+secret:'';
+      if(centralSession)$('ownerHint').textContent=say('Deze link opent de planner na inloggen met het centrale beheerwachtwoord.','This link opens the planner after signing in with the central organizer password.');
+      $('ownerUrl').value=centralSession?location.origin+'/beheer/sessie/'+centralSession:secret?location.origin+'/b/'+secret:'';
       $('ownerCopy').textContent=say('Beheerlink kopiëren','Copy organizer link');
       $('shareEnd').hidden=!fields || closed;$('shareEnd').disabled=busy;
       $('shareEnd').textContent=say('Sessie beëindigen','End session');
@@ -188,7 +194,7 @@
           token=TossPoll.token(poll.id);
           admin=await TossPoll.api('/'+poll.id+'/admin',undefined,{token});
           if(admin.phase==='open')throw Error('reopened');
-          if(admin.phase==='published' && admin.plannerKey!==secret)throw Error('other-plan');
+          if(admin.phase==='published' && admin.plannerKey!==secret && !meta?.links.some(l=>l.role==='view' && l.code===admin.viewCode))throw Error('other-plan');
           if(TossPoll.rosterSignature(admin)!==poll.signature && !confirm(say('De aanmeldlijst is gewijzigd. Dit concept toch publiceren?','Signups changed. Publish this draft anyway?')))return;
         }catch(error){
           announce(error.status===401?say('Log opnieuw in via het pollbeheer om te publiceren.','Sign in to the poll again to publish.'):
@@ -203,7 +209,14 @@
       }
       if(poll){
         try{
-          await TossPoll.api('/'+poll.id+'/admin',{action:'publish',revision:admin.revision,sessionKey:secret},{token});
+          if(centralSession && admin.phase!=='published')throw Error('reopened');
+          if(!centralSession){
+            const result=await TossPoll.api('/'+poll.id+'/admin',{action:'publish',revision:admin.revision,sessionKey:secret},{token});
+            if(result.plannerId){
+              centralSession=result.plannerId;secret=centralSession;
+              history.replaceState(null,'','/beheer/sessie/'+centralSession);
+            }
+          }
           publishedPoll=poll.id;announce(say('Het speelschema staat op de groepslink.','The schedule is now on the group link.'));
         }catch(error){
           announce(say('Het schema is opgeslagen. Publiceer opnieuw om de groepslink bij te werken.','The schedule is saved. Publish again to update the group link.'));
@@ -256,8 +269,8 @@
       }if(doc && JSON.stringify(doc)!==base){record(doc,meta.revision);schedule(300);}
     };
     window.detachTossSession=()=>{
-      clearTimeout(timer);sequence++;secret=null;meta=null;base='';download.hidden=true;announce('');
-      if(location.pathname.startsWith('/b/'))history.replaceState(null,'','/?preview=3.1');
+      clearTimeout(timer);sequence++;centralSession=null;secret=null;meta=null;base='';download.hidden=true;announce('');
+      if(location.pathname.startsWith('/b/') || location.pathname.startsWith('/beheer/sessie/'))history.replaceState(null,'','/?preview=3.1');
     };
     window.addEventListener('online',()=>schedule(0));
     document.addEventListener('visibilitychange',()=>{if(secret && (document.hidden || !meta?.closed))schedule(0);});
