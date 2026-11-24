@@ -3,7 +3,7 @@ import {makeSignupPin,recoverSignup,signupPerson} from './poll-signup-pin.mjs';
 import {centralLogin} from './organizer.mjs';
 import {acceptablePassword,hash,random,verifier} from './poll-auth.mjs';
 import {currentOrganizer,organizerCredentials,organizerSession} from './poll-organizers.mjs';
-import {creatorName, emptyPoll, changeSettings, adminEntry, nameKey, prepareRoster, publicPoll, removeEntry, respond, invalid} from './poll-roster.mjs';
+import {creatorName, emptyPoll, changeSettings, adminEntry, prepareRoster, publicPoll, removeEntry, respond, invalid} from './poll-roster.mjs';
 
 const day=86400000;
 const stmt=(db,sql,...args)=>db.prepare(sql).bind(...args);
@@ -143,15 +143,13 @@ export async function pollApi(request,db,now,{json,requestJson,counter},adminPas
     if(!person)invalid('identity',403);
     await counter(db,request,'poll-response-'+id,now,300,true);
   }
-  const standing=!kind && typeof body.name==='string' && await first(db,
-    'SELECT 1 AS found FROM signup_holds WHERE series=? AND format=? AND (person=? OR name=?)',
-    row.series,JSON.parse(row.document).settings.format,person,nameKey(body.name));
   let pendingPin;
   for(let attempt=0;attempt<20;attempt++){
     if(!row)invalid('missing',404);
     const doc=prepareRoster(JSON.parse(row.document)),extra=[];
     let writeGuard='',guardValues=[];
     if(!kind){
+      const before=JSON.stringify(doc);
       // Receipt order is assigned by the server, including equal-millisecond submissions.
       const accepted=Math.max(now,doc.lastAccepted||0);
       if(doc.phase!=='open')invalid('locked',409);
@@ -159,7 +157,7 @@ export async function pollApi(request,db,now,{json,requestJson,counter},adminPas
         if(!doc.entries.some(e=>e.person===person))invalid('identity',403);
         if(body.pin===undefined)invalid('pin-format');
       }else{
-        respond(doc,person,body,accepted,standing);
+        respond(doc,person,body,accepted);
       }
       if(body.pin!==undefined){
         const own=doc.entries.find(e=>e.person===person);
@@ -171,7 +169,7 @@ export async function pollApi(request,db,now,{json,requestJson,counter},adminPas
           own.pin=pendingPin;
         }
       }
-      if(JSON.stringify(doc)===row.document)return json(publicPoll(doc,id,person,now));
+      if(JSON.stringify(doc)===before)return json(publicPoll(doc,id,person,now));
       if(body.action!=='set-pin')doc.lastAccepted=accepted;
       // Registration on a fresh device must not race with recovery of someone else's response.
       writeGuard=' AND NOT EXISTS(SELECT 1 FROM signup_recovered_devices WHERE poll=? AND device=? AND person<>?)';
@@ -179,19 +177,7 @@ export async function pollApi(request,db,now,{json,requestJson,counter},adminPas
     }else{
       if(body.revision!==row.revision)invalid('changed',409);
       if(body.action==='entry'){
-        const before=doc.entries.find(e=>e.id===body.id);
-        const oldName=before && nameKey(before.name);
-        const entry=adminEntry(doc,body,now);
-        if(body.standing!==undefined){
-          if(typeof body.standing!=='boolean')invalid('field');
-          // The version guard makes the accompanying change to the series part of the same write.
-          const guard='EXISTS(SELECT 1 FROM signup_polls WHERE id=? AND revision=?)';
-          extra.push(stmt(db,'DELETE FROM signup_holds WHERE series=? AND format=? AND (name=? OR name=? OR person=?) AND '+guard,
-            row.series,doc.settings.format,oldName||nameKey(entry.name),nameKey(entry.name),entry.person||'',id,row.revision));
-          if(body.standing)extra.push(stmt(db,'INSERT INTO signup_holds(series,format,name,person) SELECT ?,?,?,? WHERE '+guard,
-            row.series,doc.settings.format,nameKey(entry.name),entry.person,id,row.revision));
-          entry.standing=body.standing;
-        }
+        adminEntry(doc,body,now);
       }else if(body.action==='remove-entry'){
         const removed=removeEntry(doc,body.id);
         if(removed.person)extra.push(stmt(db,`DELETE FROM signup_recovered_devices WHERE poll=? AND person=?
@@ -200,7 +186,7 @@ export async function pollApi(request,db,now,{json,requestJson,counter},adminPas
         const entry=doc.entries.find(e=>e.id===body.id);
         if(!entry)invalid('missing',404);
         adminEntry(doc,{id:entry.id,name:entry.name,place:'out',position:1},now);
-        entry.answer='cancel';entry.held=Boolean(entry.standing);
+        entry.answer='cancel';
       }else if(body.action==='settings'){
         changeSettings(doc,body.settings);checkDate(doc.settings,now);
       }else if(body.action==='plan'){

@@ -16,7 +16,7 @@ async function fixture(t){
   const key=i=>({'X-Signup-Key':i.toString(16).padStart(64,'0')});
   const read=async()=> (await send(root+'/admin',undefined,auth)).data;
   async function act(body){const {revision}=await read();return send(root+'/admin',{revision,...body},auth);}
-  async function vote(i,name,answer='yes'){return send(root,{name,answer},key(i));}
+  async function vote(i,name,answer='yes'){return send(root,{name,answer,...(answer==='yes'?{rating:'7,89'}:{})},key(i));}
   return {app,send,read,act,vote,key,config,root,auth,password};
 }
 test('everyone can see names, each browser only changes its own response, and yes number 17 precedes explicit reserves',async t=>{
@@ -46,13 +46,13 @@ test('everyone can see names, each browser only changes its own response, and ye
   assert.equal(move.data.entries.filter(e=>e.place==='in')[0].name,'Player Ten');
   assert.equal(move.data.entries.find(e=>e.id===original.id).first,original.first);
 });
-test('private series decision, password, phases, repeat, stale updates and expiry',async t=>{
+test('manual placements apply to one evening, with password, phases, repeat, stale updates and expiry',async t=>{
   const f=await fixture(t);await f.vote(1,'Robin');
   assert.equal((await f.send(f.root+'/admin')).status,401);
   assert.equal((await f.send(f.root+'/login',{password:'incorrect'})).status,401);
   const login=await f.send(f.root+'/login',{password:f.password});assert.equal(login.status,200);
   const before=await f.read(),id=before.entries[0].id;
-  await f.act({action:'entry',id,name:'Robin',place:'review',position:1,standing:true});
+  assert.equal((await f.act({action:'entry',id,name:'Robin',place:'reserve',position:1,standing:false})).status,200);
   assert.equal((await f.send(f.root+'/admin',{revision:before.revision,action:'plan'},f.auth)).status,409);
   const pub=await f.send(f.root,undefined,f.key(1));assert.deepEqual(pub.data.groups.reserve,[{name:'Robin'}]);
   assert.doesNotMatch(JSON.stringify(pub.data),/review|standing|held|first|person|verifier/);
@@ -65,13 +65,100 @@ test('private series decision, password, phases, repeat, stale updates and expir
   const next=await f.act({action:'repeat'});assert.equal(next.status,200);
   const second='/'+next.data.id;assert.equal((await f.send(second)).data.groups.in.length,0);
   assert.equal((await f.send(second+'/admin',undefined,f.auth)).status,200);
-  const same=await f.send(second,{name:'Robin',answer:'yes'},f.key(1));assert.equal(same.data.mine.place,'reserve');
+  const same=await f.send(second,{name:'Robin',answer:'yes',rating:'6.23'},f.key(1));assert.equal(same.data.mine.place,'in');
   await f.act({action:'reopen'});assert.equal((await f.send(f.root)).data.phase,'open');
   await f.send(f.root+'/logout',{},f.auth);assert.equal((await f.send(f.root+'/admin',undefined,f.auth)).status,401);
   const {cleanup}=await import('../sessions/api.mjs');await cleanup(f.app.DB,Date.now()+60*86400000);
   assert.equal((await f.send(f.root)).status,404);
-  assert.equal(f.app.sql.prepare('SELECT count(*) AS n FROM signup_holds').get().n,0);
+  assert.equal(f.app.sql.prepare('SELECT count(*) AS n FROM signup_series').get().n,0);
 });
+
+test('legacy approval placements keep their signup and PIN privately without blocking anyone next week',async t=>{
+  const f=await fixture(t),pollId=f.root.slice(1);
+  await f.send(f.root,{name:'Noor',answer:'yes',rating:'6.23',pin:'0351'},f.key(1));
+  await f.vote(2,'Mila');await f.vote(3,'Sam');
+  const row=f.app.sql.prepare('SELECT series,document FROM signup_polls WHERE id=?').get(pollId);
+  const legacy=JSON.parse(row.document),[noor,mila,sam]=legacy.entries;
+  for(const entry of [noor,mila]){
+    entry.place='review';entry.held=true;entry.standing=true;delete entry.rating;
+    entry.correction={answer:'yes',place:'in',at:entry.at,until:Date.now()+600000};
+  }
+  sam.standing=true;
+  f.app.sql.prepare('UPDATE signup_polls SET document=? WHERE id=?').run(JSON.stringify(legacy),pollId);
+  // This table already exists on older deployments.
+  f.app.sql.exec('CREATE TABLE signup_holds (series TEXT REFERENCES signup_series(id) ON DELETE CASCADE,format TEXT,name TEXT,person TEXT,PRIMARY KEY(series,format,name))');
+  f.app.sql.prepare('INSERT INTO signup_holds VALUES (?,?,?,?)').run(row.series,'koc','noor',noor.person);
+  const admin=await f.read();
+  assert.deepEqual(admin.entries.map(e=>[e.name,e.place]),[['Noor','out'],['Mila','out'],['Sam','in']]);
+  assert.equal(admin.entries[0].id,noor.id);assert.equal(admin.entries[0].first,noor.first);
+  assert.doesNotMatch(JSON.stringify(admin.entries),/standing|held|review/);
+  const visible=(await f.send(f.root)).data.groups;
+  assert.deepEqual(visible,{in:[{name:'Sam'}],wait:[],reserve:[],out:[]});
+  assert.equal((await f.send(f.root+'/recover',{name:'Noor',pin:'0351'},f.key(8))).status,200);
+  const own=(await f.send(f.root,undefined,f.key(8))).data.mine;
+  assert.deepEqual(own,{name:'Noor',answer:'cancel',place:'out',hasPin:true});
+  assert.equal((await f.act({action:'entry',id:noor.id,name:'Noor',place:'review',position:1})).data.error,'place');
+  assert.equal((await f.act({action:'entry',id:noor.id,name:'Noor',place:'in',standing:true,position:1})).data.error,'place');
+  assert.equal((await f.read()).revision,admin.revision);
+  const moved=await f.act({action:'entry',id:mila.id,name:'Mila',place:'in',position:1});
+  assert.equal(moved.status,200);assert.equal((await f.send(f.root,undefined,f.key(2))).data.mine.answer,'yes');
+  const confirmed=await f.vote(8,'Noor');
+  assert.deepEqual(confirmed.data.groups.in.map(e=>e.name),['Mila','Sam','Noor']);
+  assert.equal(confirmed.data.mine.hasPin,true);
+  const next='/'+(await f.act({action:'repeat'})).data.id;
+  assert.deepEqual((await f.send(next)).data.groups.in,[]);
+  assert.equal((await f.send(next,{name:'Noor',answer:'yes',rating:'6.23'},f.key(1))).data.mine.place,'in');
+});
+test('only a KOC Yes needs a two-decimal rating; a high rating stays a Yes and is private to the player and organizers',async t=>{
+  const f=await fixture(t),name='Rosa',key=f.key(4);
+  for(const rating of [undefined,null,'','7','7,8','7,890','7e0','8x00',7.89]){
+    const result=await f.send(f.root,{name,answer:'yes',rating},key);
+    assert.equal(result.data.error,'rating-format');
+  }
+  assert.equal((await f.read()).entries.length,0);
+  const yes=rating=>f.send(f.root,{name,answer:'yes',rating},key);
+  assert.equal((await yes('8,00')).data.mine.rating,'8.00');
+  const original=(await f.read()).entries[0];
+  for(const [rating,stored] of [['8.01','8.01'],['10,43','10.43'],['6,23','6.23']]){
+    const page=(await yes(rating)).data;
+    assert.equal(page.mine.rating,stored);assert.equal(page.mine.place,'in');
+    assert.deepEqual(page.groups.in,[{name}]);
+    const row=(await f.read()).entries[0];
+    assert.equal(row.rating,stored);assert.equal(row.at,original.at);
+  }
+  assert.doesNotMatch(JSON.stringify((await f.send(f.root)).data),/rating/i);
+  assert.equal((await f.vote(5,'Reserve','reserve')).status,200);
+  assert.equal((await f.vote(6,'No','no')).status,200);
+  // A pre-release Yes remains on the list until the player supplies a rating on their next edit.
+  f.app.sql.prepare("UPDATE signup_polls SET document=json_remove(document,'$.entries[0].rating') WHERE id=?").run(f.root.slice(1));
+  assert.equal((await f.read()).entries[0].at,original.at);assert.equal((await f.read()).entries[0].place,'in');
+  assert.equal((await yes('7.89')).data.mine.rating,'7.89');
+  assert.equal((await f.read()).entries[0].at,original.at);
+  for(const format of ['toss','americano','splitToss']){
+    await f.act({action:'settings',settings:{...f.config,format}});
+    assert.equal((await f.send(f.root,{name,answer:'yes'},key)).status,200);
+    assert.equal((await f.send(f.root,undefined,key)).data.mine.rating,undefined);
+    assert.equal((await f.read()).entries[0].rating,undefined);
+  }
+});
+
+test('moving an above-limit Yes to standby uses the move time and puts the player behind existing reserves',async()=>{
+  const {emptyPoll,respond,adminEntry}=await import('../sessions/poll-roster.mjs');
+  const doc=emptyPoll({title:'KOC',format:'koc',date:'2026-11-26',start:'21:00',end:'23:00',courts:2,capacity:4});
+  for(const [i,name] of ['A','B','C','D','E'].entries())respond(doc,name,{name,answer:'yes',rating:i===0||i===4?'10,43':'8.00'},100+i);
+  for(const [i,name] of ['R1','R2'].entries())respond(doc,name,{name,answer:'reserve'},200+i);
+  const get=name=>doc.entries.find(e=>e.name===name);
+  for(const [name,time] of [['E',500],['A',600]]){
+    adminEntry(doc,{id:get(name).id,name,place:'reserve',position:1},time);
+    assert.equal(get(name).at,time);assert.equal(get(name).answer,'reserve');
+    assert.equal(doc.entries.filter(e=>e.place==='reserve').at(-1).name,name);
+  }
+  assert.deepEqual(doc.entries.filter(e=>e.place==='reserve').map(e=>e.name),['R2','E','A']);
+  assert.equal(get('R1').place,'in');
+  adminEntry(doc,{id:get('A').id,name:'A',place:'reserve',position:1},700);
+  assert.equal(get('A').at,600);
+});
+
 test('simultaneous signups fill only the available places, retries cannot create duplicates, and quick corrections preserve waitlist order',async t=>{
   const f=await fixture(t);
   const results=await Promise.all(Array.from({length:19},(_,i)=>f.vote(i+1,'P'+i)));assert.ok(results.every(x=>x.status===200),JSON.stringify(results.map(x=>x.status)));
@@ -87,8 +174,8 @@ test('simultaneous signups fill only the available places, retries cannot create
 
 test('a PIN opens only the original signup in one edition and never changes its priority',async t=>{
   const f=await fixture(t),first=f.key(1),phone=f.key(2),other=f.key(3);
-  assert.equal((await f.send(f.root,{name:'Mila',answer:'yes',pin:'123'},first)).status,422);
-  const added=await f.send(f.root,{name:'Mila',answer:'yes',pin:'0379'},first);
+  assert.equal((await f.send(f.root,{name:'Mila',answer:'yes',rating:'7.89',pin:'123'},first)).data.error,'pin-format');
+  const added=await f.send(f.root,{name:'Mila',answer:'yes',rating:'7.89',pin:'0379'},first);
   assert.equal(added.data.mine.hasPin,true);
   await f.vote(3,'Robin');
   const before=await f.read(),original=before.entries.find(e=>e.name==='Mila');
@@ -107,7 +194,7 @@ test('a PIN opens only the original signup in one edition and never changes its 
   assert.equal((await f.read()).entries.find(e=>e.id===original.id).first,original.first);
   assert.equal((await f.send(f.root,{name:'Robin',answer:'no'},phone)).status,409);
   const next='/'+(await f.act({action:'repeat'})).data.id;
-  await f.send(next,{name:'Mila',answer:'yes'},first);
+  await f.send(next,{name:'Mila',answer:'yes',rating:'7.89'},first);
   assert.equal((await f.send(next,undefined,phone)).data.mine,undefined);
   assert.equal((await recover(next,'Mila','0379',phone)).data.error,'pin-login');
   assert.equal((await f.send(f.root,{action:'set-pin',pin:'0041'},other)).data.mine.hasPin,true);
@@ -128,19 +215,20 @@ test('standby is exclusive to KOC; a previous non-KOC standby stays available to
   const f=await fixture(t);await f.vote(1,'Noor','reserve');
   const row=await f.read(),original=row.entries[0];
   const change=await f.act({action:'settings',settings:{...f.config,format:'toss'}});
-  assert.equal(change.status,200);assert.equal(change.data.entries[0].place,'review');
+  assert.equal(change.status,200);assert.equal(change.data.entries[0].place,'out');
   assert.equal(change.data.entries[0].first,original.first);
   for(const format of ['toss','americano','splitToss']){
     await f.act({action:'settings',settings:{...f.config,format}});
     const page=(await f.send(f.root,undefined,f.key(1))).data;
-    assert.equal(page.groups.reserve,undefined);assert.equal(page.mine.place,'pending');
+    assert.equal(page.groups.reserve,undefined);assert.deepEqual(page.groups.out,[]);
+    assert.equal(page.mine.place,'out');assert.equal(page.mine.answer,'cancel');
     assert.equal((await f.vote(2,'New standby','reserve')).data.error,'reserve-format');
     assert.equal((await f.act({action:'entry',name:'New standby',place:'reserve',position:1})).data.error,'reserve-format');
   }
   const pollId=f.root.slice(1);
   f.app.sql.prepare("UPDATE signup_polls SET document=json_set(document,'$.entries[0].place','reserve') WHERE id=?").run(pollId);
-  assert.equal((await f.read()).entries[0].place,'review');
-  assert.equal((await f.send(f.root,undefined,f.key(1))).data.mine.place,'pending');
+  assert.equal((await f.read()).entries[0].place,'out');
+  assert.equal((await f.send(f.root,undefined,f.key(1))).data.mine.place,'out');
   assert.equal((await f.vote(1,'Noor','yes')).data.mine.place,'in');
   assert.equal((await f.read()).entries.length,1);
 });
@@ -150,7 +238,7 @@ test('a later Yes gets a new position once ten minutes have elapsed',async()=>{
   const start=Date.UTC(2026,10,24,18),minute=60000;
   for(const delay of [10*minute,2*24*60*minute]){
     const doc=emptyPoll({title:'Toss',format:'toss',date:'2026-11-26',start:'21:00',end:'23:00',courts:2,capacity:4});
-    const vote=(name,answer,at)=>respond(doc,name,{name,answer},at,false);
+    const vote=(name,answer,at)=>respond(doc,name,{name,answer},at);
     ['Jan','Bo','Kim','Sam','Noor','Pim'].forEach((name,i)=>vote(name,'yes',start+i));
     vote('Jan','no',start+minute);vote('Jan','yes',start+minute+delay);
     const jan=doc.entries.find(e=>e.name==='Jan');
@@ -163,7 +251,7 @@ test('a confirmed correction restores the old time for ten minutes without displ
   const {emptyPoll,respond,adminEntry,publicPoll}=await import('../sessions/poll-roster.mjs');
   const start=Date.UTC(2026,10,24,18),minute=60000;
   const doc=emptyPoll({title:'Training',format:'koc',date:'2026-11-26',start:'21:00',end:'23:00',courts:2,capacity:4});
-  const vote=(name,answer,at)=>respond(doc,name,{name,answer},at,false);
+  const vote=(name,answer,at)=>respond(doc,name,{name,answer,rating:'8,00'},at);
   const player=name=>doc.entries.find(e=>e.name===name);
   ['Jan','Bo','Kim','Sam','Noor','Pim'].forEach((name,i)=>vote(name,'yes',start+i));
   vote('Jan','no',start+minute);
@@ -182,19 +270,19 @@ test('a confirmed correction restores the old time for ten minutes without displ
   vote('Kim','no',start+14*minute+2);vote('Kim','yes',start+15*minute);
   assert.equal(player('Kim').place,'in');assert.equal(player('Kim').at,start+2);
   vote('Kim','no',start+16*minute);
-  adminEntry(doc,{id:player('Kim').id,name:'Kim',place:'review',position:1},start+16*minute);
+  adminEntry(doc,{id:player('Kim').id,name:'Kim',place:'out',position:1},start+16*minute);
   vote('Kim','yes',start+17*minute);
-  assert.equal(player('Kim').place,'review');assert.equal(player('Kim').at,start+17*minute);
+  assert.equal(player('Kim').place,'in');assert.equal(player('Kim').at,start+17*minute);
 });
 
 test('removing a player frees a place and forgets that evening’s PIN and recovered devices',async t=>{
   const f=await fixture(t),first=f.key(1),phone=f.key(99);
   await f.act({action:'settings',settings:{...f.config,capacity:4}});
-  await f.send(f.root,{name:'Mila',answer:'yes',pin:'0268'},first);
+  await f.send(f.root,{name:'Mila',answer:'yes',rating:'7.89',pin:'0268'},first);
   for(let i=2;i<=5;i++)await f.vote(i,'Player '+i);
   await f.send(f.root+'/recover',{name:'Mila',pin:'0268'},phone);
   const next='/'+(await f.act({action:'repeat'})).data.id;
-  await f.send(next,{name:'Mila',answer:'yes',pin:'0543'},first);
+  await f.send(next,{name:'Mila',answer:'yes',rating:'7.89',pin:'0543'},first);
   const before=await f.read(),mila=before.entries.find(e=>e.name==='Mila');
   const change={action:'remove-entry',id:mila.id,revision:before.revision};
   assert.equal((await f.send(f.root+'/admin',change,phone)).status,401);
