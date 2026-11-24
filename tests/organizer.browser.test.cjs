@@ -89,6 +89,16 @@ test('one central login reaches existing and new events, live schedules, and the
     await planner.getByText('Bevestigde deelnemers overgenomen.',{exact:true}).waitFor();
     const roster=planner.locator(format==='koc'?'#kocRoster input[type=text]':'#namesGrid .name-field input');
     assert.deepEqual(await roster.evaluateAll(fields=>fields.map(field=>field.value).filter(Boolean)),players);
+    if(format==='toss'){
+      const draftUrl=planner.url();
+      await planner.locator('#mastheadBack').click();
+      await planner.locator('.format-btn[data-format=americano]').click();
+      await planner.locator('#continueTo2').click();await planner.locator('#generateBtn').click();
+      await planner.getByRole('button',{name:'Schema delen'}).filter({visible:true}).click();
+      assert.equal(await planner.getByLabel('Speeldatum').inputValue(),'');
+      await planner.goto(draftUrl);
+      await planner.locator('#generateBtn:visible').waitFor();
+    }
     await publicPage.goto(signupUrl);
     await publicPage.getByText('De indeling wordt gemaakt').waitFor();
     assert.equal(await publicPage.locator('#groups').count(),0);

@@ -111,6 +111,7 @@ async function counter(db, request, name, now, max, increment){
 }
 async function resolvePlan(db,state,date,now){
   if(state.signupPoll?.id){
+    if(typeof state.signupPoll.id!=='string' || !/^[a-f0-9]{14}$/.test(state.signupPoll.id))fail(422,'poll');
     const poll=await one(db,"SELECT id,json_extract(document,'$.settings.date') AS date FROM signup_polls WHERE id=? AND expires>?",state.signupPoll.id,now);
     if(!poll)fail(409,'poll');
     return {date:poll.date,pollId:poll.id};

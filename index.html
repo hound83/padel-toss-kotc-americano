@@ -6829,6 +6829,7 @@
   });
 
   function doStartOver(){
+    if(signupId || state.signupPoll){location.assign('/');return;}
     window.detachTossSession?.();
     editSession = null;
     var keepLang = state.lang;
@@ -6954,6 +6955,8 @@
   function backToModePicker(){
     if (state.pools.length || (state.koc && state.koc.assignment)){
       showConfirmModal(t('modalStartOverText'), t('confirmStartOverBtn'), doStartOver);
+    } else if(signupId || state.signupPoll){
+      doStartOver();
     } else {
       goToStep(0);
     }
