@@ -191,7 +191,7 @@ test('one central login reaches existing and new events, live schedules, and the
   await publicPage.goto(url+'/s/'+viewerCode);
   assert.equal(await (await footerButton(publicPage)).getAttribute('href'),'/beheer');
   assert.equal(await (await footerButton(host,'Organizer')).getAttribute('href'),'/beheer?lang=en');
-  const removeSchedule=standalone.getByRole('button',{name:'Delete schedule',exact:true});
+  const removeSchedule=standalone.getByRole('button',{name:'Delete schedule · Los '+id,exact:true});
   await removeSchedule.tap();
   const confirmation=host.getByRole('dialog',{name:'Delete schedule?'});
   await confirmation.getByText('Los '+id,{exact:false}).waitFor();

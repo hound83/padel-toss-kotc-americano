@@ -761,7 +761,7 @@
   .plan-grip::before{content:'';width:12px;height:18px;background:radial-gradient(circle,currentColor 1.5px,transparent 1.7px) 0 0/6px 6px}
   .name-field .plan-grip{position:absolute;inset:0 auto auto 1px}
   .plan-grip:hover,.plan-grip[aria-pressed=true]{color:var(--teal-900);background:#e5efd9}
-  .player-card.dragging{opacity:.6}.player-card.picked,.player-card.dragging{outline:2px dashed #528344;outline-offset:2px}
+  .player-card.dragging{opacity:.6}.player-card.picked,.player-card.dragging,.player-card.drag-companion{outline:2px dashed #528344;outline-offset:2px}
   .player-card.over,.empty-slot.over{outline:3px solid #518643;outline-offset:1px;box-shadow:0 0 0 5px #e1efd6;background:#e8f5db!important}.player-card.over input{background:#e8f5db}
   .player-drag-preview{position:fixed;display:grid;gap:2px;z-index:9999;pointer-events:none;max-width:min(80vw,28rem);box-sizing:border-box;padding:8px 14px 8px 19px;background:#f4fae9;color:#193d28;border:2px solid #518643;border-left:6px solid #518643;border-radius:10px;box-shadow:0 7px 21px #17332238;line-height:1.25;overflow-wrap:anywhere}.player-drag-preview strong{font:inherit;font-weight:750}.player-drag-preview small{color:#385a3a;font-size:.8rem}.player-drag-preview [hidden]{display:none}
   .duo-link{display:grid;place-items:center;box-sizing:border-box;width:32px;height:32px;min-height:0;padding:0;border:1px solid #8aa099;border-radius:50%;background:#fff;color:#39595a;box-shadow:0 1px 3px #19352d1c;cursor:pointer;z-index:2}
@@ -771,6 +771,10 @@
   .duo-link:disabled{opacity:.32;cursor:default}
   :is(.name-field,.koc-player)>.duo-link{position:absolute;left:calc(100% + var(--link-x)/2);top:50%;transform:translate(-50%,-50%)}
   :is(.name-field,.koc-player)>.duo-link.wrap-link{left:50%;top:calc(100% + var(--link-y)/2)}
+  @media(max-width:480px){
+    .names-grid:has(.player-card),.koc-roster,.koc-roster-group{grid-template-columns:minmax(0,1fr)}
+    :is(.name-field,.koc-player)>.duo-link{left:50%;top:calc(100% + var(--link-y)/2)}
+  }
   .name-field.linked input,.koc-player.linked,.koc-court li.linked{border-color:#6a9663;background:#f1f7ec}
   .koc-court .player-card>.player-label{min-width:0;flex:1}
   .court-duo-mark{color:#365f39;display:inline-grid;place-items:center;padding:0 5px}.court-duo-mark svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
@@ -788,7 +792,7 @@
   #kocOpeningRoster .koc-player input[type=checkbox],#kocOpeningRoster .koc-entry-marker{display:none}
   #kocOpeningRoster .koc-player input:disabled{color:var(--ink);opacity:1}
   .koc-player>.partner-note{position:absolute;right:0;top:100%;z-index:2}
-  @media print{.plan-grip,.duo-link,.partner-note,.card-help{display:none!important}}
+  @media print{#kocOpeningRoster,.plan-grip,.duo-link,.partner-note,.card-help{display:none!important}}
 
   /* The name-list action never changes the normal, horizontal player layout. */
   .bulk-entry{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 14px;}
@@ -2878,7 +2882,7 @@
       const spec=destination?destination(from,to.dataset.slot):{targets:[to.dataset.slot],label:to.dataset.playerName};
       if(!spec)return null;
       const targets=rows(spec.targets);
-      return {group:targets[0] || to,slot:to.dataset.slot,targets,label:spec.label,names:spec.names};
+      return {group:targets[0] || to,slot:to.dataset.slot,targets,sources:rows(spec.sources || []),label:spec.label,names:spec.names};
     }
     root.onclick=event=>{
       const grip=event.target.closest('.plan-grip');
@@ -2983,7 +2987,7 @@
         if(!plan)return null;
         const court=plan.groups.findIndex(row=>row.includes(Number(from)));
         const positions=plan.take.map(id=>plan.groups[court].indexOf(id)+1).sort((a,b)=>a-b);
-        return {targets:plan.targets,names:plan.take.map(kocPlayerName),label:(court?courtName(court):t('kocRoundWaiting'))+' · '+placeText(positions)};
+        return {targets:plan.targets,sources:plan.take,names:plan.take.map(kocPlayerName),label:(court?courtName(court):t('kocRoundWaiting'))+' · '+placeText(positions)};
       }
     };
   }
@@ -3014,7 +3018,11 @@
       else{
         if(old.some(pair=>pair.includes(a) || pair.includes(b)))return;
         k.startPairs=old.concat([[a,b]]);
-        if(k.assignment && !arrangeKocPairs(k,round)){k.startPairs=old;return;}
+        if(k.assignment && !arrangeKocPairs(k,round)){
+          k.startPairs=old;
+          document.getElementById('kocStatus').textContent=editText('Dit duo past niet bij de huidige baanbezetting. Maak eerst twee plekken op dezelfde baan vrij.','This pair needs two places on the same court. Adjust the court layout first.');
+          return;
+        }
       }
       renderKocResult();writeAutosave();
       fields[a]?.querySelector('.duo-link:enabled,.partner-note')?.focus({preventScroll:true});
@@ -3310,7 +3318,7 @@
       members:id=>k.startPairs.find(pair=>pair.includes(Number(id))) || [id],
       destination(from,to){
         const plan=rosterPlan(from,to);if(!plan)return null;
-        return {targets:plan.targets,names:plan.take.map(kocPlayerName),label:placeText(plan.positions.map(i=>i+1))};
+        return {targets:plan.targets,sources:plan.take,names:plan.take.map(kocPlayerName),label:placeText(plan.positions.map(i=>i+1))};
       }
     });
     if (state.format === 'koc') renderRoundSettings();
@@ -4748,7 +4756,7 @@
       destination(from,to){
         const plan=nameMovePlan(from,to);if(!plan)return null;
         const group=plan.groupIds[plan.dest];
-        return {targets:plan.targets.map(id=>plan.people[id].slot),names:plan.take.map(id=>plan.people[id].display),
+        return {targets:plan.targets.map(id=>plan.people[id].slot),sources:plan.take.map(id=>plan.people[id].slot),names:plan.take.map(id=>plan.people[id].display),
           label:(group<0?'':t(LEVELS[group].labelKey)+' · ')+placeText(plan.positions.map(i=>i+1))};
       }
     });

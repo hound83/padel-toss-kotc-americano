@@ -62,7 +62,7 @@ window.TossOrganizerHub=function({P,say,modeName,dateText,el,button,link,card,fi
           say('De aanmeldingen verdwijnen en de aanmeldlink vervalt.','The signups will be deleted and the signup link will stop working.'):
           say('Het online speelschema en de uitslagen verdwijnen. De kijklink en scorelinks vervallen.','The online schedule and results will be deleted. Viewing and score links will stop working.');
         root.append(el('p',detail));
-        if(event && item.viewCode)root.append(el('p',say('Het gepubliceerde speelschema wordt ook verwijderd als het alleen bij deze avond hoort.',
+        if(event && (item.phase==='published' || item.viewCode))root.append(el('p',say('Het gepubliceerde speelschema wordt ook verwijderd als het alleen bij deze avond hoort.',
           'The published schedule will also be deleted if it belongs only to this event.')));
         return ()=>({kind,id:item.id,revision:item.revision});
       },async body=>{
@@ -99,8 +99,8 @@ window.TossOrganizerHub=function({P,say,modeName,dateText,el,button,link,card,fi
     const art=el('img');art.src=P.art(session.format,document.documentElement.lang==='en');art.alt='';
     const body=el('div');body.append(el('h3',session.title||modeName(session.format)),el('small',dateText(session)+' · '+
       (session.closed?say('Eindstand','Final results'):say('Gedeeld speelschema','Shared schedule'))),creationInfo(session));
-    actions(body,link(say('Open planner','Open planner'),'/beheer/sessie/'+session.id),link(say('Open liveweergave','Open live view'),'/s/'+session.viewCode),removeButton('session',session));
-    row.append(art,body);section.append(row);
+    actions(body,link(say('Open planner','Open planner'),'/beheer/sessie/'+session.id),link(say('Open liveweergave','Open live view'),'/s/'+session.viewCode));
+    row.append(art,body,removeButton('session',session,true));section.append(row);
   }
   function organizerAccounts(){
     const panel=el('details',undefined,'card organizer-accounts'),body=el('div');

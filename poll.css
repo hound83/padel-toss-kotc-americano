@@ -43,9 +43,9 @@ dialog{border:1px solid var(--line);border-radius:1rem;padding:1.4rem;width:min(
 .hub-trash:hover,.hub-trash:focus-visible{background:#fff0ed;color:#8a2020}.hub-trash svg{width:1.25rem;height:1.25rem;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 @media(max-width:540px){.hub-record-head{grid-template-columns:3.5rem minmax(0,1fr) 2.75rem;gap:.55rem;padding:0 .65rem}.hub-record-head .hub-toggle{grid-template-columns:subgrid;row-gap:.2rem;padding:.7rem 0}.hub-record-head .hub-label{grid-column:2}.hub-record-head .hub-counts{grid-column:2;grid-row:2;flex-wrap:wrap}}
 .hub-row #content{margin:0;padding:clamp(.65rem,2vw,1.15rem);border-top:1px solid var(--line);scroll-margin-top:1rem}
-.hub-session{display:grid;grid-template-columns:5.25rem 1fr;gap:1rem;align-items:start;padding:1rem}.hub-session h3{margin:0 0 .25rem}
+.hub-session{display:grid;grid-template-columns:5.25rem minmax(0,1fr) 2.75rem;gap:1rem;align-items:start;padding:1rem}.hub-session .hub-trash{align-self:center}.hub-session h3{margin:0 0 .25rem}
 .hub-empty{background:#fff;border:1px solid var(--line);border-radius:.8rem;padding:1.15rem}
-@media(max-width:540px){.hub-toggle{grid-template-columns:3.5rem minmax(0,1fr);gap:.25rem .65rem;padding:.7rem}.hub-toggle img{grid-row:span 2}.hub-counts{grid-column:2;display:flex;gap:.5rem;align-items:baseline;text-align:left}.hub-counts strong{font-size:1rem}.hub-session{grid-template-columns:3.5rem minmax(0,1fr);padding:.7rem;gap:.65rem}}
+@media(max-width:540px){.hub-toggle{grid-template-columns:3.5rem minmax(0,1fr);gap:.25rem .65rem;padding:.7rem}.hub-toggle img{grid-row:span 2}.hub-counts{grid-column:2;display:flex;gap:.5rem;align-items:baseline;text-align:left}.hub-counts strong{font-size:1rem}.hub-session{grid-template-columns:3.5rem minmax(0,1fr) 2.75rem;padding:.7rem;gap:.65rem}}
 
 .my-poll-list{display:grid;gap:.45rem;list-style:none;padding:0;margin:0}
 .my-poll{display:grid;grid-template-columns:4.2rem minmax(0,1fr);justify-content:start;gap:.75rem;text-align:left;width:100%;padding:.55rem .8rem}

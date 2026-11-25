@@ -26,6 +26,11 @@ test('chosen pairs keep an entire team, a waiting place and both players through
   assert.equal(rounds.openingMove(layout,pairs,2,3),null);
   const partial=[[],[0,1],[2,3,4,5]],vacant=rounds.openingMove(partial,[[2,3]],3,'vacant-1-3');
   assert.deepEqual(vacant.groups,[[],[0,1,2,3],[4,5]]);
+  const single=rounds.openingMove([[],[4],[0,1,2,3]],[[2,3]],0,'vacant-1-2');
+  assert.deepEqual(single.groups[2].slice(0,2),[2,3]);
+  const intoOne=rounds.openingMove([[],[4],[0,1,2,3]],[[2,3]],3,'vacant-1-3');
+  assert.deepEqual(intoOne.targets,[4,'vacant-1-1']);
+  assert.deepEqual(intoOne.groups[1],[2,3,4]);
   assert.equal(rounds.openingMove([[],[0,1,4],[2,3]],[[2,3]],2,'vacant-1-3'),null);
   assert.deepEqual(groups,[[8,9],[1,3,5,7],[0,2,4,6]]);
 });

@@ -4,10 +4,12 @@ window.TossCardDrag=function(list,{identify,locate,move,busy=()=>{}}){
   function highlight(next){
     target?.group.classList.remove('over');
     target?.targets?.forEach(row=>row.classList.remove('over'));
+    target?.sources?.forEach(row=>row.classList.remove('drag-companion'));
     target?.row?.classList.remove('drop-before','drop-after');
     target=next;
     target?.group.classList.add('over');
     target?.targets?.forEach(row=>row.classList.add('over'));
+    target?.sources?.forEach(row=>row.classList.add('drag-companion'));
     if(ghost){
       ghost.querySelector('strong').textContent=(next?.names || drag.entry.names || [drag.entry.name]).join(' & ');
       const caption=ghost.querySelector('small');

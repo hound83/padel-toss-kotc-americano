@@ -75,6 +75,10 @@ test('real browser: KOC setup, entrants, absence, language, reload and mobile la
   assert.match(await page.locator('.player-drag-preview').innerText(),/Speler 3 & Speler 4/);
   assert.match(await page.locator('.player-drag-preview small').innerText(),/Plekken/);
   assert.equal(await draw.locator('.player-card.over').count(),2);
+  if(process.env.PADEL_SCREENSHOT_DIR){
+    fs.mkdirSync(process.env.PADEL_SCREENSHOT_DIR,{recursive:true});
+    await page.screenshot({path:path.join(process.env.PADEL_SCREENSHOT_DIR,'koc-duo-drag.png')});
+  }
   await page.keyboard.press('Escape');await page.mouse.up();
   assert.equal(await starting.locator('.linked').count(),2);
   await source.dragTo(target);

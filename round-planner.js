@@ -231,14 +231,25 @@
     const source=groups[src],target=groups[dest];
     const members=(id,row)=>pairs.find(pair=>pair.includes(id) && pair.every(p=>row.includes(p))) || [id];
     let take=members(a,source).slice();
+    function finish(result){
+      // Closing a gap must also keep a pair on one side of the net on the source court.
+      for(const c of new Set([src,dest])){
+        const row=result[c],paired=pairs.filter(pair=>pair.every(id=>row.includes(id)));
+        if(paired.some(([x,y])=>Math.floor(row.indexOf(x)/2)!==Math.floor(row.indexOf(y)/2))){
+          const grouped=arrangeOpening([row],paired);if(!grouped)return null;
+          result[c]=grouped[0];
+        }
+      }
+      const targets=take.map(id=>{
+        const seat=result[dest].indexOf(id);return target[seat] ?? 'vacant-'+dest+'-'+seat;
+      });
+      return {groups:result,take,targets};
+    }
     if(vacant){
       if(!src || !dest || src===dest || target.length+take.length>4)return null;
       const result=groups.map(row=>row.slice());
       result[src]=source.filter(id=>!take.includes(id));result[dest]=target.concat(take);
-      // A duo on a previously one-player court occupies the first complete team.
-      if(take.length===2 && target.length===1)result[dest]=take.concat(target);
-      const targets=take.map((_,i)=>'vacant-'+dest+'-'+(target.length+i));
-      return {groups:result,take,targets};
+      return finish(result);
     }
     const b=Number(to);
     let give=members(b,target).slice();
@@ -260,15 +271,7 @@
     give.sort((x,y)=>target.indexOf(x)-target.indexOf(y));
     const exchange=new Map(take.flatMap((id,i)=>[[id,give[i]],[give[i],id]]));
     const changed=groups.map((row,c)=>c===src || c===dest?row.map(id=>exchange.get(id)??id):row.slice());
-    // Never leave a chosen pair across opposing sides, including on a short court.
-    for(const c of new Set([src,dest])){
-      const row=changed[c],paired=pairs.filter(pair=>pair.every(id=>row.includes(id)));
-      if(paired.some(([x,y])=>Math.floor(row.indexOf(x)/2)!==Math.floor(row.indexOf(y)/2))){
-        const grouped=arrangeOpening([row],paired);if(!grouped)return null;
-        changed[c]=grouped[0];
-      }
-    }
-    return {groups:changed,take,targets:give};
+    return finish(changed);
   }
 
   function rosterMove(groups,pairs,a,b,insert=true){
