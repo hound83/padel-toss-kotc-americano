@@ -2,7 +2,7 @@
   <img src="./icon.svg" alt="Padel Planner" width="88" />
 </p>
 
-<h1 align="center">🎾 Padel Planner</h1>
+<h1 align="center">🎾 Padel Planner 3.4</h1>
 
 <p align="center">
   <strong>Van spelerslijst naar speelindeling, zonder gedoe.</strong><br />
@@ -93,7 +93,7 @@ Als de baanindeling groter is dan het scherm, verdeelt de presentatie de kaarten
 
 ## Extra instellingen en speelschema
 
-Bij Toss, Toss met klassement en Split Toss kun je in **Namen** een speler verslepen of twee handgrepen kiezen. Tik op het schakeltje tussen twee namen om het duo voor de eerste ronde vast te leggen of los te maken. Een duo blijft gekoppeld als je de namen in de lijst verschuift. Bij Split Toss kun je ook twee losse spelers tussen groepen uitwisselen.
+Bij Toss, Toss met klassement en Split Toss kun je in **Namen** een speler verslepen of twee handgrepen kiezen. Tik op het schakeltje tussen twee namen om het duo voor de eerste ronde vast te leggen of los te maken. De groene kaart toont wie je verplaatst en welke plekken het duo inneemt. Bij Split Toss kunnen beide partners samen naar een andere groep.
 
 Bij Toss, Gesplitste Toss en Americano staat **Extra instellingen** onder de namen. Kies eventueel een begintijd, rondeduur (standaard 20 minuten) en namen of nummers voor de banen. Bij Gesplitste Toss gelden de spelerskeuzes per groep.
 
@@ -107,7 +107,7 @@ Bij KOC zijn baanaanduidingen en speelniveau beschikbaar onder **Extra instellin
 
 ## Speciaal voor KOC
 
-Sleep in de startindeling een spelerskaartje naar een plek op dezelfde of een andere baan. Op een volle baan wisselen de twee spelers van plek. Je kunt ook twee handgrepen aantikken. Met het schakeltje tussen twee spelers kies je de startduo’s. In de Rondeplanner kun je dit doen tot de eerste uitslag wordt ingevuld.
+Kies bij **Wie spelen er mee?** de startduo’s met het schakeltje tussen twee namen. In de startindeling zie je het schakeltje naast beide partners. Sleep één van de twee en ze wisselen samen van plek met de groen gemarkeerde spelers. Je kunt ook twee handgrepen aantikken. Bij de Rondeplanner kun je de startduo’s en plekken aanpassen tot de eerste uitslag.
 
 - Kies **2 tot en met 4 banen** met dezelfde knoppen als bij de andere speelvormen, of **5 tot en met 12 banen** via de dropdown.
 - Vink afwezige spelers uit of pas namen aan; starten met minder spelers kan ook.
@@ -163,7 +163,7 @@ node --test tests/koc.test.cjs
 </p>
 
 
-## Verhuizing naar Toss 3.3
+## Verhuizing naar Toss 3.4
 
 Het [oude adres op GitHub Pages](https://hound83.github.io/padel-toss-kotc-americano/) toont een verhuismelding en stuurt door naar Cloudflare. Een oude kijklink opent hetzelfde schema. Bij een lokaal bewaarde indeling op de oude startpagina kun je eerst een JSON-bestand downloaden en dat op Cloudflare openen met **Opgeslagen schema laden**.
 
@@ -175,7 +175,7 @@ Open **Beheer** onderaan de site of ga naar [Avonden beheren](https://padel.houn
 
 Met **Avond verwijderen** verwijder je de gekozen datum en de aanmeldingen. Een speelschema dat uitsluitend bij die avond is gepubliceerd, wordt ook verwijderd. Andere weken in de reeks blijven beschikbaar. Bij een los online speelschema kies je **Schema verwijderen**. Controleer de naam in de bevestiging en kies **Ja, verwijderen** of **Annuleren**.
 
-Het algemene beheerwachtwoord geeft toegang tot alle actieve avonden en online speelschema’s. Onder **Organisatoren beheren** kan de algemene beheerder een geregistreerde naam na bevestiging verwijderen. De persoonlijke inlog en toegang vervallen. Bestaande avonden en groepslinks blijven in Beheer. Een organisatoraccount vervalt na drie kalendermaanden zonder gebruik, zodra er geen avond voor vandaag of later aan gekoppeld is. De opruiming draait ieder uur. Bij invoering begint voor bestaande accounts een volledige nieuwe termijn. Op de kaart en in de verwijderbevestiging staan de maker en het aanmaaktijdstip in Nederlandse tijd. Bij een oudere avond kan een van die gegevens ontbreken. Bij het aanmaken via gedeeld beheer vult de maker de eigen naam in. Organisatoren kunnen op de startpagina **Mijn polls** kiezen om hun eigen avonden te openen met hun persoonlijke naam en wachtwoord. Voor een avond die vanuit **Avonden beheren → Nieuwe avond** is aangemaakt blijft het algemene beheer beschikbaar.
+Het algemene beheerwachtwoord geeft toegang tot alle actieve avonden en online speelschema’s. Gebruik de prullenbak op een avondkaart om de avond te verwijderen. Controleer de titel, speeldatum en maker voordat je bevestigt. Onder **Organisatoren beheren** kan de algemene beheerder een geregistreerde naam na bevestiging verwijderen. De persoonlijke inlog en toegang vervallen. Bestaande avonden en groepslinks blijven in Beheer. Een organisatoraccount vervalt na drie kalendermaanden zonder gebruik, zodra er geen avond voor vandaag of later aan gekoppeld is. De opruiming draait ieder uur. Bij invoering begint voor bestaande accounts een volledige nieuwe termijn. Op de kaart en in de verwijderbevestiging staan de maker en het aanmaaktijdstip in Nederlandse tijd. Bij een oudere avond kan een van die gegevens ontbreken. Bij het aanmaken via gedeeld beheer vult de maker de eigen naam in. Organisatoren kunnen op de startpagina **Mijn polls** kiezen om hun eigen avonden te openen met hun persoonlijke naam en wachtwoord. Voor een avond die vanuit **Avonden beheren → Nieuwe avond** is aangemaakt blijft het algemene beheer beschikbaar.
 
 Het vaste wachtwoord staat in de Cloudflare Worker `padel` als runtime-Secret `PADEL_ADMIN_PASSWORD`. Stel het in via **Settings → Variables and Secrets**. Een wijziging maakt bestaande centrale inlogs ongeldig. Elke inlog vervalt na twaalf uur. Voor een eigen Node-host kan dezelfde omgevingsvariabele worden ingesteld.
 
@@ -203,7 +203,7 @@ De online links blijven geldig tot ten minste zeven dagen na de speeldatum. Een 
 
 ### Sessiesite draaien
 
-De Cloudflare-site voor 3.3 serveert de planner en de database-API op hetzelfde domein. Een installatie kan meerdere tossavonden bedienen. Bij een losse indeling gaan de namen en het schema online na **Inplannen en delen**.
+De Cloudflare-site voor 3.4 serveert de planner en de database-API op hetzelfde domein. Een installatie kan meerdere tossavonden bedienen. Bij een losse indeling gaan de namen en het schema online na **Inplannen en delen**.
 
 - Voor Cloudflare Workers en D1 staat de configuratie in `wrangler.jsonc`. Publiceer met een aangemeld Cloudflare-account via `npx wrangler@4 deploy`. Wrangler verpakt de publieke bestanden en koppelt de D1-database. De Worker maakt bij het eerste gebruik de tabellen aan. De Cron Trigger ruimt verlopen gegevens op.
 - Op een eigen host met Node.js 22.13 of nieuwer draait `node sessions/local.mjs` dezelfde sessiedienst met SQLite. Geef `SESSION_DB` een pad op permanente opslag. De standaardpoort is 8787. Zet er voor publiek gebruik een HTTPS-proxy voor. De browser maakt de beheerlink en spelerslinks op de publieke hostnaam. Bij gebruik achter een proxy groepeert de Node-server de limiet voor ongeldige codes per direct verbonden IP-adres.

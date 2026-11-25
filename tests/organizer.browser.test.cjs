@@ -40,7 +40,7 @@ test('one central login reaches existing and new events, live schedules, and the
   const homeButton=await footerButton(host);
   await homeButton.focus();await host.keyboard.press('Enter');
   await host.getByLabel('Beheerwachtwoord').fill(password);await host.getByRole('button',{name:'Inloggen'}).click();
-  const event=host.getByRole('button',{name:new RegExp(title)});
+  const event=host.locator('.hub-toggle').filter({hasText:title});
   await event.focus();await host.keyboard.press('Enter');
   await host.getByRole('button',{name:'Speler toevoegen'}).click();
   await host.getByLabel('Naam',{exact:true}).fill('Mira');
@@ -100,7 +100,7 @@ test('one central login reaches existing and new events, live schedules, and the
       assert.equal(response.status(),200);
     }
     await planner.goto(url+'/beheer');
-    const eventCard=planner.getByRole('button',{name:new RegExp(eventTitle)});
+    const eventCard=planner.locator('.hub-toggle').filter({hasText:eventTitle});
     await eventCard.getByText('Aangemaakt door Nina V.',{exact:false}).waitFor();
     const cardTime=await eventCard.locator('time').getAttribute('datetime');
     assert.ok(Number.isFinite(Date.parse(cardTime)));
@@ -136,8 +136,10 @@ test('one central login reaches existing and new events, live schedules, and the
     assert.doesNotMatch(courts,/Nora Reserve|Ivo Wachtlijst/);
     if(format==='koc'){
       const viewCode=new URL(publicPage.url()).pathname.split('/').pop();
-      await planner.goto(url+'/beheer?avond='+pollId);
-      const remove=planner.getByRole('button',{name:'Avond verwijderen',exact:true});
+      await planner.goto(url+'/beheer');
+      const remove=planner.getByRole('button',{name:'Avond verwijderen · '+eventTitle,exact:true});
+      await remove.waitFor();
+      assert.equal(await eventCard.getAttribute('aria-expanded'),'false');
       await remove.tap();
       const confirmation=planner.getByRole('dialog',{name:'Avond verwijderen?'});
       await confirmation.getByText(eventTitle,{exact:false}).waitFor();

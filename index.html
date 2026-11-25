@@ -751,7 +751,9 @@
   }
   .name-field input:focus{ border-color:var(--teal-600); }
   .name-field input.dup-name-input{ border-color:var(--coral); background:#FDF1F0; }
-  .names-grid:has(.player-card){gap:24px 8px}
+  .names-grid:has(.player-card),.koc-roster,.koc-roster-group{--link-x:40px;--link-y:32px;column-gap:var(--link-x);row-gap:var(--link-y)}
+  .koc-player{position:relative;min-width:0}.koc-player input[type=text]{min-width:0}
+  @media(max-width:600px){.names-grid:has(.player-card),.koc-roster,.koc-roster-group{--link-x:32px;--link-y:32px}.koc-roster,.koc-roster-group{grid-template-columns:repeat(auto-fit,minmax(min(100%,176px),1fr))}}
   .name-field.player-card{display:grid;align-content:start;min-width:0}
   .name-field.player-card input{padding-left:61px}
   .name-field.player-card .idx{left:35px;top:23px;pointer-events:none}
@@ -759,30 +761,33 @@
   .plan-grip::before{content:'';width:12px;height:18px;background:radial-gradient(circle,currentColor 1.5px,transparent 1.7px) 0 0/6px 6px}
   .name-field .plan-grip{position:absolute;inset:0 auto auto 1px}
   .plan-grip:hover,.plan-grip[aria-pressed=true]{color:var(--teal-900);background:#e5efd9}
-  .player-card.dragging{opacity:.55}.player-card.over,.empty-slot.over,.player-card.picked{outline:2px solid var(--teal-600);outline-offset:2px}
-  .player-drag-preview{position:fixed;pointer-events:none;z-index:99;background:var(--teal-900);color:white;padding:7px 14px;border-radius:8px;box-shadow:0 3px 12px #152e4038;max-width:70vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .duo-link{display:inline-grid;place-items:center;border:0;background:transparent;min-height:30px;min-width:30px;padding:0;z-index:2;color:#536c77;cursor:pointer}
-  .duo-link::before,.duo-link::after{content:'';grid-area:1/1;width:12px;height:7px;border:2px solid currentColor;border-radius:6px;box-sizing:border-box}
-  .duo-link::before{transform:translateX(-6px) rotate(-30deg)}.duo-link::after{transform:translateX(6px) rotate(-30deg)}
-  .duo-link[aria-pressed=true]{color:#294d19;background:#dff0af;border-radius:12px}
-  .duo-link[aria-pressed=true]::before{transform:translateX(-4px) rotate(-30deg)}.duo-link[aria-pressed=true]::after{transform:translateX(4px) rotate(-30deg)}
-  .duo-link:disabled{opacity:.3;cursor:default}
-  .name-field:has(>.duo-link:not(.wrap-link)){padding-right:28px}
-  .name-field>.duo-link{position:absolute;right:0;top:8px}
+  .player-card.dragging{opacity:.6}.player-card.picked,.player-card.dragging{outline:2px dashed #528344;outline-offset:2px}
+  .player-card.over,.empty-slot.over{outline:3px solid #518643;outline-offset:1px;box-shadow:0 0 0 5px #e1efd6;background:#e8f5db!important}.player-card.over input{background:#e8f5db}
+  .player-drag-preview{position:fixed;display:grid;gap:2px;z-index:9999;pointer-events:none;max-width:min(80vw,28rem);box-sizing:border-box;padding:8px 14px 8px 19px;background:#f4fae9;color:#193d28;border:2px solid #518643;border-left:6px solid #518643;border-radius:10px;box-shadow:0 7px 21px #17332238;line-height:1.25;overflow-wrap:anywhere}.player-drag-preview strong{font:inherit;font-weight:750}.player-drag-preview small{color:#385a3a;font-size:.8rem}.player-drag-preview [hidden]{display:none}
+  .duo-link{display:grid;place-items:center;box-sizing:border-box;width:32px;height:32px;min-height:0;padding:0;border:1px solid #8aa099;border-radius:50%;background:#fff;color:#39595a;box-shadow:0 1px 3px #19352d1c;cursor:pointer;z-index:2}
+  .duo-link svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+  .duo-link:hover:enabled,.duo-link:focus-visible{outline:2px solid #63904c;outline-offset:1px}
+  .duo-link[aria-pressed=true]{background:#315f39;border-color:#315f39;color:white;box-shadow:0 0 0 3px #ddedce}
+  .duo-link:disabled{opacity:.32;cursor:default}
+  :is(.name-field,.koc-player)>.duo-link{position:absolute;left:calc(100% + var(--link-x)/2);top:50%;transform:translate(-50%,-50%)}
+  :is(.name-field,.koc-player)>.duo-link.wrap-link{left:50%;top:calc(100% + var(--link-y)/2)}
+  .name-field.linked input,.koc-player.linked,.koc-court li.linked{border-color:#6a9663;background:#f1f7ec}
   .koc-court .player-card>.player-label{min-width:0;flex:1}
-  .name-field>.duo-link.wrap-link{right:6px;top:auto;bottom:-26px}
+  .court-duo-mark{color:#365f39;display:inline-grid;place-items:center;padding:0 5px}.court-duo-mark svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
   .partner-note{width:fit-content;border:0;background:#e8f1e0;color:var(--teal-900);border-radius:5px;margin:3px 0 0 4px;padding:2px 6px;font-size:var(--fs-2xs);cursor:pointer}
   .card-help{color:var(--ink-soft);font-size:var(--fs-sm);margin:6px 0 14px}
   .koc-court li.player-card,.koc-court li.empty-slot{position:relative;display:flex;align-items:center;gap:6px;min-height:44px;background:white;border:1px solid var(--line);border-radius:8px;padding:0 9px 0 0;margin:5px 0;cursor:grab;user-select:none}
   .koc-court li.player-card.next-team{margin-top:13px}
-  .koc-court .court-link{position:absolute;right:5px;bottom:-13px}
   .koc-court .empty-slot{border-style:dashed!important;color:var(--ink-soft)}
   .empty-slot .plan-grip::before{content:'+';background:none;width:auto;height:auto}
   .round-scored .plan-grip,.round-scored .duo-link,.round-scored .card-help{display:none}
   .round-scored li.player-card{cursor:default;padding:5px 9px}
   .koc-player .plan-grip{width:24px;min-height:36px}
   .koc-player .plan-grip:disabled{display:none}
-  @media(max-width:520px){.name-field>.duo-link.wrap-link{right:calc(50% - 15px)}}
+  #kocOpeningRoster[hidden]{display:none}#kocOpeningRoster .koc-roster{margin-top:1rem}
+  #kocOpeningRoster .koc-player input[type=checkbox],#kocOpeningRoster .koc-entry-marker{display:none}
+  #kocOpeningRoster .koc-player input:disabled{color:var(--ink);opacity:1}
+  .koc-player>.partner-note{position:absolute;right:0;top:100%;z-index:2}
   @media print{.plan-grip,.duo-link,.partner-note,.card-help{display:none!important}}
 
   /* The name-list action never changes the normal, horizontal player layout. */
@@ -989,7 +994,6 @@
   }
   .toss-start-player label{display:flex;align-items:center;gap:5px;font-size:var(--fs-xs);cursor:pointer;}
   .toss-start-player input{width:18px;height:18px;margin:0;accent-color:var(--teal-900);}
-  .toss-start-pairs{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;}
   .toss-start-error,.toss-wait-warning{color:var(--coral);font-size:var(--fs-sm);line-height:1.5;}
   .resting-line{
     margin:10px 0 0;
@@ -1546,6 +1550,7 @@
         <p data-i18n="prefLevel"></p><div class="toss-start-grid" id="kocLevelGrid"></div>
         <p id="kocCourtError" role="alert" hidden></p>
       </details>
+      <p class="card-help" id="kocPairHelp"></p>
       <div class="koc-roster" id="kocRoster">
           <div class="koc-roster-group" id="kocLowestFields" role="group" aria-labelledby="kocLowestHeading" hidden>
             <h3 id="kocLowestHeading" data-i18n="kocEntryMode">Indelen op baan 1</h3>
@@ -1560,6 +1565,7 @@
         <p class="koc-dup-warning" id="kocWaitingError" role="alert" hidden></p>
       </div>
     </div>
+    <details class="toss-start-options" id="kocOpeningRoster" hidden><summary></summary></details>
     <div class="koc-actions action-bar">
       <button class="btn btn-primary" id="kocRoll" type="button" data-i18n="kocRoll">🎲 Genereer startindeling</button>
       <button class="btn btn-ghost" id="kocPresent" type="button" data-i18n="presentBtn">Presentatiemodus</button>
@@ -1661,10 +1667,8 @@
       <summary data-i18n="extraSettings">Extra instellingen</summary>
       <div class="toss-plan-fields" id="tossSessionSettings"></div>
       <label id="prefGroupLabel" hidden><span data-i18n="prefGroup"></span> <select id="prefGroup"></select></label>
-      <p data-i18n="tossStartHelp">Start garandeert een plek in ronde 1. Leg met Duo twee partners vast voor de eerste ronde. Daarna probeert de planner hun speel- en rustbeurten gelijk te houden. Met Laatste vrij krijgt een speler zo mogelijk rust in de laatste ronde.</p>
+      <p data-i18n="tossStartHelp">Start garandeert een plek in ronde 1. Koppel twee namen in de spelerslijst om ze samen te laten starten. Daarna probeert de planner hun speel- en rustbeurten gelijk te houden. Met Laatste vrij krijgt een speler zo mogelijk rust in de laatste ronde.</p>
       <div class="toss-start-grid" id="tossStartGrid"></div>
-      <button class="btn btn-ghost" id="tossAddPair" type="button" data-i18n="tossAddPair" disabled>Startkoppel vastleggen</button>
-      <div class="toss-start-pairs" id="tossStartPairs"></div>
       <p id="tossStartStatus" role="status"></p>
     </details>
     <p class="toss-start-error" id="tossStartError" role="alert" hidden></p>
@@ -1802,7 +1806,7 @@
     <div class="share-footer"><button id="shareEnd" class="btn btn-ghost" type="button" data-i18n="endShare" hidden></button><button id="shareClose" class="btn btn-ghost" type="button" data-i18n="closeShare"></button></div>
   </dialog>
   <footer class="app-footer">
-    <span id="appVersion">v3.3.0</span>
+    <span id="appVersion">v3.4.0</span>
     <details><summary data-i18n="whatsNew">Wat is nieuw?</summary>
       <ul>
         <li data-i18n="changeIllustrations">Nieuwe baanillustraties, marineblauw/lime en een puntenscore van 26–6.</li>
@@ -1985,13 +1989,9 @@
       tossRoundMinutesError: "Kies een rondeduur van 1 tot en met 240 minuten.",
       tossCourtNumbersError: "Geef elke baan een unieke naam of een uniek nummer (maximaal 40 tekens).",
       tossStartTitle: "Extra instellingen voor Toss",
-      tossStartHelp: "Start garandeert een plek in ronde 1. Leg met Duo twee partners vast voor de eerste ronde. Daarna probeert de planner hun speel- en rustbeurten gelijk te houden. Met Laatste vrij krijgt een speler zo mogelijk rust in de laatste ronde.",
+      tossStartHelp: "Start garandeert een plek in ronde 1. Koppel twee namen in de spelerslijst om ze samen te laten starten. Daarna probeert de planner hun speel- en rustbeurten gelijk te houden. Met Laatste vrij krijgt een speler zo mogelijk rust in de laatste ronde.",
       tossStartPlay: "Start",
-      tossStartPair: "Duo",
       tossStartPlayAria: "Speelt zeker in ronde 1: {name}",
-      tossStartPairAria: "Kies voor startkoppel: {name}",
-      tossAddPair: "Startkoppel vastleggen",
-      tossRemovePair: "Startkoppel verwijderen: {names}",
       tossStartCount: "{n} van de {slots} speelplekken in ronde 1 vastgelegd.",
       tossStartTooMany: "Er zijn {n} spelers vastgezet voor {slots} speelplekken. Vink minder spelers aan of kies meer banen.",
       tossWaitImpossible: "Met {n} spelers en {slots} speelplekken moet meer dan de helft per ronde wachten. Twee opeenvolgende wachtrondes zijn daardoor onvermijdelijk. Kies meer banen of minder spelers om dit te voorkomen.",
@@ -2343,13 +2343,9 @@
       tossRoundMinutesError: "Choose a round duration between 1 and 240 minutes.",
       tossCourtNumbersError: "Give each court a unique name or number (up to 40 characters).",
       tossStartTitle: "Extra settings for Toss",
-      tossStartHelp: "Start guarantees a place in round 1. Confirm two players as a pair to start as partners. Later the planner tries to give them the same playing and resting rounds. Select Final round off to give a player a break in the last round if possible.",
+      tossStartHelp: "Start guarantees a place in round 1. Link two names in the player list to start them as partners. Later the planner tries to give them the same playing and resting rounds. Select Final round off to give a player a break in the last round if possible.",
       tossStartPlay: "Start",
-      tossStartPair: "Pair",
       tossStartPlayAria: "Must play in round 1: {name}",
-      tossStartPairAria: "Select for starting pair: {name}",
-      tossAddPair: "Confirm starting pair",
-      tossRemovePair: "Remove starting pair: {names}",
       tossStartCount: "{n} of {slots} playing places in round 1 reserved.",
       tossStartTooMany: "{n} players are selected for {slots} playing places. Select fewer players or add courts.",
       tossWaitImpossible: "With {n} players and {slots} playing places, more than half the players must wait each round. Consecutive breaks are unavoidable. Add courts or reduce the number of players to prevent this.",
@@ -2807,6 +2803,13 @@
     for (var i = k.roster.length; i < kocCapacity(k); i++){
       k.roster.push({ name: '', active: true, incoming: false });
     }
+    if(!Array.isArray(k.startPairs)){
+      k.startPairs=[];
+      for(const court of Array.isArray(k.pairedCourts)?k.pairedCourts:[]){
+        const seats=(k.displayOrder || []).filter(id=>k.assignment?.[id]===court);
+        if(seats.length===4)k.startPairs.push(seats.slice(0,2),seats.slice(2));
+      }
+    }
     if (!k.lastSignature) k.lastSignature = '';
     return k;
   }
@@ -2854,43 +2857,67 @@
     row.prepend(grip);
   }
 
-  function enablePlayerCards(root,change){
-    let picked=null;
+  function enablePlayerCards(root,change,{members=id=>[id],destination}={}){
+    let picked=null,selection=[],preview=[];
+    const find=id=>root.querySelector('[data-slot="'+id+'"]');
+    const rows=ids=>ids.map(find).filter(Boolean);
+    function highlightKeyboard(target){
+      preview.forEach(row=>row.classList.remove('over'));preview=[];
+      if(!picked || !target || picked===target)return;
+      const drop=describe(picked.dataset.slot,target);
+      if(drop){preview=drop.targets;preview.forEach(row=>row.classList.add('over'));}
+    }
     function select(row){
-      picked?.classList.remove('picked');
-      picked?.querySelector('.plan-grip')?.setAttribute('aria-pressed','false');
-      picked=row;
-      picked?.classList.add('picked');
-      picked?.querySelector('.plan-grip')?.setAttribute('aria-pressed','true');
+      highlightKeyboard(null);
+      for(const card of selection){card.classList.remove('picked');card.querySelector('.plan-grip')?.setAttribute('aria-pressed','false');}
+      picked=row;selection=row?rows(members(row.dataset.slot)):[];
+      for(const card of selection){card.classList.add('picked');card.querySelector('.plan-grip')?.setAttribute('aria-pressed','true');}
+    }
+    function describe(from,to){
+      if(!to || !root.contains(to) || to.dataset.slot===from)return null;
+      const spec=destination?destination(from,to.dataset.slot):{targets:[to.dataset.slot],label:to.dataset.playerName};
+      if(!spec)return null;
+      const targets=rows(spec.targets);
+      return {group:targets[0] || to,slot:to.dataset.slot,targets,label:spec.label,names:spec.names};
     }
     root.onclick=event=>{
       const grip=event.target.closest('.plan-grip');
-      if(!grip)return;
+      if(!grip || grip.disabled)return;
       const to=grip.closest('[data-slot]');
       if(!picked){if(to.classList.contains('player-card'))select(to);return;}
       const from=picked;select(null);
       if(from!==to){
         const focusId=change(from.dataset.slot,to.dataset.slot);
-        if(focusId!=null)root.querySelector('[data-slot="'+focusId+'"] .plan-grip')?.focus({preventScroll:true});
+        if(focusId!=null)find(focusId)?.querySelector('.plan-grip')?.focus({preventScroll:true});
       }
     };
+    root.onfocusin=e=>highlightKeyboard(e.target.closest('.plan-grip')?.closest('[data-slot]'));
+    root.onpointerover=e=>{if(picked)highlightKeyboard(e.target.closest('[data-slot]'));};
     root.onkeydown=e=>{if(e.key==='Escape')select(null);};
     window.TossCardDrag(root,{
-      identify:row=>row.querySelector('.plan-grip:disabled')?null:({id:row.dataset.slot,name:row.dataset.playerName}),
-      locate(element,y,entry){
-        const group=element?.closest('[data-slot]');
-        return group && root.contains(group) && group.dataset.slot!==entry.id?{group}:null;
+      identify:row=>{
+        if(row.querySelector('.plan-grip:disabled'))return null;
+        const selected=rows(members(row.dataset.slot));
+        return {id:row.dataset.slot,names:selected.map(card=>card.dataset.playerName),rows:selected};
       },
-      move:(entry,drop)=>{select(null);change(entry.id,drop.group.dataset.slot);}
+      locate:(element,y,entry)=>describe(entry.id,element?.closest('[data-slot]')),
+      move:(entry,drop)=>{select(null);change(entry.id,drop.slot);}
     });
   }
 
+  function chainIcon(){
+    const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
+    svg.setAttribute('viewBox','0 0 24 24');svg.setAttribute('aria-hidden','true');
+    const path=document.createElementNS(svg.namespaceURI,'path');
+    path.setAttribute('d','M10 13a4 4 0 0 0 6 .5l3-3a4 4 0 0 0-5.7-5.6l-1.7 1.7M14 11a4 4 0 0 0-6-.5l-3 3a4 4 0 0 0 5.7 5.6l1.7-1.7');
+    svg.append(path);return svg;
+  }
   function duoLink(first,second,linked,activate,disabled=false){
     const btn=liveElement('button','duo-link');
     btn.type='button';btn.disabled=disabled;
     const label=(linked?editText('Ontkoppel ','Unlink '):editText('Koppel ','Pair '))+first+editText(' en ',' and ')+second;
     btn.title=label;btn.setAttribute('aria-label',label);btn.setAttribute('aria-pressed',String(linked));
-    btn.onclick=activate;
+    btn.append(chainIcon());btn.onclick=activate;
     return btn;
   }
 
@@ -2909,7 +2936,7 @@
     const waiting=kocWaitingPlayers(k);
     names.forEach(function(name,n){
       const row=cardClass==='koc-court'?kocCardRow('',name):nameLabel('li','',name);
-      if(cardClass==='koc-court')preparePlayerCard(row,waiting[n],name);
+      if(cardClass==='koc-court'){preparePlayerCard(row,waiting[n],name);markKocPartner(row,waiting[n],k,waiting);}
       list.appendChild(row);
     });
     card.appendChild(list);
@@ -2917,52 +2944,106 @@
     root.appendChild(card);
   }
 
-  function kocHasTeams(k,court){
-    return Array.isArray(k.pairedCourts)?k.pairedCourts.includes(court):k.roster.some(p=>p.level);
+  function kocGroups(k,round){
+    if(round)return [round.waiting,...round.matches.map(m=>m.teams.flat())];
+    const order=k.displayOrder || Object.keys(k.assignment).map(Number);
+    return [kocWaitingPlayers(k),...Array.from({length:k.courts},(_,c)=>order.filter(i=>k.assignment[i]===c+1))];
   }
-  function kocStartupPairs(k){
-    if(!Array.isArray(k.pairedCourts))k.pairedCourts=Array.from({length:k.courts},(_,i)=>i+1).filter(c=>kocHasTeams(k,c));
-    return k.pairedCourts;
-  }
-  function saveKocCards(){
-    const k=state.koc;
+  function applyKocGroups(k,groups,round){
+    groups.forEach((row,c)=>row.forEach(id=>{k.assignment[id]=c;}));
+    k.displayOrder=groups.flat();k.waitingOrder=groups[0].slice();
+    if(round){
+      round.waiting=groups[0].slice();
+      for(const match of round.matches){
+        const row=groups[match.court];
+        if(match.teams.flat().some((id,i)=>id!==row[i]))delete match.entryTicket;
+        match.teams=[row.slice(0,2),row.slice(2)];
+      }
+    }
     k.lastSignature=kocSignature(k.assignment,k.courts);
-    renderKocResult();writeAutosave();
   }
-  function moveKocCard(from,to){
-    const k=state.koc,a=Number(from),b=Number(to);
-    if(!Object.hasOwn(k.assignment,a))return;
-    if(to.startsWith('vacant-')){
-      const dest=Number(to.split('-')[1]),src=k.assignment[a];
-      if(!src || dest===src || !dest || Object.values(k.assignment).filter(c=>c===dest).length>=4)return;
-      k.pairedCourts=kocStartupPairs(k).filter(c=>c!==src && c!==dest);
-      k.assignment[a]=dest;k.displayOrder=k.displayOrder.filter(i=>i!==a).concat(a);
-    }else{
-      if(!Object.hasOwn(k.assignment,b) || a===b)return;
-      if(k.assignment[a]===0 || k.assignment[b]===0)k.waitingOrder=kocWaitingPlayers(k).map(i=>i===a?b:i===b?a:i);
-      [k.assignment[a],k.assignment[b]]=[k.assignment[b],k.assignment[a]];
-      k.displayOrder=k.displayOrder.map(i=>i===a?b:i===b?a:i);
+  function arrangeKocPairs(k,round){
+    const priority=i=>k.assignment[i]===0?100:i===0?80:i===1?60:k.incomingEnabled && k.roster[i]?.incoming?35:0;
+    const laidOut=PadelRounds.arrangeOpening(kocGroups(k,round),k.startPairs,priority);
+    if(!laidOut)return false;
+    applyKocGroups(k,laidOut,round);return true;
+  }
+  function kocHasTeams(k,court){
+    return k.startPairs.some(pair=>pair.every(id=>k.assignment[id]===court)) ||
+      (Array.isArray(k.pairedCourts)?k.pairedCourts.includes(court):k.roster.some(p=>p.level));
+  }
+  function kocMoveSettings(k,round){
+    return {
+      members(id){
+        const groups=kocGroups(k,round),row=groups.find(row=>row.includes(Number(id)));
+        return k.startPairs.find(pair=>pair.includes(Number(id)) && pair.every(i=>row?.includes(i))) || [id];
+      },
+      destination(from,to){
+        const groups=kocGroups(k,round),plan=PadelRounds.openingMove(groups,k.startPairs,from,to);
+        if(!plan)return null;
+        const court=plan.groups.findIndex(row=>row.includes(Number(from)));
+        const positions=plan.take.map(id=>plan.groups[court].indexOf(id)+1).sort((a,b)=>a-b);
+        return {targets:plan.targets,names:plan.take.map(kocPlayerName),label:(court?courtName(court):t('kocRoundWaiting'))+' · '+placeText(positions)};
+      }
+    };
+  }
+  function placeText(positions){
+    return (positions.length>1?editText('Plekken ','Places '):editText('Plek ','Place '))+positions.join(editText(' en ',' and '));
+  }
+  function moveKocCard(from,to,round){
+    const k=state.koc;
+    if(round && (currentKocRound()!==round || !editableKocStart(round)))return;
+    const plan=PadelRounds.openingMove(kocGroups(k,round),k.startPairs,from,to);
+    if(!plan)return;
+    applyKocGroups(k,plan.groups,round);
+    renderKocResult();writeAutosave();return from;
+  }
+  function markKocPartner(row,id,k,group){
+    const mate=k.startPairs.find(pair=>pair.includes(id) && pair.every(p=>group.includes(p)))?.find(p=>p!==id);
+    if(mate===undefined)return;
+    row.classList.add('linked');
+    const mark=liveElement('span','court-duo-mark'),label=editText('Startduo met ','Opening pair with ')+kocPlayerName(mate);
+    mark.title=label;mark.setAttribute('role','img');mark.setAttribute('aria-label',label);mark.append(chainIcon());row.append(mark);
+  }
+  function refreshKocLinks(k,round){
+    const roster=document.getElementById('kocRoster'),fields=[...roster.querySelectorAll('.koc-player')];
+    const toggle=(a,b)=>{
+      if(round && (currentKocRound()!==round || !editableKocStart(round)))return;
+      const old=k.startPairs,existing=old.find(pair=>pair.includes(a) && pair.includes(b));
+      if(existing)k.startPairs=old.filter(pair=>pair!==existing);
+      else{
+        if(old.some(pair=>pair.includes(a) || pair.includes(b)))return;
+        k.startPairs=old.concat([[a,b]]);
+        if(k.assignment && !arrangeKocPairs(k,round)){k.startPairs=old;return;}
+      }
+      renderKocResult();writeAutosave();
+      fields[a]?.querySelector('.duo-link:enabled,.partner-note')?.focus({preventScroll:true});
+    };
+    for(const [i,field] of fields.entries()){
+      const mate=k.startPairs.find(pair=>pair.includes(i))?.find(id=>id!==i);
+      field.classList.toggle('linked',mate!==undefined);
+      field.querySelector('.duo-link')?.remove();field.querySelector('.partner-note')?.remove();
+      if(i+1<fields.length){
+        const linked=mate===i+1,blocked=mate!=null || k.startPairs.some(pair=>pair.includes(i+1)) ||
+          k.roster[i].active===false || k.roster[i+1].active===false;
+        field.append(duoLink(kocPlayerName(i),kocPlayerName(i+1),linked,()=>toggle(i,i+1),!linked && blocked));
+      }
+      if(mate!==undefined && (Math.abs(mate-i)>1 || mate>=fields.length)){
+        const badge=liveElement('button','partner-note',editText('Duo met ','Paired with ')+kocPlayerName(mate));
+        badge.type='button';badge.onclick=()=>toggle(i,mate);field.append(badge);
+      }
     }
-    saveKocCards();return from;
-  }
-  function chooseKocPair(k,court,here,index,linked){
-    const pairs=kocStartupPairs(k);
-    if(linked)k.pairedCourts=pairs.filter(c=>c!==court);
-    else{
-      if(!pairs.includes(court))pairs.push(court);
-      const duo=here.slice(index,index+2),other=here.filter(i=>!duo.includes(i));
-      const order=index===2?other.concat(duo):duo.concat(other);
-      let n=0;
-      k.displayOrder=k.displayOrder.map(i=>k.assignment[i]===court?order[n++]:i);
+    if(!roster.cardSizeObserver){
+      roster.cardSizeObserver=new ResizeObserver(()=>layoutDuoLinks(roster));roster.cardSizeObserver.observe(roster);
     }
-    saveKocCards();
+    layoutDuoLinks(roster);
   }
-
   function renderKocResult(){
     var k = ensureKocRoster(), root = document.getElementById('kocResult');
     root.innerHTML = '';
     document.querySelectorAll('#kocRoster .plan-grip').forEach(grip=>{grip.disabled=!!k.assignment;});
     var round = currentKocRound();
+    refreshKocLinks(k,round);
     ['kocPrint','kocPdf'].forEach(function(id){document.getElementById(id).disabled = !k.assignment || !!kocDuplicateIndices().length;});
     document.getElementById('kocEditDetails').hidden = !k.assignment;
     renderGuidedKoc(round);
@@ -2975,7 +3056,7 @@
         k.displayOrder.some(function(i, j){ return indices.indexOf(i) === -1 || k.displayOrder.indexOf(i) !== j; })){
       k.displayOrder = shuffle(indices);
     }
-    root.append(liveElement('p','card-help',editText('Sleep een speler naar een andere plek, of tik op twee handgrepen. Met het schakeltje tussen twee spelers kies je de startduo’s op een volle baan.','Drag a player to another place or select two handles. Use the link between players to choose the opening pairs on a full court.')));
+    root.append(liveElement('p','card-help',editText('Sleep een kaartje of tik op twee handgrepen om van plek te wisselen. Gekoppelde spelers verhuizen samen.','Drag a card or select two handles to swap places. Linked partners move together.')));
     var courtGrid = liveElement('div', 'koc-courts');
     root.appendChild(courtGrid);
     for (var b = k.courts; b >= 1; b--){
@@ -2991,14 +3072,7 @@
         var split = index === 2 && paired;
         var li = kocCardRow(split ? 'next-team' : '',kocPlayerName(i));
         preparePlayerCard(li,i,kocPlayerName(i));
-        if(here.length===4 && index<3){
-          const linked=paired && index!==1;
-          const btn=duoLink(kocPlayerName(i),kocPlayerName(here[index+1]),linked,()=>{
-            chooseKocPair(k,courtNumber,here,index,linked);
-            root.querySelector('[data-slot="'+i+'"] .plan-grip')?.focus({preventScroll:true});
-          });
-          btn.classList.add('court-link');li.append(btn);
-        }
+        markKocPartner(li,i,k,here);
         list.appendChild(li);
       });
       for (var empty = here.length; empty < 4; empty++){
@@ -3012,7 +3086,7 @@
       courtGrid.appendChild(court);
     }
     appendKocWaitingCard(root, k, 'koc-court');
-    enablePlayerCards(root,moveKocCard);
+    enablePlayerCards(root,moveKocCard,kocMoveSettings(k));
   }
 
   const kocEditDialog = document.getElementById('kocEditDialog');
@@ -3219,14 +3293,25 @@
         lowestFields.appendChild(row);
       } else roster.insertBefore(row, lowestFields);
     });
+    document.getElementById('kocPairHelp').textContent=editText('Koppel twee namen met het schakeltje ertussen. Ze starten als duo en verhuizen samen als je hun kaartje sleept.','Link two names to start them as a pair. Drag either card to move both partners.');
+    function rosterPlan(from,to){
+      const ids=k.roster.slice(0,kocCapacity(k)).map((_,i)=>i);
+      return PadelRounds.rosterMove([ids],k.startPairs,Number(from),Number(to),false);
+    }
     enablePlayerCards(roster,(from,to)=>{
       if(k.assignment)return;
-      const a=Number(from),b=Number(to),first=k.roster[a],second=k.roster[b];
-      if(!first || !second)return;
-      const firstName=kocPlayerName(a),secondName=kocPlayerName(b);
-      k.roster[a]={...second,name:secondName,incoming:first.incoming};
-      k.roster[b]={...first,name:firstName,incoming:second.incoming};
-      clearBulkUndo();renderKoc();writeAutosave();return to;
+      const plan=rosterPlan(from,to);if(!plan)return;
+      const order=plan.groups[0],previous=k.roster.slice();
+      const names=order.map(kocPlayerName);
+      order.forEach((old,i)=>{if(old!==i)k.roster[i]={...previous[old],name:names[i],incoming:previous[i].incoming};});
+      k.startPairs=k.startPairs.map(pair=>pair.map(id=>order.includes(id)?order.indexOf(id):id));
+      clearBulkUndo();renderKoc();writeAutosave();return order.indexOf(Number(from));
+    },{
+      members:id=>k.startPairs.find(pair=>pair.includes(Number(id))) || [id],
+      destination(from,to){
+        const plan=rosterPlan(from,to);if(!plan)return null;
+        return {targets:plan.targets,names:plan.take.map(kocPlayerName),label:placeText(plan.positions.map(i=>i+1))};
+      }
     });
     if (state.format === 'koc') renderRoundSettings();
     var hasDuplicates = renderKocCount();
@@ -3396,6 +3481,7 @@
       k.displayOrder = order.concat(k.displayOrder.filter(function(i){return !best[i];}));
     }
     if (k.guided) k.roundPlan = [PadelRounds.startKocRounds(best,k.courts,k.roster.length,fitAmericanoStrength,Math.random,kocPairingOptions(k))];
+    if(k.startPairs.length)arrangeKocPairs(k,k.guided?k.roundPlan[0]:null);
     prepareRoundClock(1,true);
     renderKocResult();
     document.getElementById('kocRoll').textContent = t('kocReroll');
@@ -4605,39 +4691,45 @@
   function preferenceName(value,index,group){
     return String(value || '').trim() || tf(group >= 0 ? LEVELS[group].placeholderKey : 'namePlaceholder',{n:index+1});
   }
-  function nameCardMove(from,to){
-    const [group,a]=from.split(':').map(Number),[other,b]=to.split(':').map(Number);
-    const players=preferenceRoster(group),choices=tossStartChoices(group);
-    if(group===other){
-      if(a===b)return;
-      const order=players.map((_,i)=>i);
-      order.splice(b,0,order.splice(a,1)[0]);
-      const oldNames=players.slice(),newIndex=[];
-      order.forEach((old,i)=>{
-        newIndex[old]=i;
-        players[i]=old===i?oldNames[old]:oldNames[old]||preferenceName('',old,group);
+  function namesBoard(){
+    const groups=state.format==='splitToss'?activeLevelIndexes():[-1];
+    const people=[],pairs=[];
+    const byGroup=groups.map(group=>{
+      const choices=tossStartChoices(group),roster=preferenceRoster(group),offset=people.length;
+      for(const [a,b] of choices.pairs)pairs.push([offset+a,offset+b]);
+      return roster.map((name,index)=>{
+        const id=people.length;
+        people.push({id,group,index,slot:group+':'+index,name,display:preferenceName(name,index,group),
+          start:choices.players.includes(index),rest:choices.lastRest.includes(index),level:choices.levels[index]});
+        return id;
       });
-      choices.players=choices.players.map(i=>newIndex[i]);
-      choices.lastRest=choices.lastRest.map(i=>newIndex[i]);
-      choices.pairs=choices.pairs.map(pair=>pair.map(i=>newIndex[i]));
-      choices.levels=order.map(i=>choices.levels[i]);
-    }else{
-      const others=preferenceRoster(other),otherChoices=tossStartChoices(other);
-      if(choices.pairs.some(p=>p.includes(a)) || otherChoices.pairs.some(p=>p.includes(b))){
-        document.getElementById('rosterCardHelp').textContent=editText('Een duo speelt in dezelfde groep. Ontkoppel het duo eerst om deze speler van groep te wisselen.','A pair plays in the same group. Unlink the pair before moving this player to another group.');
-        return from;
-      }
-      [players[a],others[b]]=[preferenceName(others[b],b,other),preferenceName(players[a],a,group)];
-      [choices.levels[a],otherChoices.levels[b]]=[otherChoices.levels[b],choices.levels[a]];
-      for(const key of ['players','lastRest']){
-        const takeA=choices[key].includes(a),takeB=otherChoices[key].includes(b);
-        choices[key]=choices[key].filter(i=>i!==a);otherChoices[key]=otherChoices[key].filter(i=>i!==b);
-        if(takeA)otherChoices[key].push(b);
-        if(takeB)choices[key].push(a);
-      }
-    }
+    });
+    return {groups,people,pairs,byGroup};
+  }
+  function nameMovePlan(from,to){
+    const board=namesBoard(),a=board.people.find(p=>p.slot===from),b=board.people.find(p=>p.slot===to);
+    if(!a || !b)return null;
+    const plan=PadelRounds.rosterMove(board.byGroup,board.pairs,a.id,b.id);
+    return plan?{...board,...plan,groupIds:board.groups,fromId:a.id}:null;
+  }
+  function nameCardMove(from,to){
+    const plan=nameMovePlan(from,to);
+    if(!plan)return;
+    plan.groups.forEach((row,g)=>{
+      const group=plan.groupIds[g],roster=preferenceRoster(group),choices=tossStartChoices(group);
+      choices.players=[];choices.lastRest=[];choices.levels=[];
+      row.forEach((id,i)=>{
+        const p=plan.people[id];
+        roster[i]=p.index===i && p.group===group?p.name:p.display;
+        choices.levels[i]=p.level;
+        if(p.start)choices.players.push(i);
+        if(p.rest)choices.lastRest.push(i);
+      });
+      choices.pairs=plan.pairs.filter(pair=>pair.every(id=>row.includes(id))).map(pair=>pair.map(id=>row.indexOf(id)));
+    });
     if(editSession)editSession.rosterMoved=true;
-    clearBulkUndo();buildNameInputs();updateScheduleEditActions();writeAutosave();return to;
+    clearBulkUndo();buildNameInputs();updateScheduleEditActions();writeAutosave();
+    return plan.groupIds[plan.dest]+':'+plan.groups[plan.dest].indexOf(plan.fromId);
   }
 
   function showNameCardHelp(){
@@ -4648,7 +4740,18 @@
     }
     anchor.prepend(help);
     help.textContent=editText('Sleep met de handgreep of tik op twee plekken. Tik op het schakeltje tussen twee namen om als duo te starten.','Drag a handle or select two places. Use the link between two names to start them as a pair.');
-    enablePlayerCards(anchor,nameCardMove);
+    enablePlayerCards(anchor,nameCardMove,{
+      members(slot){
+        const [group,i]=slot.split(':').map(Number);
+        return (tossStartChoices(group).pairs.find(pair=>pair.includes(i)) || [i]).map(j=>group+':'+j);
+      },
+      destination(from,to){
+        const plan=nameMovePlan(from,to);if(!plan)return null;
+        const group=plan.groupIds[plan.dest];
+        return {targets:plan.targets.map(id=>plan.people[id].slot),names:plan.take.map(id=>plan.people[id].display),
+          label:(group<0?'':t(LEVELS[group].labelKey)+' · ')+placeText(plan.positions.map(i=>i+1))};
+      }
+    });
   }
 
   function decorateNameGrid(grid,group){
@@ -4661,7 +4764,7 @@
     }
   }
   function layoutDuoLinks(grid){
-    const fields=[...grid.querySelectorAll('.name-field')],tops=fields.map(field=>field.offsetTop);
+    const fields=[...grid.querySelectorAll('.name-field,.koc-player')],tops=fields.map(field=>Math.round(field.getBoundingClientRect().top));
     fields.forEach((field,i)=>field.querySelector('.duo-link')?.classList.toggle('wrap-link',tops[i]!==tops[i+1]));
   }
   function refreshNameLinks(){
@@ -4685,7 +4788,7 @@
         if(!grip)return;
         field.dataset.playerName=name(i);grip.setAttribute('aria-label',editText('Verplaats ','Move ')+name(i));
         field.querySelector('.duo-link')?.remove();field.querySelector('.partner-note')?.remove();
-        const mate=partners.get(i);
+        const mate=partners.get(i);field.classList.toggle('linked',mate!==undefined);
         if(i+1<fields.length){
           const linked=mate===i+1;
           field.append(duoLink(name(i),name(i+1),linked,()=>toggle(i,i+1),!linked && (mate!==undefined || partners.has(i+1))));
@@ -4798,25 +4901,20 @@
     var choices = tossStartChoices();
     var paired = new Set(choices.pairs.flat());
     var grid = document.getElementById('tossStartGrid');
-    var pairList = document.getElementById('tossStartPairs');
-    var add = document.getElementById('tossAddPair');
     grid.replaceChildren();
-    pairList.replaceChildren();
-    add.disabled = true;
     preferenceRoster(group).forEach(function(value,index){
       var name = preferenceName(value,index,group);
       var row = liveElement('div','toss-start-player');
       row.appendChild(liveElement('span','',name));
-      ['Play','Pair','Rest'].forEach(function(kind){
+      (paired.has(index) ? ['Rest'] : ['Play','Rest']).forEach(function(kind){
         var label = liveElement('label','');
         var input = document.createElement('input');
         input.type = 'checkbox';
         input.dataset.player = index;
         input.dataset.choice = kind;
         input.setAttribute('aria-label',tf('tossStart'+kind+'Aria',{name:name}));
-        input.disabled = kind !== 'Rest' && paired.has(index);
         if (kind === 'Rest') input.checked = choices.lastRest.includes(index);
-        if (kind === 'Play') input.checked = paired.has(index) || choices.players.indexOf(index) >= 0;
+        if (kind === 'Play') input.checked = choices.players.includes(index);
         label.append(input,liveElement('span','',t('tossStart'+kind)));
         input.addEventListener('change',function(){
           if (kind === 'Rest'){
@@ -4824,17 +4922,12 @@
             current.lastRest = current.lastRest.filter(function(i){return i !== index;});
             if (input.checked) current.lastRest.push(index);
             scheduleAutosave();
-          } else if (kind === 'Play'){
+          } else {
             var current = tossStartChoices();
             current.players = current.players.filter(function(i){return i !== index;});
             if (input.checked) current.players.push(index);
             validateTossStart();
-          } else {
-            var selected = grid.querySelectorAll('[data-choice="Pair"]:checked').length;
-            add.disabled = selected !== 2;
-            grid.querySelectorAll('[data-choice="Pair"]').forEach(function(box){
-              box.disabled = paired.has(Number(box.dataset.player)) || (!box.checked && selected === 2);
-            });
+            scheduleAutosave();
           }
         });
         row.appendChild(label);
@@ -4842,34 +4935,11 @@
       row.appendChild(levelSelect(name,choices.levels[index],function(value){tossStartChoices().levels[index]=value;}));
       grid.appendChild(row);
     });
-    choices.pairs.forEach(function(pair){
-      var names = pair.map(function(index){return preferenceName(preferenceRoster(group)[index],index,group);}).join(' & ');
-      var remove = liveElement('button','btn btn-ghost',names+' ×');
-      remove.type = 'button';
-      remove.setAttribute('aria-label',tf('tossRemovePair',{names:names}));
-      remove.addEventListener('click',function(){
-        var current = tossStartChoices();
-        current.pairs = current.pairs.filter(function(p){return p[0] !== pair[0] || p[1] !== pair[1];});
-        renderTossStartOptions();
-        document.getElementById('tossStartGrid').querySelector('[data-choice="Pair"][data-player="'+pair[0]+'"]').focus();
-        scheduleAutosave();
-      });
-      pairList.appendChild(remove);
-    });
     refreshNameLinks();
     validateTossStart();
   }
 
   document.getElementById('prefGroup').addEventListener('change',renderTossStartOptions);
-  document.getElementById('tossAddPair').addEventListener('click',function(){
-    var selected = Array.from(document.querySelectorAll('#tossStartGrid [data-choice="Pair"]:checked'))
-      .map(function(input){return Number(input.dataset.player);});
-    if (selected.length !== 2) return;
-    tossStartChoices().pairs.push(selected);
-    renderTossStartOptions();
-    document.getElementById('tossStartOptions').querySelector('summary').focus();
-    scheduleAutosave();
-  });
 
   // Only Americano always tracks results. Plain Toss never does; Split Toss
   // uses its own two independent per-group toggles instead of this flag.
@@ -6257,6 +6327,7 @@
     var k = ensureKocRoster(), capacity = kocCapacity(k);
     if (names.length > capacity) return tf('bulkTooMany', {n:names.length,max:capacity});
     if (names.some(function(name){return name.length > 50;})) return t('bulkNameTooLong');
+    k.startPairs=k.startPairs.filter(pair=>pair.every(i=>i<names.length && kocPlayerName(i)===names[i]));
     k.roster.slice(0, capacity).forEach(function(person, i){
       var newName = names[i] || '';
       // An incoming flag belongs to a person, not to a numbered slot.
@@ -6971,6 +7042,11 @@
     if (st.format === 'koc'){
       if (!st.koc || !Array.isArray(st.koc.roster) || !Number.isInteger(st.koc.courts) ||
           st.koc.courts < 1 || st.koc.courts > 12) return 'loadErrCorrupt';
+      if(st.koc.startPairs!==undefined){
+        const pairs=st.koc.startPairs;
+        if(!Array.isArray(pairs) || pairs.some(p=>!Array.isArray(p) || p.length!==2 || p.some(id=>!Number.isInteger(id) || id<0 || id>=st.koc.roster.length)) ||
+            new Set(pairs.flat()).size!==pairs.length*2)return 'loadErrCorrupt';
+      }
       if (st.koc.assignment && !validKocAssignment(st.koc)) return 'loadErrCorrupt';
       if (st.koc.roundPlan && (!st.koc.guided || !st.koc.assignment || !PadelRounds.validKocRounds(st.koc.roundPlan,st.koc.courts,st.koc.roster.length))) return 'loadErrCorrupt';
       return null;
@@ -8268,6 +8344,7 @@
     });
     const cards=document.getElementById('kocRoundCards');
     const editable=editableKocStart(round);
+    document.getElementById('kocOpeningRoster').hidden=!editable;
     cards.classList.toggle('round-scored',!editable);
     cards.querySelectorAll('.plan-grip,.duo-link').forEach(btn=>{btn.disabled=!editable;});
   }
@@ -8275,31 +8352,9 @@
   function editableKocStart(round){
     return round?.number===1 && round.matches.every(match=>match.score.every(score=>score===null));
   }
-  function changeGuidedStart(round,apply){
-    if(currentKocRound()!==round || !editableKocStart(round))return;
-    apply();
-    const k=state.koc;
-    for(const match of round.matches)for(const i of match.teams.flat())k.assignment[i]=match.court;
-    for(const i of round.waiting)k.assignment[i]=0;
-    k.displayOrder=round.matches.flatMap(m=>m.teams.flat()).concat(round.waiting);
-    saveKocCards();
-  }
-  function moveGuidedCard(round,from,to){
-    const a=Number(from),b=Number(to);
-    changeGuidedStart(round,()=>{
-      const swap=i=>i===a?b:i===b?a:i;
-      for(const m of round.matches){
-        if(m.teams.flat().some(i=>i===a || i===b)){
-          m.teams=m.teams.map(team=>team.map(swap));delete m.entryTicket;
-        }
-      }
-      round.waiting=round.waiting.map(swap);
-    });
-    return from;
-  }
   function renderKocRoundCards(root,round,live){
     const opening=!live && round.number===1;
-    if(opening)root.append(liveElement('p','card-help',editText('Vóór de eerste uitslag kun je spelers wisselen met de handgrepen. Met het schakeltje kies je andere startduo’s.','Before the first score, swap players using the handles or change the opening pairs using the links.')));
+    if(opening)root.append(liveElement('p','card-help',editText('Tot de eerste uitslag kun je spelers verplaatsen. Gekoppelde spelers verhuizen samen.','Move players until the first score is entered. Linked partners move together.')));
     var grid = liveElement('div','koc-courts');
     root.appendChild(grid);
     round.matches.slice().reverse().forEach(function(match){
@@ -8317,15 +8372,7 @@
           if(opening){
             const players=match.teams.flat(),index=side*2+j;
             preparePlayerCard(row,players[index],name);
-            if(index<3){
-              const linked=index!==1;
-              const btn=duoLink(name,kocPlayerName(players[index+1]),linked,()=>changeGuidedStart(round,()=>{
-                const [a,b,c,d]=players;
-                match.teams=linked?[[a,c],[b,d]]:[[b,c],[a,d]];
-                delete match.entryTicket;
-              }));
-              btn.classList.add('court-link');row.append(btn);
-            }
+            markKocPartner(row,players[index],state.koc,team);
           }
           list.append(row);
         });
@@ -8360,20 +8407,26 @@
       var names = liveElement('ul','');
       round.waiting.forEach(function(player){
         const name=kocPlayerName(player),row=opening?kocCardRow('',name):nameLabel('li','',name);
-        if(opening)preparePlayerCard(row,player,name);
+        if(opening){preparePlayerCard(row,player,name);markKocPartner(row,player,state.koc,round.waiting);}
         names.appendChild(row);
       });
       waiting.append(names,liveElement('p','koc-waiting-note',t('kocWaitingRule')));
       root.appendChild(waiting);
     }
-    if(opening)enablePlayerCards(root,(from,to)=>moveGuidedCard(round,from,to));
+    if(opening)enablePlayerCards(root,(from,to)=>moveKocCard(from,to,round),kocMoveSettings(state.koc,round));
   }
 
   function renderGuidedKoc(round){
     var panel = document.getElementById('kocRoundPlan');
     var cards = document.getElementById('kocRoundCards');
     panel.hidden = !round;
-    document.getElementById('kocSetup').hidden = !!round;
+    const setup=document.getElementById('kocSetup'),roster=document.getElementById('kocRoster'),editor=document.getElementById('kocOpeningRoster');
+    setup.hidden=!!round;
+    editor.hidden=!editableKocStart(round);
+    editor.querySelector('summary').textContent=editText('Startduo’s wijzigen','Edit opening pairs');
+    if(round && roster.parentNode!==editor)editor.append(roster);
+    if(!round && roster.parentNode===editor)document.getElementById('kocCount').before(roster);
+    for(const input of roster.querySelectorAll('input'))input.disabled=!!round;
     document.getElementById('kocRoll').hidden = !!round;
     document.getElementById('kocRoundReset').hidden = !round;
     cards.replaceChildren();
@@ -8501,7 +8554,7 @@
     return snapshot;
   }
 
-  // The hosted and offline planners share the same 3.3 release.
+  // The hosted and offline planners share the same 3.4 release.
   PadelSessions.setup({
     hosted:hostedSessions, language:()=>state.lang, poll:()=>state.signupPoll, hasDraw:()=>state.format==='koc'?!!state.koc?.assignment:state.step===3 && !!state.pools.length,
     snapshot:()=>{if(editSession || ![3,4].includes(state.step))return null;const view=viewSnapshot();return view ? {state,view} : null;},

@@ -47,9 +47,10 @@ window.TossOrganizerHub=function({P,say,modeName,dateText,el,button,link,card,fi
     const waiting=item.waiting+say(' wachtend',' waiting');
     const standby=settings.format==='koc'?' · '+item.standby+say(item.standby===1?' reserve':' reserves',' standby'):'';
     totals.append(el('strong',item.playing+' / '+settings.capacity),el('small',waiting+standby));
-    toggle.append(img,label,totals);row.append(toggle);parent.append(row);cards.set(item.id,{row,toggle});
+    const head=el('div',undefined,'hub-record-head');
+    toggle.append(img,label,totals);head.append(toggle,removeButton('poll',item,true));row.append(head);parent.append(row);cards.set(item.id,{row,toggle});
   }
-  function removeButton(kind,item){
+  function removeButton(kind,item,compact=false){
     const event=kind==='poll', format=event?item.settings.format:item.format;
     const label=event?say('Avond verwijderen','Delete event'):say('Schema verwijderen','Delete schedule');
     const name=event?item.settings.title:(item.title||modeName(format));
@@ -81,6 +82,16 @@ window.TossOrganizerHub=function({P,say,modeName,dateText,el,button,link,card,fi
       },{format,remove:true});
     });
     trigger.className='remove-item';
+    if(compact){
+      trigger.classList.add('hub-trash');
+      trigger.title=label+' · '+name;
+      trigger.setAttribute('aria-label',trigger.title);
+      const icon=document.createElementNS('http://www.w3.org/2000/svg','svg');
+      icon.setAttribute('viewBox','0 0 24 24');icon.setAttribute('aria-hidden','true');
+      const path=document.createElementNS(icon.namespaceURI,'path');
+      path.setAttribute('d','M4 7h16M9 7V4h6v3M6.5 7l.8 13h9.4l.8-13M10 10.5v6M14 10.5v6');
+      icon.append(path);trigger.replaceChildren(icon);
+    }
     return trigger;
   }
   function scheduleCard(section,session){

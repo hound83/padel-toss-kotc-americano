@@ -36,7 +36,7 @@ const assert=require('node:assert/strict');
     }
     assert.ok(published,'Cloudflare must serve the current page, worker, stylesheet and mode artwork');
     await page.goto(url,{waitUntil:'networkidle'});
-    assert.equal(await page.locator('#appVersion').textContent(),'v3.3.0');
+    assert.equal(await page.locator('#appVersion').textContent(),'v3.4.0');
     await page.waitForFunction(()=>document.querySelectorAll('.mode-illustration').length===4&&[...document.querySelectorAll('.mode-illustration')].every(img=>img.complete&&img.naturalWidth>0));
     assert.equal(await page.evaluate(()=>getComputedStyle(document.documentElement).getPropertyValue('--teal-900').trim()),'#193B57');
     await page.evaluate(()=>navigator.serviceWorker.ready);
@@ -79,8 +79,8 @@ const assert=require('node:assert/strict');
     await tossPage.locator('#tossCourtNumber0').fill('2');
     await tossPage.locator('#tossCourtNumber1').fill('3');
     await firstOptions.locator('[data-player="15"][data-choice="Play"]').check();
-    for(const player of [0,1])await firstOptions.locator('[data-player="'+player+'"][data-choice="Pair"]').check();
-    await tossPage.locator('#tossAddPair').tap();
+    await link.tap();
+    assert.equal(await firstOptions.locator('[data-choice="Pair"]').count(),0);
     await tossPage.locator('#generateBtn').tap();
     assert.equal(await tossPage.locator('#scheduleRound1 .round-time').innerText(),'11:00\u201311:20');
     assert.deepEqual(await tossPage.locator('#scheduleRound1 .court-label').allTextContents(),['Baan 2','Baan 3']);
@@ -106,7 +106,7 @@ const assert=require('node:assert/strict');
     const fresh=await browser.newContext({serviceWorkers:'block'}),alias=await fresh.newPage();
     for(const version of ['2.8','3','3.1']){
       await alias.goto(new URL('?preview='+version+'&lang=en#court',url).href);
-      assert.equal(await alias.locator('#appVersion').innerText(),'v3.3.0');
+      assert.equal(await alias.locator('#appVersion').innerText(),'v3.4.0');
       assert.equal(new URL(alias.url()).search,'?lang=en');assert.equal(new URL(alias.url()).hash,'#court');
       assert.equal(await alias.locator('#pollHome').isVisible(),true);assert.equal(await alias.locator('#versionLink,#entryVersionLink').count(),0);
     }
@@ -132,6 +132,6 @@ const assert=require('node:assert/strict');
     }
     await fresh.close();
     assert.deepEqual(errors,[]);
-    console.log(JSON.stringify({url,version:'v3.3.0',modes:4,desktop:true,mobile:true,score:'26-6',freshInstall:true,offline:true}));
+    console.log(JSON.stringify({url,version:'v3.4.0',modes:4,desktop:true,mobile:true,score:'26-6',freshInstall:true,offline:true}));
   }finally{await browser.close();}
 })().catch(error=>{console.error(error);process.exitCode=1;});

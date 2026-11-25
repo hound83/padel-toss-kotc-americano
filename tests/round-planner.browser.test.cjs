@@ -107,14 +107,18 @@ test('round planner, clock, rules and scoring options work in the browser',async
   }
   assert.deepEqual(await cards.locator('.koc-waiting-card li').allTextContents(),['Speler 9','Speler 10']);
   const firstCourt=cards.locator('.koc-courts .koc-court').first();
-  const original=await firstCourt.locator('li').allTextContents();
-  await firstCourt.locator('.duo-link').nth(1).tap();
-  assert.deepEqual((await firstCourt.locator('li').allTextContents()).slice(0,2),original.slice(1,3));
+  assert.equal(await cards.locator('.duo-link').count(),0);
+  await koc.locator('#kocOpeningRoster summary').tap();
+  const link=koc.locator('#kocRoster [data-slot="8"] .duo-link');
+  await link.tap();
+  assert.equal(await link.getAttribute('aria-pressed'),'true');
+  assert.equal(await cards.locator('.koc-waiting-card .linked').count(),2);
+  await cards.locator('.koc-waiting-card .plan-grip').last().tap();
   await firstCourt.locator('.plan-grip').first().tap();
+  assert.deepEqual((await firstCourt.locator('.linked').allTextContents()).sort(),['Speler 10','Speler 9']);
+  await firstCourt.locator('.linked .plan-grip').first().tap();
   await cards.locator('.koc-waiting-card .plan-grip').first().tap();
-  assert.equal((await firstCourt.locator('li').allTextContents())[0],'Speler 9');
-  await firstCourt.locator('.plan-grip').first().tap();
-  await cards.locator('.koc-waiting-card .plan-grip').first().tap();
+  assert.equal(await cards.locator('.koc-waiting-card .linked').count(),2);
   firstTeams=await readTeams();
   const expectedWaiting=await cards.locator('.koc-courts .koc-court').last().locator('.koc-round-team').nth(1).locator('li').allTextContents();
   for(const [key,value] of [['2:0','20'],['2:1','13'],['1:0','17'],['1:1','17']]){
@@ -122,6 +126,7 @@ test('round planner, clock, rules and scoring options work in the browser',async
   }
   assert.equal(await koc.locator('#kocRoundNext').isEnabled(),false);
   assert.equal(await cards.locator('.plan-grip:visible').count(),0);
+  assert.equal(await koc.locator('#kocOpeningRoster').isVisible(),false);
   await cards.locator('[data-koc-round-score="1:0"]').fill('18');
   await koc.locator('#kocRoundNext').tap();
   assert.equal(await koc.locator('#kocRoundHeading').textContent(),'Ronde 2');
@@ -308,13 +313,10 @@ test('round planner, clock, rules and scoring options work in the browser',async
   await silver.nth(0).locator('.duo-link').click();
   await silver.nth(0).locator('.plan-grip').click();
   await gold.nth(0).locator('.plan-grip').click();
-  assert.match(await split.locator('#rosterCardHelp').textContent(),/Ontkoppel het duo eerst|Unlink the pair/);
-  assert.equal(await silver.nth(0).locator('input').inputValue(),'Mila');
-  await silver.nth(0).locator('.duo-link').click();
-  await silver.nth(0).locator('.plan-grip').click();
-  await gold.nth(0).locator('.plan-grip').click();
   assert.equal(await silver.nth(0).locator('input').inputValue(),'Timo');
   assert.equal(await gold.nth(0).locator('input').inputValue(),'Mila');
+  assert.equal(await gold.nth(0).locator('.duo-link').getAttribute('aria-pressed'),'true');
+  await gold.nth(0).locator('.duo-link').click();
   await gold.nth(1).locator('.duo-link').click();
   await split.locator('#beginnerResultsToggle').check();
   await split.locator('#generateBtn').click();

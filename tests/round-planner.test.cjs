@@ -11,6 +11,35 @@ const random = () => .5;
 function ids(n){return Array.from({length:n},(_,i)=>i);}
 function sort(players){return players.slice().sort((a,b)=>a-b);}
 
+test('chosen pairs keep an entire team, a waiting place and both players through a court move',()=>{
+  const groups=[[8,9],[1,3,5,7],[0,2,4,6]],pairs=[[2,3],[8,9]];
+  const layout=rounds.arrangeOpening(groups,pairs,id=>id>7?100:id<2?80-id:0);
+  assert.deepEqual(layout[0],[8,9]);
+  assert.ok(layout[2].includes(0) && layout[1].includes(1));
+  const c=layout.findIndex(row=>row.includes(3)),positions=[2,3].map(id=>layout[c].indexOf(id));
+  assert.equal(Math.floor(positions[0]/2),Math.floor(positions[1]/2));
+  const swap=rounds.openingMove(layout,pairs,3,9);
+  assert.equal(swap.take.length,2);assert.deepEqual(swap.targets,[8,9]);
+  assert.deepEqual(sort(swap.groups[0]),[2,3]);
+  assert.deepEqual(sort(swap.groups.flat()),ids(10));
+  assert.deepEqual(rounds.openingMove(swap.groups,pairs,9,2).groups,layout);
+  assert.equal(rounds.openingMove(layout,pairs,2,3),null);
+  const partial=[[],[0,1],[2,3,4,5]],vacant=rounds.openingMove(partial,[[2,3]],3,'vacant-1-3');
+  assert.deepEqual(vacant.groups,[[],[0,1,2,3],[4,5]]);
+  assert.equal(rounds.openingMove([[],[0,1,4],[2,3]],[[2,3]],2,'vacant-1-3'),null);
+  assert.deepEqual(groups,[[8,9],[1,3,5,7],[0,2,4,6]]);
+});
+
+test('roster moves carry partner names as a block, including across Split Toss groups',()=>{
+  const groups=[[0,1,2,3,4],[5,6,7,8]],pairs=[[0,1],[6,7]];
+  const within=rounds.rosterMove(groups,pairs,1,4);
+  assert.deepEqual(within.groups[0],[2,3,4,0,1]);assert.deepEqual(within.targets,[3,4]);
+  const cross=rounds.rosterMove(groups,pairs,0,7);
+  assert.deepEqual(cross.groups,[[6,7,2,3,4],[5,0,1,8]]);
+  assert.equal(rounds.rosterMove(groups,pairs,1,0),null);
+  assert.deepEqual(groups,[[0,1,2,3,4],[5,6,7,8]]);
+});
+
 test('guided KOC sends the losing pair on court 1 to the waiting place',()=>{
   const first = rounds.startKocRounds({0:1,1:1,2:1,3:1,4:2,5:2,6:2,7:2,8:0,9:0},2,10,fit,random);
   assert.equal(rounds.nextKocRound([first],10,fit,random),null);

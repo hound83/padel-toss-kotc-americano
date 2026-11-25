@@ -3,9 +3,16 @@ window.TossCardDrag=function(list,{identify,locate,move,busy=()=>{}}){
   let drag=null,frame=0,ghost=null,target=null,blockClick=false;
   function highlight(next){
     target?.group.classList.remove('over');
+    target?.targets?.forEach(row=>row.classList.remove('over'));
     target?.row?.classList.remove('drop-before','drop-after');
     target=next;
     target?.group.classList.add('over');
+    target?.targets?.forEach(row=>row.classList.add('over'));
+    if(ghost){
+      ghost.querySelector('strong').textContent=(next?.names || drag.entry.names || [drag.entry.name]).join(' & ');
+      const caption=ghost.querySelector('small');
+      caption.textContent=next?.label || '';caption.hidden=!caption.textContent;
+    }
     if(target?.row)target.row.classList.add(target.after?'drop-after':'drop-before');
   }
   function track(){
@@ -22,7 +29,7 @@ window.TossCardDrag=function(list,{identify,locate,move,busy=()=>{}}){
     const {entry,card,events,id,moving}=drag;
     const drop=save && moving && target;
     events.abort();cancelAnimationFrame(frame);frame=0;ghost?.remove();ghost=null;
-    card.classList.remove('dragging');highlight(null);drag=null;
+    (entry.rows || [card]).forEach(row=>row.classList.remove('dragging'));highlight(null);drag=null;
     if(list.hasPointerCapture(id))list.releasePointerCapture(id);
     if(moving){blockClick=true;setTimeout(()=>{blockClick=false;},0);}
     busy(null);
@@ -47,9 +54,11 @@ window.TossCardDrag=function(list,{identify,locate,move,busy=()=>{}}){
       drag.x=event.clientX;drag.y=event.clientY;
       if(!drag.moving){
         if(Math.hypot(drag.x-drag.startX,drag.y-drag.startY)<5)return;
-        drag.moving=true;card.classList.add('dragging');list.setPointerCapture(drag.id);
+        drag.moving=true;(entry.rows || [card]).forEach(row=>row.classList.add('dragging'));list.setPointerCapture(drag.id);
         ghost=document.createElement('span');ghost.className='player-drag-preview';ghost.setAttribute('aria-hidden','true');
-        ghost.textContent=entry.name;document.body.append(ghost);
+        const names=document.createElement('strong'),caption=document.createElement('small');
+        names.textContent=(entry.names || [entry.name]).join(' & ');caption.hidden=true;
+        ghost.append(names,caption);document.body.append(ghost);
       }
       event.preventDefault();
       ghost.style.left=Math.max(4,Math.min(innerWidth-ghost.offsetWidth-4,drag.x+12))+'px';
@@ -80,7 +89,9 @@ window.TossPlayerCards=function(list,players,{busy,move}){
       if(place==='reserve' && ['in','wait'].includes(entry.place) && Number(entry.rating)>8)row=null;
       const after=row?y>row.getBoundingClientRect().top+row.offsetHeight/2:false;
       const position=row?queue.findIndex(p=>p.id===row.dataset.id)+1+Number(after):queue.length+1;
-      return {group,row,place,position,after};
+      const title=group.querySelector('h3')?.firstChild?.textContent?.trim() || '';
+      const prefix=document.documentElement.lang==='en'?'Place ':'Plek ';
+      return {group,row,place,position,after,label:title+' · '+prefix+position};
     },
     move:(entry,drop)=>move(entry,drop.place,drop.position)
   });
