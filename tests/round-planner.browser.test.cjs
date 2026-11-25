@@ -28,6 +28,32 @@ test('round planner, clock, rules and scoring options work in the browser',async
     await page.locator('.format-btn[data-format="'+mode+'"]').click();
     return page;
   }
+  for(const guided of [false,true]){
+    const page=await open('koc');
+    await page.locator('#kocCourtButtons [data-courts="2"]').click();
+    if(guided)await page.locator('#kocVariant-planner-title').click();
+    for(const id of [2,4])await page.locator('#kocRoster [data-slot="'+id+'"] .duo-link').click();
+    const board=page.locator(guided?'#kocRoundCards':'#kocResult');
+    async function courtsOfDuos(){
+      const courts=[];
+      for(const id of [2,4]){
+        const card=board.locator('.koc-court').filter({has:page.locator('[data-slot="'+id+'"]')});
+        assert.equal(await card.locator('[data-slot="'+(id+1)+'"].linked').count(),1);
+        courts.push(await card.locator('h3').innerText());
+      }
+      assert.notEqual(courts[0],courts[1]);
+      return courts;
+    }
+    await page.locator('#kocRoll').click();
+    const first=await courtsOfDuos();
+    await page.locator('#kocRoll').click();
+    assert.deepEqual(await courtsOfDuos(),first.slice().reverse());
+    if(guided){
+      await board.locator('[data-koc-round-score]').first().fill('1');
+      assert.equal(await page.locator('#kocRoll').isVisible(),false);
+    }
+    await page.close();
+  }
   const koc=await open('koc',true);
   await koc.locator('#kocCourtButtons [data-courts="2"]').tap();
   assert.equal(await koc.getByRole('radio',{name:'Startindeling'}).isChecked(),true);
@@ -288,7 +314,18 @@ test('round planner, clock, rules and scoring options work in the browser',async
   await middleLink.tap();
   assert.equal(await middleLink.getAttribute('aria-pressed'),'false');
   await middleLink.tap();
+  await americano.locator('#namesGrid .duo-link').first().tap();
+  for(const [index,name] of [[0,'Amber'],[1,'Bram'],[6,'Nora'],[7,'Sven']]){
+    await americano.locator('#namesGrid .name-field input').nth(index).fill(name);
+  }
   await americano.locator('#generateBtn').click();
+  async function duoCourt(page,left,right){
+    const teams=page.locator('#scheduleRound1 .match-card .team-names');
+    const team=teams.filter({has:page.getByText(left,{exact:true})});
+    assert.equal(await team.getByText(right,{exact:true}).count(),1);
+    return page.locator('#scheduleRound1 .match-card').filter({has:page.getByText(left,{exact:true})}).locator('.court-label').innerText();
+  }
+  assert.notEqual(await duoCourt(americano,'Amber','Bram'),await duoCourt(americano,'Nora','Sven'));
   assert.equal(await americano.locator('#playRules summary').textContent(),'Spelregels voor Americano');
   const gameScores=americano.locator('#scheduleRound1 input[data-key]');
   await gameScores.first().fill('4');
@@ -305,6 +342,7 @@ test('round planner, clock, rules and scoring options work in the browser',async
   await split.locator('.lang-btn[data-lang="en"]').click();
   assert.equal(await split.locator('#playRules summary').textContent(),'How to play Split Toss');
   await split.locator('.lang-btn[data-lang="nl"]').click();
+  await split.locator('#panel1 .court-btn[data-courts="4"]').click();
   await split.locator('#roundSettingsScore').selectOption('games');
   await split.locator('#continueTo2').click();
   const silver=split.locator('#namesGridBeginner .name-field'),gold=split.locator('#namesGridErvaren .name-field');
@@ -318,8 +356,14 @@ test('round planner, clock, rules and scoring options work in the browser',async
   assert.equal(await gold.nth(0).locator('.duo-link').getAttribute('aria-pressed'),'true');
   await gold.nth(0).locator('.duo-link').click();
   await gold.nth(1).locator('.duo-link').click();
+  for(const [index,name] of [[0,'Timo'],[1,'Sara'],[2,'Lars'],[3,'Noor']]){
+    await silver.nth(index).locator('input').fill(name);
+  }
+  await silver.nth(0).locator('.duo-link').click();
+  await silver.nth(2).locator('.duo-link').click();
   await split.locator('#beginnerResultsToggle').check();
   await split.locator('#generateBtn').click();
+  assert.notEqual(await duoCourt(split,'Timo','Sara'),await duoCourt(split,'Lars','Noor'));
   assert.match(await split.locator('#scheduleScoreUnit').innerText(),/gewonnen games/);
   assert.ok(await split.locator('#scheduleRound1 input[data-key^=beginner]').count()>0);
   assert.equal(await split.locator('#scheduleRound1 input[data-key^=ervaren]').count(),0);

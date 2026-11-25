@@ -97,7 +97,7 @@ Bij Toss, Toss met klassement en Split Toss kun je in **Namen** een speler versl
 
 Bij Toss, Gesplitste Toss en Americano staat **Extra instellingen** onder de namen. Kies eventueel een begintijd, rondeduur (standaard 20 minuten) en namen of nummers voor de banen. Bij Gesplitste Toss gelden de spelerskeuzes per groep.
 
-**Start** garandeert een speelplek in ronde 1. Een bevestigd duo speelt de eerste ronde samen. Daarna probeert de planner beide spelers in dezelfde rondes te laten spelen en rusten. Met **Laatste vrij** krijgt een speler zo mogelijk rust in de laatste ronde. Banen vullen en twee opeenvolgende wachtrondes voorkomen gaan voor. Een optioneel speelniveau helpt de planner om evenwichtige koppels te kiezen. De organisator ziet de aanduidingen in de instellingen.
+**Start** garandeert een speelplek in ronde 1. Een bevestigd duo speelt de eerste ronde samen. De loting verdeelt de startduo’s over de beschikbare banen. Pas als elke baan een duo heeft, komen twee duo’s tegenover elkaar te staan. Daarna probeert de planner beide spelers in dezelfde rondes te laten spelen en rusten. Met **Laatste vrij** krijgt een speler zo mogelijk rust in de laatste ronde. Banen vullen en twee opeenvolgende wachtrondes voorkomen gaan voor. Een optioneel speelniveau helpt de planner om evenwichtige koppels te kiezen. De organisator ziet de aanduidingen in de instellingen.
 
 **Opnieuw loten** maakt vanaf het schemablad een nieuwe indeling. Eerdere rondes en rondes tot en met de laatste ingevoerde uitslag blijven behouden, ook bij een gedeeltelijke score. De bestaande groepstoewijzing blijft gelden na een Americano-splitsing.
 
@@ -107,7 +107,7 @@ Bij KOC zijn baanaanduidingen en speelniveau beschikbaar onder **Extra instellin
 
 ## Speciaal voor KOC
 
-Kies bij **Wie spelen er mee?** de startduo’s met het schakeltje tussen twee namen. In de startindeling zie je het schakeltje naast beide partners. Sleep één van de twee en ze wisselen samen van plek met de groen gemarkeerde spelers. Je kunt ook twee handgrepen aantikken. Bij de Rondeplanner kun je de startduo’s en plekken aanpassen tot de eerste uitslag.
+Kies bij **Wie spelen er mee?** de startduo’s met het schakeltje tussen twee namen. In de startindeling zie je het schakeltje naast beide partners. Sleep één van de twee en ze wisselen samen van plek met de groen gemarkeerde spelers. Je kunt ook twee handgrepen aantikken. De loting spreidt vrije startduo’s ook bij KOC. Vaste startbanen, gemarkeerde instromers en wachtplekken hebben voorrang. In de Rondeplanner kun je de startindeling opnieuw loten of handmatig wijzigen tot de eerste uitslag.
 
 - Kies **2 tot en met 4 banen** met dezelfde knoppen als bij de andere speelvormen, of **5 tot en met 12 banen** via de dropdown.
 - Vink afwezige spelers uit of pas namen aan; starten met minder spelers kan ook.

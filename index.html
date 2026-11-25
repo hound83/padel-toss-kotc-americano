@@ -1671,7 +1671,7 @@
       <summary data-i18n="extraSettings">Extra instellingen</summary>
       <div class="toss-plan-fields" id="tossSessionSettings"></div>
       <label id="prefGroupLabel" hidden><span data-i18n="prefGroup"></span> <select id="prefGroup"></select></label>
-      <p data-i18n="tossStartHelp">Start garandeert een plek in ronde 1. Koppel twee namen in de spelerslijst om ze samen te laten starten. Daarna probeert de planner hun speel- en rustbeurten gelijk te houden. Met Laatste vrij krijgt een speler zo mogelijk rust in de laatste ronde.</p>
+      <p data-i18n="tossStartHelp">Start garandeert een plek in ronde 1. Koppel twee namen om ze samen te laten starten. De planner loot voor elk startduo een eigen baan zolang er banen vrij zijn. Daarna probeert de planner hun speel- en rustbeurten gelijk te houden. Met Laatste vrij krijgt een speler zo mogelijk rust in de laatste ronde.</p>
       <div class="toss-start-grid" id="tossStartGrid"></div>
       <p id="tossStartStatus" role="status"></p>
     </details>
@@ -1810,7 +1810,7 @@
     <div class="share-footer"><button id="shareEnd" class="btn btn-ghost" type="button" data-i18n="endShare" hidden></button><button id="shareClose" class="btn btn-ghost" type="button" data-i18n="closeShare"></button></div>
   </dialog>
   <footer class="app-footer">
-    <span id="appVersion">v3.4.0</span>
+    <span id="appVersion">v3.4.1</span>
     <details><summary data-i18n="whatsNew">Wat is nieuw?</summary>
       <ul>
         <li data-i18n="changeIllustrations">Nieuwe baanillustraties, marineblauw/lime en een puntenscore van 26–6.</li>
@@ -1993,7 +1993,7 @@
       tossRoundMinutesError: "Kies een rondeduur van 1 tot en met 240 minuten.",
       tossCourtNumbersError: "Geef elke baan een unieke naam of een uniek nummer (maximaal 40 tekens).",
       tossStartTitle: "Extra instellingen voor Toss",
-      tossStartHelp: "Start garandeert een plek in ronde 1. Koppel twee namen in de spelerslijst om ze samen te laten starten. Daarna probeert de planner hun speel- en rustbeurten gelijk te houden. Met Laatste vrij krijgt een speler zo mogelijk rust in de laatste ronde.",
+      tossStartHelp: "Start garandeert een plek in ronde 1. Koppel twee namen om ze samen te laten starten. De planner loot voor elk startduo een eigen baan zolang er banen vrij zijn. Daarna probeert de planner hun speel- en rustbeurten gelijk te houden. Met Laatste vrij krijgt een speler zo mogelijk rust in de laatste ronde.",
       tossStartPlay: "Start",
       tossStartPlayAria: "Speelt zeker in ronde 1: {name}",
       tossStartCount: "{n} van de {slots} speelplekken in ronde 1 vastgelegd.",
@@ -2347,7 +2347,7 @@
       tossRoundMinutesError: "Choose a round duration between 1 and 240 minutes.",
       tossCourtNumbersError: "Give each court a unique name or number (up to 40 characters).",
       tossStartTitle: "Extra settings for Toss",
-      tossStartHelp: "Start guarantees a place in round 1. Link two names in the player list to start them as partners. Later the planner tries to give them the same playing and resting rounds. Select Final round off to give a player a break in the last round if possible.",
+      tossStartHelp: "Start guarantees a place in round 1. Link two names to start them as partners. Each opening pair is drawn onto a separate court while courts are available. Later the planner tries to give them the same playing and resting rounds. Select Final round off to give a player a break in the last round if possible.",
       tossStartPlay: "Start",
       tossStartPlayAria: "Must play in round 1: {name}",
       tossStartCount: "{n} of {slots} playing places in round 1 reserved.",
@@ -2966,9 +2966,13 @@
     }
     k.lastSignature=kocSignature(k.assignment,k.courts);
   }
-  function arrangeKocPairs(k,round){
-    const priority=i=>k.assignment[i]===0?100:i===0?80:i===1?60:k.incomingEnabled && k.roster[i]?.incoming?35:0;
-    const laidOut=PadelRounds.arrangeOpening(kocGroups(k,round),k.startPairs,priority);
+  function arrangeKocPairs(k,round,{draw=false,previousAssignment}={}){
+    // When the organizer links another duo on an existing board, reserve the
+    // positions of the duos that were already placed there (including manual moves).
+    const keep=new Set(draw?[]:k.startPairs.slice(0,-1).flat());
+    const priority=i=>k.assignment[i]===0?100:i===0?80:i===1?60:k.incomingEnabled && k.roster[i]?.incoming?35:keep.has(i)?1:0;
+    const pairs=draw?shuffle(k.startPairs):k.startPairs;
+    const laidOut=PadelRounds.arrangeOpening(kocGroups(k,round),pairs,priority,{spread:true,previousAssignment});
     if(!laidOut)return false;
     applyKocGroups(k,laidOut,round);return true;
   }
@@ -3448,7 +3452,8 @@
   }
 
   function rollKoc(){
-    if (currentKocRound()) return;
+    var previousRound = currentKocRound();
+    if (previousRound && !editableKocStart(previousRound)) return;
     var k = ensureKocRoster();
     var attendees = kocAttendees();
     var status = document.getElementById('kocStatus');
@@ -3463,6 +3468,7 @@
       status.textContent = t('kocDup');
       return;
     }
+    var previousAssignment = k.assignment;
     var best = null, signature = '';
     for (var attempt = 0; attempt < 90; attempt++){
       var candidate = makeKocAssignment(attendees, k);
@@ -3489,8 +3495,8 @@
       k.displayOrder = order.concat(k.displayOrder.filter(function(i){return !best[i];}));
     }
     if (k.guided) k.roundPlan = [PadelRounds.startKocRounds(best,k.courts,k.roster.length,fitAmericanoStrength,Math.random,kocPairingOptions(k))];
-    if(k.startPairs.length)arrangeKocPairs(k,k.guided?k.roundPlan[0]:null);
-    prepareRoundClock(1,true);
+    if(k.startPairs.length)arrangeKocPairs(k,k.guided?k.roundPlan[0]:null,{draw:true,previousAssignment});
+    if(!previousRound)prepareRoundClock(1,true);
     renderKocResult();
     document.getElementById('kocRoll').textContent = t('kocReroll');
     renderKocCount();
@@ -3530,6 +3536,34 @@
 
   function usableCourts(n, courtsAvailable){
     return Math.max(1, Math.min(courtsAvailable, Math.floor(n / 4)));
+  }
+
+  function placeTossOpeningPairs(players, playing, fixedPairs, paired, previousCourts){
+    var courtCount = playing.length / 4;
+    var courts = Array.from({length:courtCount}, function(){ return []; });
+    // One opening duo per court before placing a second duo anywhere.
+    shuffle(fixedPairs).forEach(function(pair, index){ courts[index % courtCount].push(pair); });
+    courts = shuffle(courts);
+    if (previousCourts && courtCount > 1){
+      var previous = previousCourts.map(function(court){return new Set(court.team1.concat(court.team2));});
+      var bestOffset = 0, fewestRepeats = Infinity;
+      for (var shift = 0; shift < courtCount; shift++){
+        var repeats = previous.reduce(function(count, oldCourt, index){
+          return count + courts[(index + shift) % courtCount].filter(function(pair){
+            return pair.every(function(name){return oldCourt.has(name);});
+          }).length;
+        },0);
+        if (repeats < fewestRepeats){bestOffset = shift; fewestRepeats = repeats;}
+        if (!repeats) break;
+      }
+      courts = courts.slice(bestOffset).concat(courts.slice(0,bestOffset));
+    }
+    var singles = playing.filter(function(index){return !paired.has(players[index]);});
+    return courts.flatMap(function(pairs){
+      var sides = pairs.map(function(pair){return pair.map(function(name){return players.indexOf(name);});});
+      while (sides.length < 2) sides.push([singles.pop(),singles.pop()]);
+      return shuffle(sides).flat();
+    });
   }
 
   // Global-pool scheduler. Optional `seed` carries prior history
@@ -3641,10 +3675,8 @@
         indices = left.concat(right);
       }
       var playing = shuffle(indices.slice(0, slots));
-      // Keep fixed duos in whole two-player blocks so no court boundary splits a pair.
       if (r === 0 && fixedPairs.length){
-        var fixed = shuffle(fixedPairs).flat().map(function(name){ return players.indexOf(name); });
-        playing = fixed.concat(playing.filter(function(index){ return !paired.has(players[index]); }));
+        playing = placeTossOpeningPairs(players,playing,fixedPairs,paired,options.previousOpeningCourts);
       }
       var sitOut = indices.slice(slots);
       previousRest = new Set(sitOut.map(function(index){ return players[index]; }));
@@ -5542,6 +5574,7 @@
         var end = remaining.findIndex(function(rd){return JSON.stringify(rosterOf(rd)) !== signature;});
         var segment = end < 0 ? remaining : remaining.slice(0,end);
         var opts = poolOptions(roster,levelIndexById(pool.id));
+        if (segment[0].round === 1) opts.previousOpeningCourts = segment[0].courts;
         var starters = new Set(opts.firstRoundPlayers.concat(opts.firstRoundPairs.flat()));
         var places = segment[0].courts.length*4;
         if (segment[0].round === 1 && starters.size > places){
@@ -8353,6 +8386,7 @@
     const cards=document.getElementById('kocRoundCards');
     const editable=editableKocStart(round);
     document.getElementById('kocOpeningRoster').hidden=!editable;
+    document.getElementById('kocRoll').hidden=!!round && !editable;
     cards.classList.toggle('round-scored',!editable);
     cards.querySelectorAll('.plan-grip,.duo-link').forEach(btn=>{btn.disabled=!editable;});
   }
@@ -8435,7 +8469,7 @@
     if(round && roster.parentNode!==editor)editor.append(roster);
     if(!round && roster.parentNode===editor)document.getElementById('kocCount').before(roster);
     for(const input of roster.querySelectorAll('input'))input.disabled=!!round;
-    document.getElementById('kocRoll').hidden = !!round;
+    document.getElementById('kocRoll').hidden = !!round && !editableKocStart(round);
     document.getElementById('kocRoundReset').hidden = !round;
     cards.replaceChildren();
     if (!round) return;

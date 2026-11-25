@@ -35,7 +35,7 @@ test('an organizer can close the laptop, players score, and the organizer contin
     return {page,ctx};
   }
   const laptop=await device(),organizer=laptop.page;
-  await organizer.goto(origin);assert.equal(await organizer.locator('#appVersion').innerText(),'v3.4.0');
+  await organizer.goto(origin);assert.equal(await organizer.locator('#appVersion').innerText(),'v3.4.1');
   await organizer.locator('.format-btn[data-format=americano]').click();
   await organizer.locator('#continueTo2').click();await organizer.locator('#generateBtn').click();
   await organizer.getByRole('button',{name:'Schema delen'}).last().click();

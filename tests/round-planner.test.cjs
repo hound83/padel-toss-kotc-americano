@@ -35,6 +35,26 @@ test('chosen pairs keep an entire team, a waiting place and both players through
   assert.deepEqual(groups,[[8,9],[1,3,5,7],[0,2,4,6]]);
 });
 
+test('KOC opening duos spread and rotate within available courts while fixed places take priority',()=>{
+  const groups=[[12,13],[2,3,4,5],[1,6,7,8],[0,9,10,11]],duos=[[2,3],[4,5],[12,13]];
+  const priority=id=>id>=12?100:id===0?80:id===1?60:0;
+  const draw=rounds.arrangeOpening(groups,duos,priority,{spread:true});
+  const court=(rows,id)=>rows.findIndex(row=>row.includes(id));
+  assert.deepEqual(draw[0],[12,13]);assert.equal(court(draw,0),3);assert.equal(court(draw,1),2);
+  assert.notEqual(court(draw,2),court(draw,4));
+  const previousAssignment=Object.fromEntries(draw.flatMap((row,c)=>row.map(id=>[id,c])));
+  const again=rounds.arrangeOpening(groups,duos,priority,{spread:true,previousAssignment});
+  for(const [a,b] of duos.slice(0,2)){
+    assert.equal(court(again,a),court(again,b));assert.notEqual(court(again,a),court(draw,a));
+    const row=again[court(again,a)];assert.equal(Math.floor(row.indexOf(a)/2),Math.floor(row.indexOf(b)/2));
+  }
+  const pinned=rounds.arrangeOpening(groups,duos,id=>groups[1].includes(id)?35:priority(id),{spread:true});
+  assert.deepEqual(sort(pinned[1]),[2,3,4,5]);
+  assert.deepEqual(sort(pinned.flat()),ids(14));
+  const partial=rounds.arrangeOpening([[],[6],[2,3,4,5],[0,1,7,8]],duos.slice(0,2),()=>0,{spread:true});
+  assert.deepEqual(partial[1],[6]);assert.notEqual(court(partial,2),court(partial,4));
+});
+
 test('roster moves carry partner names as a block, including across Split Toss groups',()=>{
   const groups=[[0,1,2,3,4],[5,6,7,8]],pairs=[[0,1],[6,7]];
   const within=rounds.rosterMove(groups,pairs,1,4);

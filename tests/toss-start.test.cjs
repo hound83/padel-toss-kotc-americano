@@ -66,6 +66,45 @@ test('selected starters and multiple duos are guaranteed only for the first roun
     }
   }
 });
+test('opening pairs spread across courts, team sides and opponents on a new draw',()=>{
+  const roster=players(20), pairs=[roster.slice(0,2),roster.slice(2,4),roster.slice(4,6),roster.slice(6,8)];
+  const places=new Set(), opponents=new Set(), otherPairs=new Set();
+  for(let seed=1;seed<=120;seed++){
+    for(const [courts,count] of [[4,1],[4,2],[3,3],[2,3],[2,4],[1,2]]){
+      const chosen=pairs.slice(0,count);
+      const [opening]=scheduler(seed)(roster,1,0,[courts],null,{firstRoundPairs:chosen});
+      const teams=opening.courts.flatMap(court=>[court.team1,court.team2]);
+      const positions=chosen.map(pair=>teams.findIndex(team=>pair.every(name=>team.includes(name))));
+      assert.ok(positions.every(i=>i>=0),'every opening pair plays together');
+      const usedCourts=new Set(positions.map(i=>Math.floor(i/2)));
+      assert.equal(usedCourts.size,Math.min(courts,count),'use each available court before placing a second pair');
+      check([opening],roster,4*courts);
+      const opponent=teams[positions[0]%2===0?positions[0]+1:positions[0]-1];
+      if(courts===4 && count===2){
+        places.add(positions[0]);
+        opponents.add(opponent.slice().sort().join('|'));
+      }
+      if(courts===2 && count===4)otherPairs.add(pairs.findIndex(pair=>pair.every(name=>opponent.includes(name))));
+    }
+  }
+  assert.equal(places.size,8,'a pair can start on either side of every court');
+  assert.ok(opponents.size>1,'the opposing singles vary between draws');
+  assert.deepEqual([...otherPairs].sort(),[1,2,3],'when every team is linked the opponents still vary');
+});
+
+test('redrawing two starting duos moves each to another available court',()=>{
+  const roster=players(16),firstRoundPairs=[roster.slice(0,2),roster.slice(2,4)];
+  for(const courts of [2,3,4]){
+    let previous;
+    for(let i=1;i<=30;i++){
+      const [next]=scheduler(i)(roster,1,0,courts,null,{firstRoundPairs,previousOpeningCourts:previous?.courts});
+      const place=(round,duo)=>round.courts.findIndex(c=>[c.team1,c.team2].some(team=>duo.every(name=>team.includes(name))));
+      if(previous)for(const duo of firstRoundPairs)assert.notEqual(place(previous,duo),place(next,duo));
+      previous=next;
+    }
+  }
+});
+
 test('seeded regeneration respects the last frozen waiting list',()=>{
   const names=players(24);
   const before=scheduler(13)(names,3,0,3,null,{avoidConsecutiveRest:true});
