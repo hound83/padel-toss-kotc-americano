@@ -188,7 +188,7 @@
   }
 
   // Groups are indexed by court number. Group zero is the waiting list.
-  function arrangeOpening(groups,pairs,priority=()=>0){
+  function arrangeOpening(groups,pairs,priority=()=>0,{spread=false,previousAssignment}={}){
     const home=new Map(groups.flatMap((row,c)=>row.map(id=>[id,c])));
     const active=pairs.filter(([a,b])=>home.has(a) && home.has(b));
     if(!active.length)return groups.map(row=>row.slice());
@@ -200,17 +200,27 @@
     let remainingPairs=active.length;
     for(const unit of units){
       if(unit.length===2)remainingPairs--;
-      let best=-1,score=-Infinity;
+      const candidates=[];
       for(let c=0;c<space.length;c++){
         if(space[c]<unit.length)continue;
+        if(spread && c===0 && !unit.some(id=>home.get(id)===0))continue;
         space[c]-=unit.length;
         const canFit=space.reduce((n,free)=>n+Math.floor(free/2),0)>=remainingPairs;
         space[c]+=unit.length;
         if(!canFit)continue;
-        const fit=unit.reduce((value,id)=>value+(home.get(id)===c?10+priority(id):-Math.abs(home.get(id)-c)*0.1),0);
-        if(fit>score){score=fit;best=c;}
+        const atHome=unit.filter(id=>home.get(id)===c);
+        const fixed=atHome.reduce((sum,id)=>sum+priority(id),0);
+        const fit=10*atHome.length+fixed-unit.reduce((sum,id)=>sum+Math.abs(home.get(id)-c)*0.1,0);
+        const spreadPair=spread && unit.length===2 && c!==0;
+        candidates.push({court:c,fixed:spread?fixed:0,fit,
+          duos:spreadPair?allocated[c].filter(other=>other.length===2).length:0,
+          repeat:spreadPair && previousAssignment && unit.every(id=>previousAssignment[id]===c)?1:0});
       }
-      if(best<0)return null;
+      if(!candidates.length)return null;
+      // Waiting, seeded and entry places come first. Free duos then seek
+      // separate courts, a fresh court on a redraw and finally their drawn seats.
+      candidates.sort((a,b)=>b.fixed-a.fixed || a.duos-b.duos || a.repeat-b.repeat || b.fit-a.fit);
+      const best=candidates[0].court;
       space[best]-=unit.length;allocated[best].push(unit);
     }
     return allocated.map((units,c)=>{

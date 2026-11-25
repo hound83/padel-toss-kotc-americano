@@ -18,7 +18,7 @@ const {chromium}=require('playwright');
     let live=false;
     for(let i=0;i<36;i++){
       await page.goto(base);
-      if(await page.locator('#appVersion').innerText()==='v3.4.0' && await page.locator('#pollHome').isVisible()){live=true;break;}
+      if(await page.locator('#appVersion').innerText()==='v3.4.1' && await page.locator('#pollHome').isVisible()){live=true;break;}
       await new Promise(resolve=>setTimeout(resolve,5000));
     }
     assert.ok(live,'the production planner serves 3.4');

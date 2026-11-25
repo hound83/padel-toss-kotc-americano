@@ -80,7 +80,13 @@ test('Toss first-round choices survive generating, language, storage and roster 
     for(let i=1;i<rounds.length;i++)assert.ok(rounds[i].resting.every(name=>!rounds[i-1].resting.includes(name)));
     const first=rounds[0].courts;
     assert.ok(first.some(c=>c.team1.concat(c.team2).includes('Zoe')));
-    assert.ok(first.some(c=>[c.team1,c.team2].some(team=>team.includes('Alexandra van den Berg')&&team.includes('Benjamin'))));
+    const pairedCourts=data.state.tossStart.pairs.map(pair=>{
+      const names=pair.map(i=>data.state.names[i] || 'Speler '+(i+1));
+      return first.findIndex(c=>[c.team1,c.team2].some(team=>names.every(name=>team.includes(name))));
+    });
+    assert.equal(pairedCourts.length,2);
+    assert.ok(pairedCourts.every(i=>i>=0),'both linked duos start together');
+    assert.notEqual(pairedCourts[0],pairedCourts[1],'the duos play different opponents on separate courts');
   }
   const generated=await save();check(generated);
   await page.reload();

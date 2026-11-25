@@ -68,7 +68,7 @@ test('Old links retain the event, query and fragment, and a local-only draw can 
   assert.deepEqual(JSON.parse(require('node:zlib').gunzipSync(Buffer.from(fields[3],'base64url'))),final);
   await page.goto(old+'?preview=3.1');
   await page.waitForURL(cloud+'/');
-  assert.equal(await page.locator('#appVersion').innerText(),'v3.4.0');
+  assert.equal(await page.locator('#appVersion').innerText(),'v3.4.1');
   assert.deepEqual((await page.locator('.format-btn').evaluateAll(all=>all.map(el=>el.dataset.format))).sort(),modes.slice().sort());
   await page.locator('.format-btn[data-format=toss]').click();await page.locator('#continueTo2').click();
   await page.locator('#namesGrid input').first().fill('Test Deelnemer');await page.locator('#generateBtn').click();
