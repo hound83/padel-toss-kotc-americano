@@ -58,10 +58,33 @@ test('real browser: KOC setup, entrants, absence, language, reload and mobile la
   await firstCourt.locator('.plan-grip').first().dragTo(lastCourt.locator('li').nth(1));
   cards=await courtNames();
   assert.equal(cards[0][0],bottom);assert.equal(cards[3][1],top);
-  const afterMove=cards[0].slice();
-  await firstCourt.locator('.duo-link').nth(1).click();
-  assert.equal(await firstCourt.locator('[aria-pressed=true].duo-link').count(),2);
-  assert.deepEqual((await courtNames())[0].slice(0,2),afterMove.slice(1,3));
+  const link=page.locator('#kocRoster [data-slot="2"] .duo-link');
+  await link.click();
+  assert.equal(await link.getAttribute('aria-pressed'),'true');
+  assert.equal(await draw.locator('.duo-link').count(),0);
+  const pair=['Speler 3','Speler 4'];
+  const starting=draw.locator('.koc-court').filter({has:page.locator('[data-slot="2"]')});
+  assert.equal(await starting.locator('.linked').count(),2);
+  const destination=draw.locator('.koc-court').filter({hasNot:page.locator('[data-slot="2"]')}).first();
+  const destinationName=await destination.locator('h3').textContent();
+  const source=starting.locator('[data-slot="3"] .plan-grip'),target=destination.locator('.player-card').first();
+  await source.scrollIntoViewIfNeeded();await target.scrollIntoViewIfNeeded();
+  const a=await source.boundingBox(),b=await target.boundingBox();
+  await page.mouse.move(a.x+a.width/2,a.y+a.height/2);await page.mouse.down();
+  await page.mouse.move(b.x+b.width/2,b.y+b.height/2,{steps:8});
+  assert.match(await page.locator('.player-drag-preview').innerText(),/Speler 3 & Speler 4/);
+  assert.match(await page.locator('.player-drag-preview small').innerText(),/Plekken/);
+  assert.equal(await draw.locator('.player-card.over').count(),2);
+  if(process.env.PADEL_SCREENSHOT_DIR){
+    fs.mkdirSync(process.env.PADEL_SCREENSHOT_DIR,{recursive:true});
+    await page.screenshot({path:path.join(process.env.PADEL_SCREENSHOT_DIR,'koc-duo-drag.png')});
+  }
+  await page.keyboard.press('Escape');await page.mouse.up();
+  assert.equal(await starting.locator('.linked').count(),2);
+  await source.dragTo(target);
+  const moved=draw.locator('.koc-court').filter({has:page.locator('[data-slot="2"]')});
+  assert.equal(await moved.locator('h3').textContent(),destinationName);
+  assert.deepEqual((await moved.locator('.linked').allTextContents()).sort(),pair);
 
   await context.grantPermissions(['clipboard-read','clipboard-write'],{origin});
   await page.locator('.action-bar:visible summary').click();
@@ -69,7 +92,7 @@ test('real browser: KOC setup, entrants, absence, language, reload and mobile la
   const copied = await page.evaluate(() => navigator.clipboard.readText());
   assert.match(copied,/King of the Court/);
   assert.match(copied,/Baan 4/);
-  assert.ok(copied.includes(afterMove.slice(1,3).join(' & ')));
+  assert.ok(copied.includes(pair.join(' & ')) || copied.includes(pair.slice().reverse().join(' & ')));
   assert.ok(!copied.includes('Indelen op baan 1'),'copying for WhatsApp never reveals incoming markers');
 
   const downloadEvent = page.waitForEvent('download');
@@ -79,7 +102,8 @@ test('real browser: KOC setup, entrants, absence, language, reload and mobile la
   const savedPath = await download.path();
   const saved = JSON.parse(fs.readFileSync(savedPath,'utf8'));
   assert.equal(saved.state.koc.incomingEnabled,true);
-  assert.deepEqual(saved.state.koc.pairedCourts,[4]);
+  assert.deepEqual(saved.state.koc.startPairs,[[2,3]]);
+  await link.click();
   assert.equal(saved.state.koc.roster.slice(12,16).filter(p=>p.incoming).length,4);
 
   // The fifth player is absent; of four entrants one must now start on court 2.
@@ -122,6 +146,9 @@ test('real browser: KOC setup, entrants, absence, language, reload and mobile la
   await page.locator('#loadFileInput').setInputFiles(savedPath);
   await page.locator('.koc-entry-marker[aria-pressed=true]').first().waitFor({state:'visible'});
   assert.equal(await page.locator('.koc-entry-marker[aria-pressed=true]').count(),4);
+
+  assert.equal(await link.getAttribute('aria-pressed'),'true');
+  assert.equal(await draw.locator('.linked').count(),2);
 
   // The English labels also work when selected from the visible mode picker.
   const english = await browser.newContext();

@@ -187,5 +187,123 @@
     };
   }
 
-  return {startKocRounds,nextKocRound,roundComplete,validKocRounds,createClock,remainingMillis,changeClock,summarizeSchedule,validScore};
+  // Groups are indexed by court number. Group zero is the waiting list.
+  function arrangeOpening(groups,pairs,priority=()=>0){
+    const home=new Map(groups.flatMap((row,c)=>row.map(id=>[id,c])));
+    const active=pairs.filter(([a,b])=>home.has(a) && home.has(b));
+    if(!active.length)return groups.map(row=>row.slice());
+    const used=new Set(active.flat());
+    const units=[...active,...groups.flat().filter(id=>!used.has(id)).map(id=>[id])];
+    const weight=unit=>Math.max(...unit.map(priority));
+    units.sort((a,b)=>weight(b)-weight(a) || b.length-a.length);
+    const space=groups.map(row=>row.length),allocated=groups.map(()=>[]);
+    let remainingPairs=active.length;
+    for(const unit of units){
+      if(unit.length===2)remainingPairs--;
+      let best=-1,score=-Infinity;
+      for(let c=0;c<space.length;c++){
+        if(space[c]<unit.length)continue;
+        space[c]-=unit.length;
+        const canFit=space.reduce((n,free)=>n+Math.floor(free/2),0)>=remainingPairs;
+        space[c]+=unit.length;
+        if(!canFit)continue;
+        const fit=unit.reduce((value,id)=>value+(home.get(id)===c?10+priority(id):-Math.abs(home.get(id)-c)*0.1),0);
+        if(fit>score){score=fit;best=c;}
+      }
+      if(best<0)return null;
+      space[best]-=unit.length;allocated[best].push(unit);
+    }
+    return allocated.map((units,c)=>{
+      const original=groups[c],rank=id=>original.includes(id)?original.indexOf(id):original.length;
+      const ordered=units.sort((a,b)=>Math.min(...a.map(rank))-Math.min(...b.map(rank)));
+      const duos=ordered.filter(unit=>unit.length===2),singles=ordered.filter(unit=>unit.length===1);
+      // A chosen duo must occupy one side of the net, including when it is the second team.
+      if(duos.length===1 && singles.length>=2 && rank(singles[1][0])<Math.min(...duos[0].map(rank)))return singles.slice(0,2).flat().concat(duos.flat(),singles.slice(2).flat());
+      return duos.flat().concat(singles.flat());
+    });
+  }
+
+  function openingMove(groups,pairs,from,to){
+    const a=Number(from),vacant=String(to).startsWith('vacant-');
+    const locate=id=>groups.findIndex(row=>row.includes(id));
+    const src=locate(a),dest=vacant?Number(String(to).split('-')[1]):locate(Number(to));
+    if(src<0 || dest<0 || !groups[dest] || String(from)===String(to))return null;
+    const source=groups[src],target=groups[dest];
+    const members=(id,row)=>pairs.find(pair=>pair.includes(id) && pair.every(p=>row.includes(p))) || [id];
+    let take=members(a,source).slice();
+    function finish(result){
+      // Closing a gap must also keep a pair on one side of the net on the source court.
+      for(const c of new Set([src,dest])){
+        const row=result[c],paired=pairs.filter(pair=>pair.every(id=>row.includes(id)));
+        if(paired.some(([x,y])=>Math.floor(row.indexOf(x)/2)!==Math.floor(row.indexOf(y)/2))){
+          const grouped=arrangeOpening([row],paired);if(!grouped)return null;
+          result[c]=grouped[0];
+        }
+      }
+      const targets=take.map(id=>{
+        const seat=result[dest].indexOf(id);return target[seat] ?? 'vacant-'+dest+'-'+seat;
+      });
+      return {groups:result,take,targets};
+    }
+    if(vacant){
+      if(!src || !dest || src===dest || target.length+take.length>4)return null;
+      const result=groups.map(row=>row.slice());
+      result[src]=source.filter(id=>!take.includes(id));result[dest]=target.concat(take);
+      return finish(result);
+    }
+    const b=Number(to);
+    let give=members(b,target).slice();
+    if(take.includes(b))return null;
+    function complete(unit,row,excluded){
+      if(unit.length===2)return unit;
+      const start=row.indexOf(unit[0]);
+      const first=row[start%2===0?start+1:start-1];
+      const mate=[first,...row].find(id=>id!=null && id!==unit[0] && !excluded.includes(id) && members(id,row).length===1);
+      if(mate==null)return null;
+      return [unit[0],mate].sort((x,y)=>row.indexOf(x)-row.indexOf(y));
+    }
+    if(take.length!==give.length){
+      if(take.length===1)take=complete(take,source,give);
+      else give=complete(give,target,take);
+      if(!take || !give)return null;
+    }
+    take.sort((x,y)=>source.indexOf(x)-source.indexOf(y));
+    give.sort((x,y)=>target.indexOf(x)-target.indexOf(y));
+    const exchange=new Map(take.flatMap((id,i)=>[[id,give[i]],[give[i],id]]));
+    const changed=groups.map((row,c)=>c===src || c===dest?row.map(id=>exchange.get(id)??id):row.slice());
+    return finish(changed);
+  }
+
+  function rosterMove(groups,pairs,a,b,insert=true){
+    const src=groups.findIndex(row=>row.includes(a)),dest=groups.findIndex(row=>row.includes(b));
+    if(src<0 || dest<0 || a===b)return null;
+    const source=groups[src],target=groups[dest],result=groups.map(row=>row.slice());
+    const unit=(id,row)=>row.filter(p=>(pairs.find(pair=>pair.includes(id)) || [id]).includes(p));
+    let take=unit(a,source),give=unit(b,target);
+    if(take.includes(b))return null;
+    if(src===dest && insert){
+      const remaining=source.filter(id=>!take.includes(id));
+      const forward=source.indexOf(a)<source.indexOf(b);
+      const at=forward?remaining.indexOf(give.at(-1))+1:remaining.indexOf(give[0]);
+      remaining.splice(at,0,...take);result[src]=remaining;
+    }else{
+      const fill=(items,row,exclude)=>{
+        if(items.length===2)return items;
+        const i=row.indexOf(items[0]);
+        const neighbor=[row[i+1],row[i-1]].find(id=>id!=null && !exclude.includes(id) && unit(id,row).length===1);
+        return neighbor==null?null:row.filter(id=>items.includes(id) || id===neighbor);
+      };
+      if(take.length!==give.length){
+        if(take.length===1)take=fill(take,source,give);
+        else give=fill(give,target,take);
+        if(!take || !give)return null;
+      }
+      const exchange=new Map(take.flatMap((id,i)=>[[id,give[i]],[give[i],id]]));
+      for(const g of new Set([src,dest]))result[g]=groups[g].map(id=>exchange.get(id)??id);
+    }
+    const positions=take.map(id=>result[dest].indexOf(id));
+    return {groups:result,take,positions,targets:positions.map(i=>target[i]),dest};
+  }
+
+  return {rosterMove,arrangeOpening,openingMove,startKocRounds,nextKocRound,roundComplete,validKocRounds,createClock,remainingMillis,changeClock,summarizeSchedule,validScore};
 });

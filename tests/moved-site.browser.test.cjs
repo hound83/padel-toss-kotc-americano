@@ -28,7 +28,7 @@ test('Pages builds only a notice at every legacy entry point',()=>{
   }
 });
 
-test('Old links retain the event, query and fragment, and a local-only draw can be downloaded and imported into 3.3',async t=>{
+test('Old links retain the event, query and fragment, and a local-only draw can be downloaded and imported into 3.4',async t=>{
   const browser=await chromium.launch();t.after(()=>browser.close());
   const ctx=await browser.newContext({serviceWorkers:'block',viewport:{width:390,height:844},hasTouch:true});
   const page=await ctx.newPage(),old='https://hound83.github.io'+project;
@@ -68,7 +68,7 @@ test('Old links retain the event, query and fragment, and a local-only draw can 
   assert.deepEqual(JSON.parse(require('node:zlib').gunzipSync(Buffer.from(fields[3],'base64url'))),final);
   await page.goto(old+'?preview=3.1');
   await page.waitForURL(cloud+'/');
-  assert.equal(await page.locator('#appVersion').innerText(),'v3.3.0');
+  assert.equal(await page.locator('#appVersion').innerText(),'v3.4.0');
   assert.deepEqual((await page.locator('.format-btn').evaluateAll(all=>all.map(el=>el.dataset.format))).sort(),modes.slice().sort());
   await page.locator('.format-btn[data-format=toss]').click();await page.locator('#continueTo2').click();
   await page.locator('#namesGrid input').first().fill('Test Deelnemer');await page.locator('#generateBtn').click();

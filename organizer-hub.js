@@ -47,9 +47,10 @@ window.TossOrganizerHub=function({P,say,modeName,dateText,el,button,link,card,fi
     const waiting=item.waiting+say(' wachtend',' waiting');
     const standby=settings.format==='koc'?' · '+item.standby+say(item.standby===1?' reserve':' reserves',' standby'):'';
     totals.append(el('strong',item.playing+' / '+settings.capacity),el('small',waiting+standby));
-    toggle.append(img,label,totals);row.append(toggle);parent.append(row);cards.set(item.id,{row,toggle});
+    const head=el('div',undefined,'hub-record-head');
+    toggle.append(img,label,totals);head.append(toggle,removeButton('poll',item,true));row.append(head);parent.append(row);cards.set(item.id,{row,toggle});
   }
-  function removeButton(kind,item){
+  function removeButton(kind,item,compact=false){
     const event=kind==='poll', format=event?item.settings.format:item.format;
     const label=event?say('Avond verwijderen','Delete event'):say('Schema verwijderen','Delete schedule');
     const name=event?item.settings.title:(item.title||modeName(format));
@@ -61,7 +62,7 @@ window.TossOrganizerHub=function({P,say,modeName,dateText,el,button,link,card,fi
           say('De aanmeldingen verdwijnen en de aanmeldlink vervalt.','The signups will be deleted and the signup link will stop working.'):
           say('Het online speelschema en de uitslagen verdwijnen. De kijklink en scorelinks vervallen.','The online schedule and results will be deleted. Viewing and score links will stop working.');
         root.append(el('p',detail));
-        if(event && item.viewCode)root.append(el('p',say('Het gepubliceerde speelschema wordt ook verwijderd als het alleen bij deze avond hoort.',
+        if(event && (item.phase==='published' || item.viewCode))root.append(el('p',say('Het gepubliceerde speelschema wordt ook verwijderd als het alleen bij deze avond hoort.',
           'The published schedule will also be deleted if it belongs only to this event.')));
         return ()=>({kind,id:item.id,revision:item.revision});
       },async body=>{
@@ -81,6 +82,16 @@ window.TossOrganizerHub=function({P,say,modeName,dateText,el,button,link,card,fi
       },{format,remove:true});
     });
     trigger.className='remove-item';
+    if(compact){
+      trigger.classList.add('hub-trash');
+      trigger.title=label+' · '+name;
+      trigger.setAttribute('aria-label',trigger.title);
+      const icon=document.createElementNS('http://www.w3.org/2000/svg','svg');
+      icon.setAttribute('viewBox','0 0 24 24');icon.setAttribute('aria-hidden','true');
+      const path=document.createElementNS(icon.namespaceURI,'path');
+      path.setAttribute('d','M4 7h16M9 7V4h6v3M6.5 7l.8 13h9.4l.8-13M10 10.5v6M14 10.5v6');
+      icon.append(path);trigger.replaceChildren(icon);
+    }
     return trigger;
   }
   function scheduleCard(section,session){
@@ -88,8 +99,8 @@ window.TossOrganizerHub=function({P,say,modeName,dateText,el,button,link,card,fi
     const art=el('img');art.src=P.art(session.format,document.documentElement.lang==='en');art.alt='';
     const body=el('div');body.append(el('h3',session.title||modeName(session.format)),el('small',dateText(session)+' · '+
       (session.closed?say('Eindstand','Final results'):say('Gedeeld speelschema','Shared schedule'))),creationInfo(session));
-    actions(body,link(say('Open planner','Open planner'),'/beheer/sessie/'+session.id),link(say('Open liveweergave','Open live view'),'/s/'+session.viewCode),removeButton('session',session));
-    row.append(art,body);section.append(row);
+    actions(body,link(say('Open planner','Open planner'),'/beheer/sessie/'+session.id),link(say('Open liveweergave','Open live view'),'/s/'+session.viewCode));
+    row.append(art,body,removeButton('session',session,true));section.append(row);
   }
   function organizerAccounts(){
     const panel=el('details',undefined,'card organizer-accounts'),body=el('div');

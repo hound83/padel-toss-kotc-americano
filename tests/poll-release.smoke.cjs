@@ -18,10 +18,10 @@ const {chromium}=require('playwright');
     let live=false;
     for(let i=0;i<36;i++){
       await page.goto(base);
-      if(await page.locator('#appVersion').innerText()==='v3.3.0' && await page.locator('#pollHome').isVisible()){live=true;break;}
+      if(await page.locator('#appVersion').innerText()==='v3.4.0' && await page.locator('#pollHome').isVisible()){live=true;break;}
       await new Promise(resolve=>setTimeout(resolve,5000));
     }
-    assert.ok(live,'the production planner serves 3.3');
+    assert.ok(live,'the production planner serves 3.4');
     const manage=page.locator('footer .organizer-button');
     const homeBox=await manage.boundingBox();
     assert.ok(homeBox && homeBox.height>=44);
@@ -105,6 +105,6 @@ const {chromium}=require('playwright');
     assert.equal(await page.getByLabel('Speeldatum',{exact:true}).inputValue(),'');
     await page.getByLabel('Jouw naam',{exact:true}).waitFor();
     await page.getByRole('button',{name:'Inplannen en delen'}).waitFor();
-    console.log('Cloudflare production serves Toss 3.3, the four mode illustrations and the protected organizer dashboard.');
+    console.log('Cloudflare production serves Toss 3.4, the four mode illustrations and the protected organizer dashboard.');
   }finally{await browser.close();}
 })().catch(err=>{console.error(err);process.exitCode=1;});
